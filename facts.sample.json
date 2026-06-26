@@ -1,0 +1,328 @@
+{
+  "facts": [
+    {
+      "fact_id": "019f035c-1823-7fe9-8c54-02b2d1acc30c",
+      "fact.identity": {
+        "actor.id": "guest",
+        "actor.name": "guest",
+        "target.id": "prod",
+        "source.ip": null
+      },
+      "fact.time": {
+        "system_timestamp": 1782467794979937,
+        "log_sequence_number": 14812346
+      },
+      "fact.behavior": {
+        "class": "privilege_violation",
+        "action": "authorization.failure",
+        "risk_level": "Medium"
+      },
+      "fact.evidence": {
+        "raw_observation_hash": "b3:b1cab9dd351db49cc48be7a5658ef0e1fec835b8156f1f7c718288afe0c55f0a",
+        "carimbo_tempo_legal": "icp_brasil_serpro_tst_recibo"
+      },
+      "fact.lineage": {
+        "transformation_steps": [
+          "parse",
+          "normalize",
+          "behavior",
+          "emit"
+        ],
+        "input_source": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+        "matched_rule": "pg_permission_denied"
+      },
+      "fact.confidence": 0.972,
+      "fact.knowledge_version": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+      "fact.reasoning_version": "reasoner-core-v6.0",
+      "fact.ontology_version": "v9"
+    },
+    {
+      "fact_id": "019f035c-1823-767e-8ce2-601aedbcf46b",
+      "fact.identity": {
+        "actor.id": "admin",
+        "actor.name": "admin",
+        "target.id": "prod",
+        "source.ip": null
+      },
+      "fact.time": {
+        "system_timestamp": 1782467794979904,
+        "log_sequence_number": 14812345
+      },
+      "fact.behavior": {
+        "class": "data_access",
+        "action": "query.execute",
+        "risk_level": "Low"
+      },
+      "fact.evidence": {
+        "raw_observation_hash": "b3:07e93b78408d31c44365bc592e2847b7798d9074213f24a2cd62b858cbb96ba6",
+        "carimbo_tempo_legal": "icp_brasil_serpro_tst_recibo"
+      },
+      "fact.lineage": {
+        "transformation_steps": [
+          "parse",
+          "normalize",
+          "behavior",
+          "emit"
+        ],
+        "input_source": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+        "matched_rule": "pg_statement"
+      },
+      "fact.confidence": 0.972,
+      "fact.knowledge_version": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+      "fact.reasoning_version": "reasoner-core-v6.0",
+      "fact.ontology_version": "v9"
+    },
+    {
+      "fact_id": "019f035c-1823-7b56-840f-52738e98c864",
+      "fact.identity": {
+        "actor.id": "admin",
+        "actor.name": "admin",
+        "target.id": "prod",
+        "source.ip": null
+      },
+      "fact.time": {
+        "system_timestamp": 1782467794979865,
+        "log_sequence_number": 14812344
+      },
+      "fact.behavior": {
+        "class": "session",
+        "action": "authentication.success",
+        "risk_level": "Low"
+      },
+      "fact.evidence": {
+        "raw_observation_hash": "b3:c48ef2e80a2dec4340fe96f70a97f7db4e8c996442992d0c4375d1b344a7cc5e",
+        "carimbo_tempo_legal": "icp_brasil_serpro_tst_recibo"
+      },
+      "fact.lineage": {
+        "transformation_steps": [
+          "parse",
+          "normalize",
+          "behavior",
+          "emit"
+        ],
+        "input_source": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+        "matched_rule": "pg_connection_authorized"
+      },
+      "fact.confidence": 0.972,
+      "fact.knowledge_version": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+      "fact.reasoning_version": "reasoner-core-v6.0",
+      "fact.ontology_version": "v9"
+    },
+    {
+      "fact_id": "019f035c-1823-7e64-b57a-686aff741fef",
+      "fact.identity": {
+        "actor.id": "admin",
+        "actor.name": "admin",
+        "target.id": "postgresql",
+        "source.ip": null
+      },
+      "fact.time": {
+        "system_timestamp": 1782467794979831,
+        "log_sequence_number": 14812343
+      },
+      "fact.behavior": {
+        "class": "brute_force_attack",
+        "action": "authentication.failure",
+        "risk_level": "Critical"
+      },
+      "fact.evidence": {
+        "raw_observation_hash": "b3:a52d87df8971833f9b7c7f480f99808a40a09e3d5daab4e9417d7d1a79545df6",
+        "carimbo_tempo_legal": "icp_brasil_serpro_tst_recibo"
+      },
+      "fact.lineage": {
+        "transformation_steps": [
+          "parse",
+          "normalize",
+          "behavior",
+          "emit"
+        ],
+        "input_source": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+        "matched_rule": "pg_auth_failure"
+      },
+      "fact.confidence": 0.972,
+      "fact.knowledge_version": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+      "fact.reasoning_version": "reasoner-core-v6.0",
+      "fact.ontology_version": "v9"
+    },
+    {
+      "fact_id": "019f035c-1823-72cb-a816-abdb57aafcd2",
+      "fact.identity": {
+        "actor.id": "admin",
+        "actor.name": "admin",
+        "target.id": "postgresql",
+        "source.ip": null
+      },
+      "fact.time": {
+        "system_timestamp": 1782467794979797,
+        "log_sequence_number": 14812342
+      },
+      "fact.behavior": {
+        "class": "credential_attack",
+        "action": "authentication.failure",
+        "risk_level": "High"
+      },
+      "fact.evidence": {
+        "raw_observation_hash": "b3:2a8c9f08f8041deca25edf9b0d681a5ef73d4ecda221b94f0962c734132fea37",
+        "carimbo_tempo_legal": "icp_brasil_serpro_tst_recibo"
+      },
+      "fact.lineage": {
+        "transformation_steps": [
+          "parse",
+          "normalize",
+          "behavior",
+          "emit"
+        ],
+        "input_source": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+        "matched_rule": "pg_auth_failure"
+      },
+      "fact.confidence": 0.972,
+      "fact.knowledge_version": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+      "fact.reasoning_version": "reasoner-core-v6.0",
+      "fact.ontology_version": "v9"
+    },
+    {
+      "fact_id": "019f035c-1823-7833-8a67-655486ff2781",
+      "fact.identity": {
+        "actor.id": "admin",
+        "actor.name": "admin",
+        "target.id": "postgresql",
+        "source.ip": null
+      },
+      "fact.time": {
+        "system_timestamp": 1782467794979761,
+        "log_sequence_number": 14812341
+      },
+      "fact.behavior": {
+        "class": "credential_attack",
+        "action": "authentication.failure",
+        "risk_level": "High"
+      },
+      "fact.evidence": {
+        "raw_observation_hash": "b3:f4a4464d4b25d2a33cecd003844b1b7c3b72c19ae600f320cae7cd2a57f0a371",
+        "carimbo_tempo_legal": "icp_brasil_serpro_tst_recibo"
+      },
+      "fact.lineage": {
+        "transformation_steps": [
+          "parse",
+          "normalize",
+          "behavior",
+          "emit"
+        ],
+        "input_source": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+        "matched_rule": "pg_auth_failure"
+      },
+      "fact.confidence": 0.972,
+      "fact.knowledge_version": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+      "fact.reasoning_version": "reasoner-core-v6.0",
+      "fact.ontology_version": "v9"
+    },
+    {
+      "fact_id": "019f035c-1823-7a9b-83b4-351e01a6758f",
+      "fact.identity": {
+        "actor.id": "admin",
+        "actor.name": "admin",
+        "target.id": "postgresql",
+        "source.ip": null
+      },
+      "fact.time": {
+        "system_timestamp": 1782467794979715,
+        "log_sequence_number": 14812340
+      },
+      "fact.behavior": {
+        "class": "credential_attack",
+        "action": "authentication.failure",
+        "risk_level": "High"
+      },
+      "fact.evidence": {
+        "raw_observation_hash": "b3:403d35da1eb5cb7174490b714029cf1ec3fcbcdb7d5941f655a6d5c78de1cff5",
+        "carimbo_tempo_legal": "icp_brasil_serpro_tst_recibo"
+      },
+      "fact.lineage": {
+        "transformation_steps": [
+          "parse",
+          "normalize",
+          "behavior",
+          "emit"
+        ],
+        "input_source": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+        "matched_rule": "pg_auth_failure"
+      },
+      "fact.confidence": 0.972,
+      "fact.knowledge_version": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+      "fact.reasoning_version": "reasoner-core-v6.0",
+      "fact.ontology_version": "v9"
+    },
+    {
+      "fact_id": "019f035c-1823-7362-8bc9-e26be2df6b70",
+      "fact.identity": {
+        "actor.id": "admin",
+        "actor.name": "admin",
+        "target.id": "postgresql",
+        "source.ip": null
+      },
+      "fact.time": {
+        "system_timestamp": 1782467794979647,
+        "log_sequence_number": 14812339
+      },
+      "fact.behavior": {
+        "class": "credential_attack",
+        "action": "authentication.failure",
+        "risk_level": "High"
+      },
+      "fact.evidence": {
+        "raw_observation_hash": "b3:93625d7dd9bbe301bfdf24c0b6cc90c93d867d83dbfcfa3f31c14f91817d5d5a",
+        "carimbo_tempo_legal": "icp_brasil_serpro_tst_recibo"
+      },
+      "fact.lineage": {
+        "transformation_steps": [
+          "parse",
+          "normalize",
+          "behavior",
+          "emit"
+        ],
+        "input_source": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+        "matched_rule": "pg_auth_failure"
+      },
+      "fact.confidence": 0.972,
+      "fact.knowledge_version": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+      "fact.reasoning_version": "reasoner-core-v6.0",
+      "fact.ontology_version": "v9"
+    },
+    {
+      "fact_id": "019f035c-1823-7cec-8ab7-e640520407f3",
+      "fact.identity": {
+        "actor.id": null,
+        "actor.name": null,
+        "target.id": null,
+        "source.ip": null
+      },
+      "fact.time": {
+        "system_timestamp": 1782467794979111,
+        "log_sequence_number": 14812338
+      },
+      "fact.behavior": {
+        "class": "observation",
+        "action": "log.info",
+        "risk_level": "Low"
+      },
+      "fact.evidence": {
+        "raw_observation_hash": "b3:698cb0f21803247d60777dd441ea9bb156209219a6a80bf1a1d30c43722c1679",
+        "carimbo_tempo_legal": "icp_brasil_serpro_tst_recibo"
+      },
+      "fact.lineage": {
+        "transformation_steps": [
+          "parse",
+          "normalize",
+          "behavior",
+          "emit"
+        ],
+        "input_source": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+        "matched_rule": "pg_info"
+      },
+      "fact.confidence": 0.972,
+      "fact.knowledge_version": "br.gov.heraclitus.pipelines.postgresql-v1.0.0",
+      "fact.reasoning_version": "reasoner-core-v6.0",
+      "fact.ontology_version": "v9"
+    }
+  ]
+}

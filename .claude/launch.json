@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "forensic-dashboard",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-3", "-m", "http.server", "9000", "--directory", "D:\\DEV\\HeraclitusDB\\dashboard"],
+      "port": 9000
+    }
+  ]
+}
