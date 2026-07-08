@@ -1,0 +1,104 @@
+/* ---- DSgov tokens (Design System do Governo Federal) ---- */
+:root {
+  --azul: #1351B4; --azul-esc: #0C326F; --azul-claro: #155BCB; --azul-bg: #E8F0FB;
+  --verde: #168821; --verde-bg: #E3F5E1; --amarelo: #FFCD07;
+  --vermelho: #E52207; --vermelho-bg: #FBE9E7; --laranja: #C45000;
+  --ink: #1B1B1B; --muted: #555; --line: #D9D9D9; --bg: #F8F8F8; --card: #fff;
+  --soc: #0B1B33; --soc-2: #12264a; --soc-line: #1e3a64; --soc-ink: #cfe0ff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Rawline", -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.govbar { background: var(--azul-esc); color: #fff; font-size: 12px; padding: 4px 16px; display: flex; gap: 14px; align-items: center; }
+.govbar b { font-weight: 700; letter-spacing: .5px; }
+.govbar .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amarelo); }
+
+header { background: var(--azul); color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 4px solid var(--amarelo); flex-wrap: wrap; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand .mark { width: 38px; height: 38px; border-radius: 9px; background: #fff; color: var(--azul); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; }
+.brand h1 { font-size: 17px; margin: 0; font-weight: 700; line-height: 1.1; }
+.brand small { font-size: 11px; opacity: .85; font-weight: 400; }
+.conn { display: flex; align-items: center; gap: 8px; font-size: 12px; background: rgba(255,255,255,.12); padding: 6px 12px; border-radius: 99px; cursor: pointer; }
+.conn .led { width: 9px; height: 9px; border-radius: 50%; background: #9aa; }
+.conn.live .led { background: #41d160; box-shadow: 0 0 8px #41d160; }
+.conn.demo .led { background: var(--amarelo); }
+
+.wrap { display: grid; grid-template-columns: 230px 1fr; min-height: calc(100vh - 86px); }
+@media (max-width: 768px) {
+  .wrap { grid-template-columns: 1fr; }
+  nav { border-right: none; border-bottom: 1px solid var(--line); }
+}
+
+nav { background: #fff; border-right: 1px solid var(--line); padding: 10px 0; }
+nav .grp { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: #888; padding: 14px 18px 4px; font-weight: 700; }
+nav a { display: flex; align-items: center; gap: 10px; padding: 9px 18px; color: var(--ink); text-decoration: none; cursor: pointer; border-left: 3px solid transparent; font-size: 13px; }
+nav a:hover { background: var(--azul-bg); }
+nav a.active { background: var(--azul-bg); border-left-color: var(--azul); color: var(--azul); font-weight: 600; }
+nav a .ic { width: 18px; text-align: center; }
+
+main { padding: 20px 26px; overflow: auto; }
+.secttl { display: flex; align-items: baseline; gap: 12px; margin: 0 0 4px; flex-wrap: wrap; }
+.secttl h2 { font-size: 20px; margin: 0; font-weight: 700; color: var(--azul-esc); }
+.secttl .tag { font-size: 11px; background: var(--azul-bg); color: var(--azul); padding: 2px 9px; border-radius: 99px; font-weight: 600; }
+.sub { color: var(--muted); margin: 0 0 18px; font-size: 13px; }
+
+section { display: none; }
+section.on { display: block; animation: fade .2s; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
+.grid { display: grid; gap: 14px; }
+.k4 { grid-template-columns: repeat(4, 1fr); }
+.k3 { grid-template-columns: repeat(3, 1fr); }
+.k2 { grid-template-columns: repeat(2, 1fr); }
+
+@media (max-width: 1024px) {
+  .k4 { grid-template-columns: repeat(2, 1fr); }
+  .k3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 576px) {
+  .k4, .k3, .k2 { grid-template-columns: 1fr; }
+}
+
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.kpi .lb { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.kpi .v { font-size: 26px; font-weight: 700; margin-top: 4px; color: var(--azul-esc); }
+.kpi .v small { font-size: 13px; font-weight: 600; color: var(--muted); }
+.kpi.ok .v { color: var(--verde); } .kpi.warn .v { color: var(--laranja); } .kpi.bad .v { color: var(--vermelho); }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-top: 16px; overflow-x: auto; }
+.card h3 { margin: 0 0 12px; font-size: 15px; color: var(--azul-esc); }
+
+.pill { font-size: 11px; padding: 2px 9px; border-radius: 99px; font-weight: 600; display: inline-block; }
+.pill.g { background: var(--verde-bg); color: var(--verde); } 
+.pill.r { background: var(--vermelho-bg); color: var(--vermelho); }
+.pill.y { background: #FFF4D6; color: #946200; } 
+.pill.b { background: var(--azul-bg); color: var(--azul); }
+
+.btn { background: var(--azul); color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
+.btn.g { background: var(--verde); } .btn.ghost { background: #fff; color: var(--azul); border: 1px solid var(--azul); }
+
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 600px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+.mono { font-family: ui-monospace, Consolas, monospace; }
+
+.flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.step { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--azul); border-radius: 0 8px 8px 0; padding: 8px 12px; min-width: 150px; flex: 1; }
+.step .t { font-size: 11px; color: var(--muted); } .step .n { font-weight: 600; }
+.step.bad { border-left-color: var(--vermelho); } .step.warn { border-left-color: var(--laranja); }
+.arrow { display: flex; align-items: center; color: #bbb; font-size: 18px; justify-content: center; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px; color: var(--muted); margin-top: 10px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: 1px; }
+
+.verify { display: flex; align-items: center; gap: 10px; background: var(--verde-bg); border: 1px solid #b6e3b6; border-radius: 10px; padding: 12px 16px; color: var(--verde); font-weight: 600; }
+input[type=range] { width: 100%; accent-color: var(--azul); }
+.soc { background: var(--soc); border-radius: 12px; padding: 8px; border: 1px solid var(--soc-line); }

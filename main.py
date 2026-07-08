@@ -1,0 +1,631 @@
+import os
+
+# Definição da estrutura de arquivos com os templates JS corrigidos (sem escapamentos incorretos)
+FILES = {
+    "index.html": """<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Heraclitus Forensic Layer</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div id="govbar-container"></div>
+  <div id="header-container"></div>
+
+  <div class="wrap">
+    <nav id="nav"></nav>
+    <main id="main-content"></main>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>""",
+
+    "css/styles.css": """/* ---- DSgov tokens (Design System do Governo Federal) ---- */
+:root {
+  --azul: #1351B4; --azul-esc: #0C326F; --azul-claro: #155BCB; --azul-bg: #E8F0FB;
+  --verde: #168821; --verde-bg: #E3F5E1; --amarelo: #FFCD07;
+  --vermelho: #E52207; --vermelho-bg: #FBE9E7; --laranja: #C45000;
+  --ink: #1B1B1B; --muted: #555; --line: #D9D9D9; --bg: #F8F8F8; --card: #fff;
+  --soc: #0B1B33; --soc-2: #12264a; --soc-line: #1e3a64; --soc-ink: #cfe0ff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Rawline", -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.govbar { background: var(--azul-esc); color: #fff; font-size: 12px; padding: 4px 16px; display: flex; gap: 14px; align-items: center; }
+.govbar b { font-weight: 700; letter-spacing: .5px; }
+.govbar .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amarelo); }
+
+header { background: var(--azul); color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 4px solid var(--amarelo); flex-wrap: wrap; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand .mark { width: 38px; height: 38px; border-radius: 9px; background: #fff; color: var(--azul); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; }
+.brand h1 { font-size: 17px; margin: 0; font-weight: 700; line-height: 1.1; }
+.brand small { font-size: 11px; opacity: .85; font-weight: 400; }
+.conn { display: flex; align-items: center; gap: 8px; font-size: 12px; background: rgba(255,255,255,.12); padding: 6px 12px; border-radius: 99px; cursor: pointer; }
+.conn .led { width: 9px; height: 9px; border-radius: 50%; background: #9aa; }
+.conn.live .led { background: #41d160; box-shadow: 0 0 8px #41d160; }
+.conn.demo .led { background: var(--amarelo); }
+
+.wrap { display: grid; grid-template-columns: 230px 1fr; min-height: calc(100vh - 86px); }
+@media (max-width: 768px) {
+  .wrap { grid-template-columns: 1fr; }
+  nav { border-right: none; border-bottom: 1px solid var(--line); }
+}
+
+nav { background: #fff; border-right: 1px solid var(--line); padding: 10px 0; }
+nav .grp { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: #888; padding: 14px 18px 4px; font-weight: 700; }
+nav a { display: flex; align-items: center; gap: 10px; padding: 9px 18px; color: var(--ink); text-decoration: none; cursor: pointer; border-left: 3px solid transparent; font-size: 13px; }
+nav a:hover { background: var(--azul-bg); }
+nav a.active { background: var(--azul-bg); border-left-color: var(--azul); color: var(--azul); font-weight: 600; }
+nav a .ic { width: 18px; text-align: center; }
+
+main { padding: 20px 26px; overflow: auto; }
+.secttl { display: flex; align-items: baseline; gap: 12px; margin: 0 0 4px; flex-wrap: wrap; }
+.secttl h2 { font-size: 20px; margin: 0; font-weight: 700; color: var(--azul-esc); }
+.secttl .tag { font-size: 11px; background: var(--azul-bg); color: var(--azul); padding: 2px 9px; border-radius: 99px; font-weight: 600; }
+.sub { color: var(--muted); margin: 0 0 18px; font-size: 13px; }
+
+section { display: none; }
+section.on { display: block; animation: fade .2s; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
+.grid { display: grid; gap: 14px; }
+.k4 { grid-template-columns: repeat(4, 1fr); }
+.k3 { grid-template-columns: repeat(3, 1fr); }
+.k2 { grid-template-columns: repeat(2, 1fr); }
+
+@media (max-width: 1024px) {
+  .k4 { grid-template-columns: repeat(2, 1fr); }
+  .k3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 576px) {
+  .k4, .k3, .k2 { grid-template-columns: 1fr; }
+}
+
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.kpi .lb { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.kpi .v { font-size: 26px; font-weight: 700; margin-top: 4px; color: var(--azul-esc); }
+.kpi .v small { font-size: 13px; font-weight: 600; color: var(--muted); }
+.kpi.ok .v { color: var(--verde); } .kpi.warn .v { color: var(--laranja); } .kpi.bad .v { color: var(--vermelho); }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin-top: 16px; overflow-x: auto; }
+.card h3 { margin: 0 0 12px; font-size: 15px; color: var(--azul-esc); }
+
+.pill { font-size: 11px; padding: 2px 9px; border-radius: 99px; font-weight: 600; display: inline-block; }
+.pill.g { background: var(--verde-bg); color: var(--verde); } 
+.pill.r { background: var(--vermelho-bg); color: var(--vermelho); }
+.pill.y { background: #FFF4D6; color: #946200; } 
+.pill.b { background: var(--azul-bg); color: var(--azul); }
+
+.btn { background: var(--azul); color: #fff; border: none; padding: 9px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
+.btn.g { background: var(--verde); } .btn.ghost { background: #fff; color: var(--azul); border: 1px solid var(--azul); }
+
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 600px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+.mono { font-family: ui-monospace, Consolas, monospace; }
+
+.flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch; }
+.step { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--azul); border-radius: 0 8px 8px 0; padding: 8px 12px; min-width: 150px; flex: 1; }
+.step .t { font-size: 11px; color: var(--muted); } .step .n { font-weight: 600; }
+.step.bad { border-left-color: var(--vermelho); } .step.warn { border-left-color: var(--laranja); }
+.arrow { display: flex; align-items: center; color: #bbb; font-size: 18px; justify-content: center; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 12px; color: var(--muted); margin-top: 10px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: 1px; }
+
+.verify { display: flex; align-items: center; gap: 10px; background: var(--verde-bg); border: 1px solid #b6e3b6; border-radius: 10px; padding: 12px 16px; color: var(--verde); font-weight: 600; }
+input[type=range] { width: 100%; accent-color: var(--azul); }
+.soc { background: var(--soc); border-radius: 12px; padding: 8px; border: 1px solid var(--soc-line); }""",
+
+    "js/app.js": """import { GovBar } from './components/GovBar.js';
+import { Header } from './components/Header.js';
+import { Navigation } from './components/Navigation.js';
+import { SOCPanel } from './components/SOCPanel.js';
+import { ExecPanel } from './components/ExecPanel.js';
+import { TimeMachine } from './components/TimeMachine.js';
+import { AttackReplay } from './components/AttackReplay.js';
+import { AttackGraph } from './components/AttackGraph.js';
+import { CausalInvestigation } from './components/CausalInvestigation.js';
+import { CustodyChain } from './components/CustodyChain.js';
+import { MerkleViewer } from './components/MerkleViewer.js';
+import { CompliancePanel } from './components/CompliancePanel.js';
+import { ForensicAI } from './components/ForensicAI.js';
+
+window.$ = s => document.querySelector(s);
+window.$$ = s => document.querySelectorAll(s);
+window.fmt = n => n.toLocaleString('pt-BR');
+window.LIVE = false;
+
+document.addEventListener("DOMContentLoaded", async () => {
+  $('#govbar-container').innerHTML = GovBar.render();
+  $('#header-container').innerHTML = Header.render();
+  $('#nav').innerHTML = Navigation.render();
+
+  const main = $('#main-content');
+  main.innerHTML = `
+    ${SOCPanel.render()}
+    ${ExecPanel.render()}
+    ${TimeMachine.render()}
+    ${AttackReplay.render()}
+    ${AttackGraph.render()}
+    ${CausalInvestigation.render()}
+    ${CustodyChain.render()}
+    ${MerkleViewer.render()}
+    ${CompliancePanel.render()}
+    ${ForensicAI.render()}
+  `;
+
+  Header.init();
+  Navigation.init();
+  SOCPanel.init();
+  TimeMachine.init();
+  AttackReplay.init();
+  AttackGraph.init();
+  CausalInvestigation.init();
+  CustodyChain.init();
+  MerkleViewer.init();
+  CompliancePanel.init();
+  ForensicAI.init();
+});""",
+
+    "js/components/GovBar.js": """export const GovBar = {
+  render() {
+    return `<div class="govbar"><b>GOV.BR</b><span class="dot"></span><span>Plataforma de Evidência Digital · Uso restrito</span></div>`;
+  }
+};""",
+
+    "js/components/Header.js": """export const Header = {
+  render() {
+    return `
+      <header>
+        <div class="brand">
+          <div class="mark">H</div>
+          <div><h1>Heraclitus Forensic Layer</h1><small>A primeira plataforma que transforma logs em provas jurídicas</small></div>
+        </div>
+        <div class="conn demo" id="conn" title="Clique para configurar o endpoint REST do HeraclitusDB">
+          <span class="led"></span><span id="connlbl">demo — sem conexão</span>
+        </div>
+      </header>
+    `;
+  },
+  init() {
+    const connBtn = $('#conn');
+    if (connBtn) {
+      connBtn.onclick = () => {
+        const v = prompt('Endpoint REST do HeraclitusDB:', localStorage.getItem('hera_api') || 'http://127.0.0.1:7475');
+        if (v) {
+          localStorage.setItem('hera_api', v);
+          window.location.reload();
+        }
+      };
+    }
+  }
+};""",
+
+    "js/components/Navigation.js": """export const Navigation = {
+  render() {
+    return `
+      <div class="grp">Operação</div>
+      <a data-s="soc" class="active"><span class="ic">◉</span> Central de Comando (SOC)</a>
+      <a data-s="exec"><span class="ic">▤</span> Painel Executivo</a>
+      <div class="grp">Investigação</div>
+      <a data-s="time"><span class="ic">⏱</span> Linha do Tempo Forense</a>
+      <a data-s="replay"><span class="ic">▶</span> Replay de Ataque</a>
+      <a data-s="graph"><span class="ic">⬡</span> Grafo de Ataques</a>
+      <a data-s="why"><span class="ic">⌖</span> Investigação Causal (WHY)</a>
+      <div class="grp">Evidências</div>
+      <a data-s="custody"><span class="ic">🛡</span> Cadeia de Custódia</a>
+      <a data-s="merkle"><span class="ic">▦</span> Visualizador Merkle</a>
+      <div class="grp">Governança</div>
+      <a data-s="comp"><span class="ic">✓</span> Conformidade</a>
+      <div class="grp">Inteligência</div>
+      <a data-s="ia"><span class="ic">✦</span> IA Forense</a>
+    `;
+  },
+  init() {
+    $$('#nav a').forEach(a => {
+      a.onclick = () => {
+        $$('#nav a').forEach(x => x.classList.remove('active'));
+        a.classList.add('active');
+        $$('section').forEach(s => s.classList.remove('on'));
+        $('#' + a.dataset.s).classList.add('on');
+      };
+    });
+  }
+};""",
+
+    "js/components/SOCPanel.js": """export const SOCPanel = {
+  render() {
+    return `
+      <section id="soc" class="on">
+        <div class="secttl"><h2>Central de Comando</h2><span class="tag">SOC · tempo real</span></div>
+        <p class="sub">Fluxo de eventos de firewalls, servidores, bancos, APIs e dispositivos de rede, com prova criptográfica na ingestão.</p>
+        <div class="grid k4">
+          <div class="kpi"><div class="lb">Eventos / segundo</div><div class="v" id="eps">—</div></div>
+          <div class="kpi ok"><div class="lb">Eventos selados</div><div class="v" id="sealed">—</div></div>
+          <div class="kpi warn"><div class="lb">Eventos suspeitos</div><div class="v" id="susp">—</div></div>
+          <div class="kpi bad"><div class="lb">Incidentes ativos</div><div class="v" id="inc">—</div></div>
+          <div class="kpi ok"><div class="lb">Integridade do log</div><div class="v" id="integ">—</div></div>
+          <div class="kpi"><div class="lb">Último selo ICP-Brasil</div><div class="v" id="icp" style="font-size:18px">—</div></div>
+          <div class="kpi ok"><div class="lb">Merkle Tree</div><div class="v" id="merk" style="font-size:18px">—</div></div>
+          <div class="kpi"><div class="lb">Latência de ingestão</div><div class="v" id="lat">—<small> ms</small></div></div>
+        </div>
+        <div class="card">
+          <h3>Mapa vivo da infraestrutura</h3>
+          <div class="soc"><svg id="map" viewBox="0 0 880 300" style="width:100%;height:auto"></svg></div>
+          <div class="legend"><span><i style="background:#41d160"></i>fluxo normal</span><span><i style="background:#FFCD07"></i>anomalia</span><span><i style="background:#ff5b4a"></i>ataque</span></div>
+        </div>
+        <div class="card"><h3>Eventos recentes</h3><table id="stream"><thead><tr><th>Hora</th><th>Origem</th><th>Tipo</th><th>Severidade</th><th>Hash (blake3)</th></tr></thead><tbody></tbody></table></div>
+      </section>
+    `;
+  },
+  init() {
+    this.drawMap();
+    this.drawStream();
+    this.startPolling();
+  },
+  drawMap(hot = {}) {
+    const base = [['Internet',60,150],['Firewall',200,150],['Roteador',200,60],['Servidor A',360,90],['Servidor B',360,210],['API',520,90],['Active Dir.',520,210],['Postgres',680,150],['Backup',820,150]];
+    const nodes = base.map(([n,x,y]) => [n,x,y,(hot[n] || '#41d160')]);
+    const edges = [[0,1],[1,2],[1,3],[1,4],[3,5],[4,5],[3,6],[5,7],[6,7],[7,8]];
+    let h = '';
+    edges.forEach(([a,b]) => {
+      const c = nodes[b][3] === '#ff5b4a' || nodes[a][3] === '#ff5b4a' ? '#ff5b4a' : '#2e5288';
+      h += `<line x1="${nodes[a][1]}" y1="${nodes[a][2]}" x2="${nodes[b][1]}" y2="${nodes[b][2]}" stroke="${c}" stroke-width="2" opacity=".7"/>`;
+    });
+    nodes.forEach(([n,x,y,c]) => {
+      h += `<circle cx="${x}" cy="${y}" r="9" fill="${c}"/><circle cx="${x}" cy="${y}" r="9" fill="none" stroke="${c}" stroke-width="2" opacity=".35"><animate attributeName="r" values="9;15;9" dur="2.4s" repeatCount="indefinite"/></circle><text x="${x}" y="${y+24}" fill="#cfe0ff" font-size="11" text-anchor="middle" font-family="Arial">${n}</text>`;
+    });
+    $('#map').innerHTML = h;
+  },
+  drawStream() {
+    const rows = [['09:41:02','187.* (BR)','VPN login','média','b3:9f2a…e71c'],['09:41:00','fw-01 Fortinet','regra violada','alta','b3:1d04…aa90'],['09:40:58','srv-B Linux','sudo escalou','alta','b3:77e1…3c2b'],['09:40:55','pg-prod','DELETE em users','crítica','b3:c0de…9911'],['09:40:51','srv-B','outbound 3GB','crítica','b3:beef…4420']];
+    const sev = {'média':'y','alta':'y','crítica':'r','baixa':'g'};
+    $('#stream tbody').innerHTML = rows.map(r => `<tr><td class="mono">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td><span class="pill ${sev[r[3]]||'b'}">${r[3]}</span></td><td class="mono">${r[4]}</td></tr>`).join('');
+  },
+  async startPolling() {
+    const loadData = async () => {
+      const base = localStorage.getItem('hera_api') || '/forensic/api';
+      try {
+        const r = await fetch(base + '/stats', { cache: 'no-store' });
+        if (r.ok) {
+          const s = await r.json();
+          window.LIVE = true;
+          $('#conn').className = 'conn live'; $('#connlbl').textContent = 'ao vivo · ' + base;
+          if(s.head) { $('#sealed').textContent = fmt(s.head); }
+          $('#integ').textContent = '100%';
+        }
+      } catch (e) {
+        window.LIVE = false;
+        $('#sealed').textContent = '4.231.880.114';
+        $('#icp').textContent = 'hoje 09:14';
+        $('#integ').textContent = '100%';
+        $('#lat').innerHTML = '1.8 <small>ms</small>';
+        $('#eps').textContent = fmt(18420);
+        $('#merk').textContent = 'íntegra';
+      }
+    };
+    loadData();
+    setInterval(loadData, 4000);
+  }
+};""",
+
+    "js/components/ExecPanel.js": """export const ExecPanel = {
+  render() {
+    return `
+      <section id="exec">
+        <div class="secttl"><h2>Painel Executivo</h2><span class="tag">Gestão</span></div>
+        <p class="sub">Indicadores de alto nível para diretores, SGD/MGI e órgãos de controle.</p>
+        <div class="grid k3">
+          <div class="kpi ok"><div class="lb">Integridade</div><div class="v" style="font-size:34px">99.9999<small>%</small></div></div>
+          <div class="kpi"><div class="lb">Eventos selados</div><div class="v" style="font-size:34px">4.231.880.114</div></div>
+          <div class="kpi ok"><div class="lb">Conformidade</div><div class="v" style="font-size:34px">100<small>%</small></div></div>
+          <div class="kpi bad"><div class="lb">Incidentes</div><div class="v" style="font-size:34px">4</div></div>
+          <div class="kpi ok"><div class="lb">Ataques bloqueados</div><div class="v" style="font-size:34px">283</div></div>
+          <div class="kpi"><div class="lb">Último carimbo ICP</div><div class="v" style="font-size:22px">hoje 09:14</div></div>
+        </div>
+        <div class="card"><h3>Status de saúde jurídica</h3>
+          <div class="verify"><span style="font-size:18px">✓</span> db.verify() — cadeia Merkle íntegra, sem violação retroativa detectada. Pronto para auditoria de TCU / CGU / ANPD.</div>
+        </div>
+      </section>
+    `;
+  },
+  init() {}
+};""",
+
+    "js/components/TimeMachine.js": """export const TimeMachine = {
+  render() {
+    return `
+      <section id="time">
+        <div class="secttl"><h2>Linha do Tempo Forense</h2><span class="tag">AS OF LSN</span></div>
+        <p class="sub">Viagem no tempo: arraste para reconstruir a infraestrutura exatamente como estava naquele instante — topologia, sessões, processos e objetos do banco.</p>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <div><span class="pill b">AS OF</span> <b class="mono" id="tlabel" style="font-size:18px">02:15:00</b> <span class="muted" id="tlsn" style="color:#888">LSN 14.812.337</span></div>
+            <button class="btn ghost" id="playbtn">▶ Reproduzir</button>
+          </div>
+          <input type="range" min="0" max="100" value="80" id="tl" style="margin:14px 0 6px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#888" class="mono"><span>02:11</span><span>02:12</span><span>02:13</span><span>02:14</span><span>02:15</span></div>
+        </div>
+        <div class="card"><h3>Estado reconstruído @ <span id="tlabel2" class="mono">02:15</span></h3>
+          <div class="grid k4">
+            <div class="kpi"><div class="lb">Servidores ativos</div><div class="v" id="ts">—</div></div>
+            <div class="kpi"><div class="lb">Sessões</div><div class="v" id="tsess">—</div></div>
+            <div class="kpi"><div class="lb">Conexões</div><div class="v" id="tconn">—</div></div>
+            <div class="kpi warn"><div class="lb">Fluxos anômalos</div><div class="v" id="tanom">—</div></div>
+          </div>
+        </div>
+      </section>
+    `;
+  },
+  init() {
+    const slider = $('#tl');
+    let timer = null;
+
+    const scrub = (v) => {
+      const mins = 11 + (v / 100) * 4;
+      const m = Math.floor(mins), s = Math.floor((mins - m) * 60);
+      const lab = "02:" + String(m).padStart(2, '0') + ":" + String(s).padStart(2, '0');
+      $('#tlabel').textContent = lab; $('#tlabel2').textContent = lab.slice(0, 5);
+      $('#tlsn').textContent = 'LSN ' + fmt(14000000 + Math.floor(v * 8123));
+      const k = v / 100;
+      $('#ts').textContent = Math.round(40 + k * 6);
+      $('#tsess').textContent = Math.round(120 + k * 200);
+      $('#tconn').textContent = fmt(Math.round(800 + k * 2600));
+      $('#tanom').textContent = Math.round(k > 0.6 ? (k - 0.6) * 90 : 0);
+    };
+
+    slider.oninput = (e) => scrub(e.target.value);
+    scrub(80);
+
+    $('#playbtn').onclick = () => {
+      if (timer) {
+        clearInterval(timer); timer = null;
+        $('#playbtn').textContent = '▶ Reproduzir';
+      } else {
+        $('#playbtn').textContent = '⏸ Pausar';
+        timer = setInterval(() => {
+          let v = (+slider.value + 2) % 101;
+          slider.value = v; scrub(v);
+        }, 180);
+      }
+    };
+  }
+};""",
+
+    "js/components/AttackReplay.js": """export const AttackReplay = {
+  render() {
+    return `
+      <section id="replay">
+        <div class="secttl"><h2>Replay de Ataque</h2><span class="tag">reconstituição</span></div>
+        <p class="sub">Quando um incidente acontece, o sistema monta o replay automático. Cada passo tem hash, prova e cadeia causal.</p>
+        <div class="card"><h3>INC-2026-0012 · acesso indevido a banco</h3>
+          <div class="flow" id="replayflow"></div>
+        </div>
+      </section>
+    `;
+  },
+  init() {
+    const steps = [
+      {t:'02:13', n:'Login VPN', h:'b3:9f2a…'},{t:'02:14', n:'Privilégio elevado', k:'warn', h:'b3:1d04…'},
+      {t:'02:15', n:'Movimento lateral', k:'warn', h:'b3:77e1…'},{t:'02:16', n:'Banco acessado', k:'bad', h:'b3:c0de…'},
+      {t:'02:17', n:'DELETE users', k:'bad', h:'b3:9911…'},{t:'02:18', n:'Exfiltração 3GB', k:'bad', h:'b3:beef…'}
+    ];
+    $('#replayflow').innerHTML = steps.map((s, i) => `
+      <div class="step ${s.k || ''}"><div class="t">${s.t || ''}</div><div class="n">${s.n}</div>${s.h ? `<div class="t mono">${s.h}</div>` : ''}</div>
+      ${i < steps.length - 1 ? '<div class="arrow">→</div>' : ''}
+    `).join('');
+  }
+};""",
+
+    "js/components/AttackGraph.js": """export const AttackGraph = {
+  render() {
+    return `
+      <section id="graph">
+        <div class="secttl"><h2>Grafo de Ataques</h2><span class="tag">engine de grafos</span></div>
+        <p class="sub">Em vez de listas, relações. Cada ligação carrega probabilidade, evidências, score, origem, timestamp e proveniência.</p>
+        <div class="card"><div class="soc"><svg id="attg" viewBox="0 0 880 320" style="width:100%;height:auto"></svg></div></div>
+      </section>
+    `;
+  },
+  init() {
+    const ns = [['IP 187.*',70,160],['Firewall',200,160],['Servidor B',330,90],['Usuário svc-bkp',330,230],['Processo',470,160],['Postgres',610,90],['Tabela users',610,230],['Arquivo dump',780,160]];
+    const es = [[0,1,.98],[1,2,.91],[2,4,.88],[3,4,.74],[4,5,.95],[5,6,.97],[6,7,.93]];
+    let h = '';
+    es.forEach(([a,b,p]) => { h += `<line x1="${ns[a][1]}" y1="${ns[a][2]}" x2="${ns[b][1]}" y2="${ns[b][2]}" stroke="#ff5b4a" stroke-width="2"/><text x="${(ns[a][1]+ns[b][1])/2}" y="${(ns[a][2]+ns[b][2])/2-6}" fill="#FFCD07" font-size="10" text-anchor="middle">${p}</text>`; });
+    ns.forEach(([n,x,y]) => { h += `<rect x="${x-46}" y="${y-16}" width="92" height="32" rx="7" fill="#12264a" stroke="#ff5b4a"/><text x="${x}" y="${y+4}" fill="#cfe0ff" font-size="11" text-anchor="middle" font-family="Arial">${n}</text>`; });
+    $('#attg').innerHTML = h;
+  }
+};""",
+
+    "js/components/CausalInvestigation.js": """export const CausalInvestigation = {
+  render() {
+    return `
+      <section id="why">
+        <div class="secttl"><h2>Investigação Causal</h2><span class="tag">WHY()</span></div>
+        <p class="sub">Um clique substitui o cruzamento manual de logs: o sistema renderiza a cadeia de causalidade mínima do incidente.</p>
+        <div class="card">
+          <button class="btn" id="runWhyBtn">⌖ Encontrar causa raiz</button>
+          <div class="flow" id="whyflow" style="margin-top:16px"></div>
+        </div>
+      </section>
+    `;
+  },
+  init() {
+    const whySteps = [{n:'Servidor caiu',k:'bad'},{n:'Banco indisponível',k:'bad'},{n:'Consulta lenta',k:'warn'},{n:'Índice removido',k:'warn'},{n:'Administrador X'},{n:'VPN'},{n:'IP 187.* '},{n:'País: —'}];
+    $('#runWhyBtn').onclick = () => {
+      $('#whyflow').innerHTML = whySteps.map((s, i) => `
+        <div class="step ${s.k || ''}"><div class="n">${s.n}</div></div>
+        ${i < whySteps.length - 1 ? '<div class="arrow">→</div>' : ''}
+      `).join('');
+    };
+  }
+};""",
+
+    "js/components/CustodyChain.js": """export const CustodyChain = {
+  render() {
+    return `
+      <section id="custody">
+        <div class="secttl"><h2>Cadeia de Custódia Digital</h2><span class="tag">não-repúdio</span></div>
+        <p class="sub">O ciclo de vida e a blindagem de cada registro, da captura à verificação.</p>
+        <div class="card"><div class="flow" id="custflow"></div></div>
+        <div class="card"><h3>Recibos de carimbo de tempo (ICP-Brasil via SERPRO)</h3>
+          <table><thead><tr><th>Recibo</th><th>Merkle root</th><th>Carimbo</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">TST-2026-44120</td><td class="mono">b3:9f2a…e71c</td><td>hoje 09:14</td><td><span class="pill g">verificado</span></td></tr>
+            <tr><td class="mono">TST-2026-44119</td><td class="mono">b3:1d04…aa90</td><td>hoje 08:14</td><td><span class="pill g">verificado</span></td></tr>
+            <tr><td class="mono">TST-2026-44118</td><td class="mono">b3:77e1…3c2b</td><td>hoje 07:14</td><td><span class="pill g">verificado</span></td></tr>
+          </tbody></table>
+        </div>
+      </section>
+    `;
+  },
+  init() {
+    const custodySteps = [{n:'Captura do evento'},{n:'Geração do hash',h:'blake3'},{n:'Árvore Merkle'},{n:'Merkle Root'},{n:'Carimbo ICP-Brasil',h:'SERPRO'},{n:'Assinatura'},{n:'Verificado'}];
+    $('#custflow').innerHTML = custodySteps.map((s, i) => `
+      <div class="step"><div class="n">${s.n}</div>${s.h ? `<div class="t mono">${s.h}</div>` : ''}</div>
+      ${i < custodySteps.length - 1 ? '<div class="arrow">→</div>' : ''}
+    `).join('');
+  }
+};""",
+
+    "js/components/MerkleViewer.js": """export const MerkleViewer = {
+  render() {
+    return `
+      <section id="merkle">
+        <div class="secttl"><h2>Visualizador Merkle</h2><span class="tag">blake3</span></div>
+        <p class="sub">Árvore interativa: cada nó muda de cor quando validado. Uma violação no passado quebra a raiz na hora.</p>
+        <div class="card"><div class="soc"><svg id="mtree" viewBox="0 0 880 280" style="width:100%;height:auto"></svg></div>
+          <div style="margin-top:12px;display:flex;gap:10px">
+            <button class="btn g" id="verifyTreeBtn">Verificar (db.verify)</button>
+            <button class="btn ghost" id="simulateViolationBtn">Simular violação</button>
+          </div>
+        </div>
+      </section>
+    `;
+  },
+  init() {
+    this.drawTree(true);
+    $('#verifyTreeBtn').onclick = () => this.drawTree(true);
+    $('#simulateViolationBtn').onclick = () => this.drawTree(false);
+  },
+  drawTree(TREEOK) {
+    let h = '';
+    const line = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#1e3a64" stroke-width="2"/>`;
+    const node = (x, y, t, ok, bad) => {
+      const c = bad ? '#ff5b4a' : (ok ? '#41d160' : '#1e3a64');
+      return `<rect x="${x-26}" y="${y-13}" width="52" height="26" rx="6" fill="#0e1f3d" stroke="${c}" stroke-width="2"/><circle cx="${x+18}" cy="${y-7}" r="3" fill="${c}"/><text x="${x-4}" y="${y+4}" fill="#cfe0ff" font-size="10" text-anchor="middle">${t}</text>`;
+    };
+    
+    h += line(440, 40, 240, 110) + line(440, 40, 640, 110);
+    [240, 640].forEach((p, i) => { const ch = i === 0 ? [140, 340] : [540, 740]; ch.forEach(c => h += line(p, 110, c, 180)); });
+    const map = { 140: [80, 200], 340: [300, 420], 540: [520, 640], 740: [740, 840] };
+    Object.entries(map).forEach(([p, ch]) => ch.forEach(c => h += line(+p, 180, c, 250)));
+    
+    h += node(440, 40, 'Root', TREEOK);
+    [240, 640].forEach(p => h += node(p, 110, 'Seg', TREEOK));
+    [140, 340, 540, 740].forEach(p => h += node(p, 180, 'Seg', TREEOK));
+    
+    const bad = !TREEOK ? 420 : -1;
+    [80, 200, 300, 420, 520, 640, 740, 840].forEach(p => h += node(p, 250, 'Ev', TREEOK || p !== bad, p === bad));
+    
+    $('#mtree').innerHTML = h;
+  }
+};""",
+
+    "js/components/CompliancePanel.js": """export const CompliancePanel = {
+  render() {
+    return `
+      <section id="comp">
+        <div class="secttl"><h2>Conformidade</h2><span class="tag">LGPD · PPSI · ISO 27001 · NIST</span></div>
+        <p class="sub">Status de saúde jurídica para SGD/MGI, ANPD e auditoria.</p>
+        <div class="card"><div class="verify" id="verifyline"><span style="font-size:18px">✓</span> db.verify() — todos os segmentos íntegros</div>
+          <table style="margin-top:14px"><thead><tr><th>Controle</th><th>Referência</th><th>Status</th></tr></thead><tbody id="comptbl"></tbody></table>
+        </div>
+      </section>
+    `;
+  },
+  init() {
+    const rows = [
+      ['Imutabilidade do log (append-only + Merkle)', 'PPSI / ISO 27001 A.12.4', 'g'],
+      ['Carimbo de tempo legal (ICP-Brasil)', 'MP 2.200-2 / SERPRO', 'g'],
+      ['Retenção e não-repúdio', 'LGPD Art. 37 / 46', 'g'],
+      ['Trilha de auditoria verificável (db.verify)', 'NIST 800-92', 'g'],
+      ['Cadeia de custódia digital', 'CPP / perícia', 'g'],
+      ['Reconstrução AS OF (forense)', 'PAD / sindicância', 'g']
+    ];
+    $('#comptbl').innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td class="muted" style="color:#777">${r[1]}</td><td><span class="pill ${r[2]}">conforme</span></td></tr>`).join('');
+  }
+};""",
+
+    "js/components/ForensicAI.js": """export const ForensicAI = {
+  render() {
+    return `
+      <section id="ia">
+        <div class="secttl"><h2>IA Forense</h2><span class="tag">grafo + vetor + texto</span></div>
+        <p class="sub">A IA não consulta só logs — navega pelo grafo temporal, pela proveniência e pelas evidências criptográficas.</p>
+        <div class="card">
+          <div id="chat" style="min-height:120px;display:flex;flex-direction:column;gap:10px"></div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <input id="q" placeholder="Ex: Por que esse servidor ficou lento?" style="flex:1;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px">
+            <button class="btn" id="askBtn">Perguntar</button>
+          </div>
+          <div style="margin-top:10px;font-size:12px;color:var(--muted)">Sugestões:
+            <span class="pill b tag-suggest" style="cursor:pointer">Mostre os eventos desta invasão</span>
+            <span class="pill b tag-suggest" style="cursor:pointer">Qual foi o primeiro evento da cadeia?</span>
+            <span class="pill b tag-suggest" style="cursor:pointer">Existe padrão semelhante nos últimos 6 meses?</span>
+          </div>
+        </div>
+      </section>
+    `;
+  },
+  init() {
+    const chat = $('#chat');
+    const input = $('#q');
+
+    const triggerAsk = (text) => {
+      if (!text) return;
+      chat.innerHTML += `<div style="align-self:flex-end;background:var(--azul);color:#fff;padding:8px 12px;border-radius:12px 12px 2px 12px;max-width:80%; text-align:right;">${text}</div>`;
+      chat.innerHTML += `<div style="align-self:flex-start;background:#fff;border:1px solid var(--line);padding:10px 14px;border-radius:12px 12px 12px 2px;max-width:85%">Navegando pelo grafo temporal e pela proveniência… <b>3 eventos</b> contribuíram para a cadeia INC-2026-0012. Primeiro evento: <b class="mono">02:13 login VPN (IP 187.*)</b>. <span class="pill b">ver no grafo</span> <span class="pill b">abrir cadeia causal</span><br><small style="color:#888">Resposta ancorada em eventos selados e verificáveis (db.verify ✓).</small></div>`;
+      input.value = '';
+      chat.scrollTop = chat.scrollHeight;
+    };
+
+    $('#askBtn').onclick = () => triggerAsk(input.value.trim());
+    $$('.tag-suggest').forEach(el => {
+      el.onclick = () => triggerAsk(el.textContent);
+    });
+  }
+};"""
+}
+
+def build_structure():
+    print("🚀 Iniciando a geração modular limpa do projeto Heraclitus Forensic Layer...")
+    
+    for path, content in FILES.items():
+        folder = os.path.dirname(path)
+        if folder and not os.path.exists(folder):
+            os.makedirs(folder, exist_ok=True)
+            print(f"📁 Diretório criado: {folder}")
+            
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+        print(f"📄 Arquivo gerado com sucesso: {path}")
+
+    print("\n✨ Tudo pronto e sem erros sintáticos de string!")
+    print("👉 Suba o servidor: python -m http.server 8000")
+
+if __name__ == "__main__":
+    build_structure()

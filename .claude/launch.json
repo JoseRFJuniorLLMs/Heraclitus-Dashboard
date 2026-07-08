@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "forensic-dashboard",
-      "runtimeExecutable": "py",
-      "runtimeArgs": ["-3", "-m", "http.server", "9000", "--directory", "D:\\DEV\\HeraclitusDB\\dashboard"],
+      "runtimeExecutable": "C:\\Users\\web2a\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+      "runtimeArgs": ["-m", "http.server", "9000", "--directory", "D:\\DEV\\HeraclitusDB-Dasboard"],
       "port": 9000
     }
   ]
