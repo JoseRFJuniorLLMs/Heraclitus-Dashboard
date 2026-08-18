@@ -54,7 +54,20 @@ export const API = {
   },
   cabecalhos() {
     const c = this.credenciais();
-    return c ? { Authorization: 'Basic ' + btoa(c) } : {};
+    if (!c) return {};
+    // `btoa` só aceita Latin-1: uma password com "ã" ou "€" lançava
+    // `InvalidCharacterError`, a exceção subia até ao `catch` genérico do
+    // `get`, e o painel diagnosticava "bloqueado por CORS" — mandando o
+    // operador afinar o servidor por causa de um acento na password.
+    // Codificar em UTF-8 primeiro é o que o RFC 7617 recomenda.
+    try {
+      const bytes = new TextEncoder().encode(c);
+      let bin = '';
+      for (const b of bytes) bin += String.fromCharCode(b);
+      return { Authorization: 'Basic ' + btoa(bin) };
+    } catch {
+      return {};
+    }
   },
 
   /**
@@ -86,7 +99,17 @@ export const API = {
             : r.status === 404
               ? Falha.AUSENTE
               : Falha.HTTP;
-        return { ok: false, falha, estado: r.status, latencia };
+        // O CORPO de uma resposta de erro é recuperado, não deitado fora. No
+        // `/verify` é exatamente aí que vem o motivo da falha de integridade —
+        // qual segmento, que raiz não bateu. Descartá-lo deixava o operador
+        // com "HTTP 500" e mais nada, no momento em que mais precisa de saber.
+        let corpo = null;
+        try {
+          corpo = await r.json();
+        } catch {
+          /* corpo não-JSON: fica `null` */
+        }
+        return { ok: false, falha, estado: r.status, corpo, latencia };
       }
       try {
         const dados = texto ? await r.text() : await r.json();
@@ -201,7 +224,12 @@ export class Ritmo {
     if (anterior) {
       const dt = (agora - anterior.t) / 1000;
       if (dt > 0 && head >= anterior.head) {
-        this.serie.push((head - anterior.head) / dt);
+        // Guarda-se o INSTANTE junto com o valor. Sem ele, a leitura do
+        // sparkline tinha de assumir "1 amostra = 1 segundo" para dizer
+        // "há N s" — e essa premissa quebra-se ao primeiro separador em
+        // segundo plano, em que o browser estrangula os temporizadores e as
+        // amostras passam a valer minutos.
+        this.serie.push({ t: agora, v: (head - anterior.head) / dt });
         if (this.serie.length > this.maxAmostras) this.serie.shift();
       }
     }
@@ -249,14 +277,22 @@ export function ligarFluxo({ aoEvento, aoEstado }) {
   let ctrl = null;
   let parado = false;
   let tentativa = 0;
+  let alarme = null;
 
   const fechar = () => {
     parado = true;
+    // O temporizador de recuo TEM de ser cancelável. Sem isto, um `fechar()`
+    // durante a espera deixava um `correr()` agendado que disparava depois e
+    // ressuscitava o fluxo — e ao mudar de endpoint ficavam dois fluxos vivos,
+    // um deles contra o servidor antigo.
+    if (alarme) clearTimeout(alarme);
+    alarme = null;
     if (ctrl) ctrl.abort();
     ctrl = null;
   };
 
   const correr = async () => {
+    if (parado) return;
     ctrl = new AbortController();
     let resp;
     try {
@@ -341,13 +377,15 @@ export function ligarFluxo({ aoEvento, aoEstado }) {
   const agendar = () => {
     if (parado) return;
     tentativa = Math.min(tentativa + 1, 6);
-    setTimeout(correr, Math.min(1000 * 2 ** (tentativa - 1), 30000));
+    alarme = setTimeout(correr, Math.min(1000 * 2 ** (tentativa - 1), 30000));
   };
 
   correr();
   return {
     fechar,
+    /** Fecha o que estiver aberto antes de reabrir — nunca acumula fluxos. */
     reabrir: () => {
+      fechar();
       parado = false;
       tentativa = 0;
       correr();

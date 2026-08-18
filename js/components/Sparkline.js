@@ -71,19 +71,24 @@ export const Sparkline = {
 
     // Escala: sempre a partir do zero. Um sparkline com base flutuante
     // exagera oscilações pequenas e faz um sistema estável parecer errático.
-    const max = Math.max(...serie, 1);
+    // A série é `{t, v}`: o instante vem junto para a leitura poder dizer a
+    // idade REAL em vez de assumir "1 amostra = 1 segundo" (premissa que se
+    // quebra assim que o separador vai para segundo plano e o browser
+    // estrangula os temporizadores).
+    const vals = serie.map((p) => (typeof p === 'number' ? p : p.v));
+    const max = Math.max(...vals, 1);
     const px = (i) => (i / (serie.length - 1)) * L;
     const py = (v) => A - PAD - (v / max) * (A - 2 * PAD);
 
-    const pontos = serie.map((v, i) => `${px(i).toFixed(2)},${py(v).toFixed(2)}`);
+    const pontos = vals.map((v, i) => `${px(i).toFixed(2)},${py(v).toFixed(2)}`);
     linha.setAttribute('d', `M${pontos.join('L')}`);
     area.setAttribute('d', `M0,${A}L${pontos.join('L')}L${L},${A}Z`);
 
     fim.setAttribute('cx', L.toFixed(2));
-    fim.setAttribute('cy', py(serie[serie.length - 1]).toFixed(2));
+    fim.setAttribute('cy', py(vals[vals.length - 1]).toFixed(2));
     fim.setAttribute('opacity', '1');
 
-    const atual = Math.round(serie[serie.length - 1]);
+    const atual = Math.round(vals[vals.length - 1]);
     svg.setAttribute(
       'aria-label',
       `taxa de inserção: ${atual} ${unidade} agora, máximo ${Math.round(max)} nos últimos ${serie.length} instantes`
@@ -110,11 +115,18 @@ export const Sparkline = {
       cruz.setAttribute('x1', ((i / (serie.length - 1)) * L).toFixed(2));
       cruz.setAttribute('x2', ((i / (serie.length - 1)) * L).toFixed(2));
       cruz.setAttribute('opacity', '.55');
-      const atras = serie.length - 1 - i;
-      lida.textContent =
-        atras === 0
-          ? `${Math.round(serie[i]).toLocaleString('pt-BR')} ${svg.__unidade} · agora`
-          : `${Math.round(serie[i]).toLocaleString('pt-BR')} ${svg.__unidade} · há ${atras}s`;
+      const ponto = serie[i];
+      const valor = typeof ponto === 'number' ? ponto : ponto.v;
+      // Idade REAL a partir do instante guardado, não do índice.
+      const idadeMs =
+        typeof ponto === 'number' ? null : Math.max(0, performance.now() - ponto.t);
+      const quando =
+        idadeMs === null
+          ? ''
+          : idadeMs < 1500
+            ? ' · agora'
+            : ` · há ${Math.round(idadeMs / 1000)}s`;
+      lida.textContent = `${Math.round(valor).toLocaleString('pt-BR')} ${svg.__unidade}${quando}`;
     };
 
     const sair = () => {

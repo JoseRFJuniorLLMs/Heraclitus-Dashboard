@@ -142,14 +142,58 @@ export const SOCPanel = {
     this.sondar();
     setInterval(() => this.sondar(), POLL_MS);
     this.abrirFluxo();
+
+    // Mudar de servidor ou de credenciais tem de reabrir o fluxo. Sem isto, os
+    // mostradores passavam a mostrar o servidor NOVO enquanto a tabela
+    // continuava a receber eventos do ANTIGO — duas verdades no mesmo ecrã,
+    // sem nada a assinalar qual era qual.
+    document.addEventListener('hera:endpoint-mudou', () => {
+      this.ritmo.limpar();
+      Sparkline.update('spark-eps', []);
+      this.linhas = [];
+      this.desenharLinhas();
+      this.marcarIntegridadeObsoleta('Servidor mudou — verificação anterior já não se aplica.');
+      if (this.fluxo) this.fluxo.reabrir();
+    });
+  },
+
+  /**
+   * O veredicto de integridade é de um instante e de um servidor. Quando a
+   * ligação cai ou o endpoint muda, deixá-lo a dizer "íntegro" a verde é
+   * afirmar sobre algo que já não se está a observar.
+   */
+  marcarIntegridadeObsoleta(motivo) {
+    const alvo = document.getElementById('integ');
+    const nota = document.getElementById('verify-nota');
+    const cartao = document.getElementById('kpi-integ');
+    if (!alvo || alvo.textContent === 'não verificado') return;
+    alvo.textContent = 'não verificado';
+    if (cartao) cartao.className = 'kpi span2';
+    if (nota) nota.textContent = motivo;
+    document.dispatchEvent(new CustomEvent('hera:verify', { detail: { erro: motivo } }));
   },
 
   // ── ligação ─────────────────────────────────────────────────────────────
 
+  /** Guarda contra sondagens sobrepostas — ver `sondar`. */
+  sondando: false,
+
   async sondar() {
-    const r = await API.stats();
-    if (!r.ok) return this.semLigacao(r);
-    this.comLigacao(r.dados, r.latencia);
+    // Sem esta guarda, uma sondagem lenta (o servidor a engasgar, a rede a
+    // hesitar) ainda estava em voo quando a seguinte partia. As respostas
+    // podiam chegar TROCADAS, e a mais antiga trazia um `head` menor: o
+    // `Ritmo` lia isso como "log recriado" e apagava os 90 segundos de
+    // histórico do sparkline. O sintoma era o gráfico a limpar-se sozinho de
+    // vez em quando, sem nada no ecrã que o explicasse.
+    if (this.sondando) return;
+    this.sondando = true;
+    try {
+      const r = await API.stats();
+      if (!r.ok) return this.semLigacao(r);
+      this.comLigacao(r.dados, r.latencia);
+    } finally {
+      this.sondando = false;
+    }
   },
 
   comLigacao(s, latencia) {
@@ -201,6 +245,7 @@ export const SOCPanel = {
       }
     }
     document.dispatchEvent(new CustomEvent('hera:sem-ligacao'));
+    this.marcarIntegridadeObsoleta('Ligação perdida — a verificação anterior já não se aplica.');
     this.ritmo.limpar();
     Sparkline.update('spark-eps', []);
     // Traços, não números plausíveis. Um painel sem ligação tem de PARECER
@@ -220,13 +265,22 @@ export const SOCPanel = {
   avisar(html) {
     const el = document.getElementById('aviso');
     if (!el) return;
-    if (!html) {
+    // Só reescreve se MUDOU. A região é `aria-live="assertive"`, portanto
+    // qualquer alteração ao conteúdo faz o leitor de ecrã interromper o que
+    // está a dizer e reanunciar. Reescrever a cada segundo — que era o que
+    // acontecia — transformava o aviso numa metralhadora que tornava o painel
+    // inutilizável para quem usa leitor. A guarda de transição no `semLigacao`
+    // não chegava: o `avisar` era chamado fora dela.
+    const novo = html || '';
+    if (el.dataset.conteudo === novo) return;
+    el.dataset.conteudo = novo;
+    if (!novo) {
       el.hidden = true;
       el.innerHTML = '';
       return;
     }
     el.hidden = false;
-    el.innerHTML = html;
+    el.innerHTML = novo;
   },
 
   // ── integridade, só a pedido ────────────────────────────────────────────
@@ -248,49 +302,77 @@ export const SOCPanel = {
     const seg = ((performance.now() - t0) / 1000).toFixed(1);
     botao.disabled = false;
 
+    const quando = new Date().toLocaleString('pt-BR');
+
+    // ── falha ────────────────────────────────────────────────────────────
+    // Uma raiz Merkle que não bate faz o `Log::verify` devolver `Err`, e o
+    // servidor responde 500 com o motivo no corpo. É o caso mais importante
+    // do produto inteiro: adulteração detectada.
     if (!r.ok) {
-      const e = explicarFalha(r.falha, r.estado);
-      alvo.textContent = 'não verificado';
-      nota.textContent = `Falhou: ${e.curto}.`;
-      cartao.className = 'kpi span2';
-      document.dispatchEvent(new CustomEvent('hera:verify', { detail: { erro: e.curto } }));
+      const motivo = r.corpo?.error || explicarFalha(r.falha, r.estado).curto;
+      const adulteracao = r.estado === 500 && !!r.corpo?.error;
+      alvo.textContent = adulteracao ? 'FALHA DE INTEGRIDADE' : 'não verificado';
+      cartao.className = adulteracao ? 'kpi span2 bad' : 'kpi span2';
+      nota.textContent = motivo;
+      document.dispatchEvent(
+        new CustomEvent('hera:verify', {
+          detail: adulteracao ? { ok: false, quando, detalhe: motivo } : { erro: motivo },
+        })
+      );
       return;
     }
 
+    // ── sucesso ──────────────────────────────────────────────────────────
+    // O contrato é `{ok, segments, sealed, records, merkle_ok, sem_raiz}`.
+    // `segments` inclui o segmento ATIVO, que nunca está selado — comparar
+    // `merkle_ok` com `segments` nunca dava verdadeiro e fazia o painel gritar
+    // falha em bases perfeitamente sãs. Compara-se com `sealed`.
     const d = r.dados || {};
-    // Só se declara íntegro com um sinal POSITIVO do relatório. A ausência de
-    // campos conhecidos não é prova de integridade — é ausência de prova, e
-    // tratá-la como "ok" era exatamente o erro do painel antigo.
-    const ok =
-      d.ok === true ||
-      (typeof d.segments === 'number' && d.merkle_ok === d.segments) ||
-      (typeof d.corrupt === 'number' && d.corrupt === 0 && d.segments > 0);
+    const selados = Number(d.sealed);
+    const verificados = Number(d.merkle_ok);
+    const base = `${d.records ?? '?'} registos em ${d.segments ?? '?'} segmentos (1 ativo, por selar).`;
 
-    const detalhe =
-      d.segments !== undefined ? `${d.segments} segmentos, ${d.records ?? '?'} registos.` : '';
-    const quando = new Date().toLocaleString('pt-BR');
-
-    if (ok) {
-      alvo.textContent = 'íntegro';
-      cartao.className = 'kpi span2 ok';
-      nota.textContent = `Verificado agora, em ${seg}s. ${detalhe} Vale para este instante, não para sempre.`;
-      document.dispatchEvent(
-        new CustomEvent('hera:verify', { detail: { ok: true, quando, detalhe } })
-      );
-    } else if (d.segments === undefined && d.ok === undefined) {
-      // Respondeu, mas sem nada que se reconheça como veredicto.
+    if (!Number.isFinite(selados) || !Number.isFinite(verificados)) {
+      // Servidor antigo, sem os campos novos. Não se inventa um veredicto.
       alvo.textContent = 'inconclusivo';
       cartao.className = 'kpi span2';
-      nota.textContent = `O servidor respondeu em ${seg}s mas sem um veredicto reconhecível.`;
+      nota.textContent =
+        `Respondeu em ${seg}s mas sem os campos que decidem (sealed, merkle_ok). ` +
+        'Servidor anterior à correção do contrato.';
       document.dispatchEvent(
-        new CustomEvent('hera:verify', { detail: { erro: 'resposta sem veredicto' } })
+        new CustomEvent('hera:verify', { detail: { erro: 'relatório sem veredicto' } })
       );
-    } else {
-      alvo.textContent = 'FALHA DE INTEGRIDADE';
-      cartao.className = 'kpi span2 bad';
-      nota.textContent = `Verificado agora, em ${seg}s. ${detalhe}`;
-      document.dispatchEvent(new CustomEvent('hera:verify', { detail: { ok: false, quando } }));
+      return;
     }
+
+    if (selados === 0) {
+      // Nada selado ainda: não é falha, mas também não é atestado nenhum.
+      // Dizer "íntegro" aqui seria declarar limpo aquilo que não se verificou.
+      alvo.textContent = 'nada a verificar';
+      cartao.className = 'kpi span2';
+      nota.textContent =
+        `${base} Nenhum segmento selado ainda — a verificação Merkle só se ` +
+        'aplica a segmentos fechados. Sem selados, não há o que atestar.';
+      document.dispatchEvent(
+        new CustomEvent('hera:verify', { detail: { erro: 'nenhum segmento selado' } })
+      );
+      return;
+    }
+
+    const semRaiz = Number(d.sem_raiz ?? selados - verificados);
+    const detalhe =
+      semRaiz > 0
+        ? `${verificados} de ${selados} segmentos selados conferem; ${semRaiz} sem raiz gravada.`
+        : `${verificados} de ${selados} segmentos selados conferem.`;
+
+    alvo.textContent = semRaiz > 0 ? 'íntegro (parcial)' : 'íntegro';
+    cartao.className = 'kpi span2 ok';
+    nota.textContent =
+      `Verificado em ${seg}s. ${detalhe} ${base} ` +
+      'Vale para este instante, não para sempre.';
+    document.dispatchEvent(
+      new CustomEvent('hera:verify', { detail: { ok: true, quando, detalhe } })
+    );
   },
 
   // ── fluxo de appends ────────────────────────────────────────────────────
@@ -321,9 +403,26 @@ export const SOCPanel = {
     });
   },
 
+  /** Pedido de desenho pendente — ver `novaLinha`. */
+  pintar: null,
+
   novaLinha(ev) {
     this.linhas.unshift(ev);
     if (this.linhas.length > 50) this.linhas.pop();
+    // Redesenhar a tabela inteira POR EVENTO era viável a 10 eventos/s e
+    // suicida a 12 000: o separador bloqueava assim que uma ingestão a sério
+    // começasse — exatamente o momento em que alguém está a olhar. Agora
+    // acumula-se e pinta-se no máximo uma vez por frame; a 12 000 ev/s vêem-se
+    // 60 atualizações por segundo com as 50 linhas mais recentes, que é tudo o
+    // que um olho aproveita.
+    if (this.pintar) return;
+    this.pintar = requestAnimationFrame(() => {
+      this.pintar = null;
+      this.desenharLinhas();
+    });
+  },
+
+  desenharLinhas() {
     const corpo = document.querySelector('#stream tbody');
     if (!corpo) return;
     corpo.innerHTML = this.linhas

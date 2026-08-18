@@ -45,6 +45,10 @@ export const Header = {
       const rot = document.getElementById('connlbl');
       if (rot) rot.textContent = 'a ligar · ' + API.base();
       btn.className = 'conn demo';
+      // Avisa quem depende do endpoint. O fluxo SSE tem de ser reaberto: sem
+      // isto continuava agarrado ao servidor anterior enquanto os mostradores
+      // já mostravam o novo.
+      document.dispatchEvent(new CustomEvent('hera:endpoint-mudou'));
     };
 
     btn.onclick = configurar;
