@@ -3,6 +3,7 @@ import { Header } from './components/Header.js';
 import { Navigation } from './components/Navigation.js';
 import { SOCPanel } from './components/SOCPanel.js';
 import { ExecPanel } from './components/ExecPanel.js';
+import { Titular } from './components/Titular.js';
 import { TimeMachine } from './components/TimeMachine.js';
 import { AttackReplay } from './components/AttackReplay.js';
 import { AttackGraph } from './components/AttackGraph.js';
@@ -26,6 +27,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   main.innerHTML = `
     ${SOCPanel.render()}
     ${ExecPanel.render()}
+    ${Titular.render()}
     ${TimeMachine.render()}
     ${AttackReplay.render()}
     ${AttackGraph.render()}
@@ -46,7 +48,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // visitante não tinha como distinguir de medições. Fazer isto num sítio só
   // garante que uma secção nova nasce marcada por omissão, em vez de nascer a
   // parecer real.
-  const LIGADAS = new Set(['soc', 'exec']);
+  const LIGADAS = new Set(['soc', 'exec', 'titular']);
   for (const sec of document.querySelectorAll('#main-content > section')) {
     if (LIGADAS.has(sec.id)) continue;
     const titulo = sec.querySelector('.secttl');
@@ -64,6 +66,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   Navigation.init();
   SOCPanel.init();
   ExecPanel.init(); // faltava: o painel executivo nunca era inicializado
+  Titular.init();
   TimeMachine.init();
   AttackReplay.init();
   AttackGraph.init();

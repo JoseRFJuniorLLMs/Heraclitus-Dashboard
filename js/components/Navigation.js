@@ -13,6 +13,7 @@ export const Navigation = {
       <a data-s="custody"><span class="ic">🛡</span> Cadeia de Custódia</a>
       <a data-s="merkle"><span class="ic">▦</span> Visualizador Merkle</a>
       <div class="grp">Governança</div>
+      <a data-s="titular"><span class="ic">👤</span> Titular dos dados (LGPD)</a>
       <a data-s="comp"><span class="ic">✓</span> Conformidade</a>
       <div class="grp">Inteligência</div>
       <a data-s="ia"><span class="ic">✦</span> IA Forense</a>
