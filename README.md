@@ -81,9 +81,16 @@ de administração, mas um painel destes num ecrã de parede tem outra exposiç�
 
 ## O que ainda é ilustrativo
 
-Replay de ataque, grafo de ataques, investigação causal, Merkle animado, linha
-do tempo e selos ICP continuam com dados de demonstração. Estão marcados como
-tal na interface, e não se misturam com os mostradores medidos.
+Duas secções estão ligadas a dados reais — **Central de Comando** e **Painel
+Executivo**. As outras oito (linha do tempo, replay, grafo, investigação causal,
+cadeia de custódia, Merkle, conformidade, IA forense) continuam com dados de
+demonstração e recebem automaticamente o selo *dados de demonstração* no título.
+
+A marcação é feita num sítio só (`js/app.js`), a partir de uma lista explícita
+das secções ligadas. Assim uma secção nova nasce marcada por omissão, em vez de
+nascer a parecer real — que era o problema: oito secções não tinham marca
+nenhuma e várias exibiam números grandes e convincentes (12.000.000 de eventos
+na linha do tempo) que ninguém tinha como distinguir de medições.
 
 ## Histórico
 

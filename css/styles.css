@@ -172,3 +172,25 @@ td.vazio { color: var(--muted); font-size: 13px; padding: 14px; text-align: cent
 @media (max-width: 720px) {
   .kpi.hero, .kpi.span2 { grid-column: span 1; }
 }
+
+/* Linha de aviso quando o broadcast do servidor descarta eventos por o painel
+   nao acompanhar a ingestao. Fundo + texto escuro (o amarelo DSgov reprova como
+   cor de marca sobre claro). */
+tr.saltados td {
+  background: #FFF4D6;
+  color: #946200;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  padding: 8px;
+}
+
+/* Marca de proveniencia nas areas ainda nao ligadas a dados reais. Fundo
+   ambar com texto escuro — o #FFCD07 nao serve como cor de marca sobre claro
+   (contraste 1,5:1), mas serve de fundo com ink escuro por cima. */
+.tag-demo {
+  background: #FFF4D6;
+  color: #946200;
+  border: 1px solid #E5B93C;
+  font-weight: 600;
+}

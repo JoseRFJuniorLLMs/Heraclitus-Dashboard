@@ -5,16 +5,15 @@
  * devolve `null` e diz porquê. Quem desenha decide como mostrar a ausência —
  * mas não recebe um valor plausível em vez dela.
  *
- * Endpoints reais do servidor (crates/heraclitus-server/src/rest.rs):
- *   GET /healthz            -> "panta rhei"
- *   GET /stats              -> { head, memtable, vector_indexed, text_indexed,
- *                                graph_nodes, tgraph_edges, entity_keys,
- *                                activation_tracked, views[] }
- *   GET /state              -> head, segmentos (id/versão/selado/raiz Merkle), watermarks
- *   GET /verify             -> verificação Merkle do log INTEIRO (relê e re-hasha
- *                              tudo — caro; nunca chamar em temporizador)
- *   GET /live/events        -> SSE com o fluxo de appends (AINDA NÃO EXISTE no
- *                              servidor; ver `estadoDoFluxo`)
+ * Endpoints (crates/heraclitus-server/src/rest.rs):
+ *   GET /healthz       -> "panta rhei"
+ *   GET /stats         -> { head, memtable, vector_indexed, text_indexed,
+ *                           graph_nodes, tgraph_edges, entity_keys,
+ *                           activation_tracked, views[] }
+ *   GET /state         -> head, segmentos, watermarks
+ *   GET /verify        -> verificação Merkle do log INTEIRO (relê e re-hasha
+ *                         tudo — caro; nunca chamar em temporizador)
+ *   GET /live/events   -> SSE com metadados de cada append confirmado
  */
 
 const PADRAO = 'http://127.0.0.1:7475';
@@ -24,6 +23,8 @@ export const Falha = {
   TIMEOUT: 'timeout',
   CORS: 'cors',
   REDE: 'rede',
+  AUTH: 'auth',
+  AUSENTE: 'ausente',
   HTTP: 'http',
   FORMATO: 'formato',
 };
@@ -37,14 +38,34 @@ export const API = {
   },
 
   /**
+   * Credenciais Basic, quando o servidor tem `rest_basic_auth`.
+   *
+   * Ficam em `sessionStorage` e não em `localStorage`: morrem com o separador.
+   * São credenciais de administração de uma base de dados — deixá-las em disco
+   * indefinidamente, num painel que pode ficar aberto num ecrã partilhado, é
+   * pior do que a inconveniência de as reintroduzir.
+   */
+  credenciais() {
+    return sessionStorage.getItem('hera_auth') || null;
+  },
+  definirCredenciais(v) {
+    if (v) sessionStorage.setItem('hera_auth', v);
+    else sessionStorage.removeItem('hera_auth');
+  },
+  cabecalhos() {
+    const c = this.credenciais();
+    return c ? { Authorization: 'Basic ' + btoa(c) } : {};
+  },
+
+  /**
    * GET com timeout e diagnóstico do erro.
    *
    * O truque do `no-cors`: no browser, uma falha de CORS e uma falha de rede
    * chegam ambas como `TypeError: Failed to fetch` — indistinguíveis. Mas um
-   * pedido `mode:'no-cors'` devolve uma resposta opaca se o servidor estiver
-   * mesmo lá. Se o opaco passa e o normal falha, o problema é CORS, não
-   * ligação. Sem isto, um servidor a funcionar perfeitamente aparece como
-   * "offline" e ninguém percebe porquê.
+   * pedido `mode:'no-cors'` devolve resposta opaca se o servidor estiver mesmo
+   * lá. Se o opaco passa e o normal falha, o problema é CORS, não ligação. Sem
+   * isto, um servidor a funcionar perfeitamente aparece como "offline" e
+   * ninguém percebe porquê.
    */
   async get(caminho, { ms = 4000, texto = false } = {}) {
     const url = this.base() + caminho;
@@ -52,10 +73,20 @@ export const API = {
     const alarme = setTimeout(() => ctrl.abort(), ms);
     const t0 = performance.now();
     try {
-      const r = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
+      const r = await fetch(url, {
+        cache: 'no-store',
+        signal: ctrl.signal,
+        headers: this.cabecalhos(),
+      });
       const latencia = performance.now() - t0;
       if (!r.ok) {
-        return { ok: false, falha: Falha.HTTP, estado: r.status, latencia };
+        const falha =
+          r.status === 401 || r.status === 403
+            ? Falha.AUTH
+            : r.status === 404
+              ? Falha.AUSENTE
+              : Falha.HTTP;
+        return { ok: false, falha, estado: r.status, latencia };
       }
       try {
         const dados = texto ? await r.text() : await r.json();
@@ -66,7 +97,6 @@ export const API = {
     } catch (e) {
       const latencia = performance.now() - t0;
       if (e.name === 'AbortError') return { ok: false, falha: Falha.TIMEOUT, latencia };
-      // Distinguir CORS de rede.
       try {
         await fetch(url, { mode: 'no-cors', cache: 'no-store' });
         return { ok: false, falha: Falha.CORS, latencia };
@@ -101,9 +131,18 @@ export function explicarFalha(f, estado) {
         curto: 'bloqueado por CORS',
         longo:
           'O servidor responde, mas não autoriza pedidos vindos desta página. ' +
-          'O REST do HeraclitusDB não envia `Access-Control-Allow-Origin`. ' +
-          'Servir o painel na mesma origem (nginx) ou autorizar esta origem na config do servidor.',
+          'Autorizar esta origem em `rest_cors_origins` na configuração do ' +
+          'HeraclitusDB, ou servir painel e API na mesma origem (nginx).',
       };
+    case Falha.AUTH:
+      return {
+        curto: 'sem autorização',
+        longo:
+          'O servidor exige autenticação (`rest_basic_auth`). Clique no selo do ' +
+          'topo para introduzir as credenciais — ficam só neste separador.',
+      };
+    case Falha.AUSENTE:
+      return { curto: 'endpoint inexistente', longo: 'O servidor não expõe este caminho.' };
     case Falha.TIMEOUT:
       return { curto: 'sem resposta', longo: 'O servidor não respondeu dentro do tempo limite.' };
     case Falha.REDE:
@@ -123,29 +162,33 @@ export function explicarFalha(f, estado) {
 /**
  * Taxa de inserção medida a partir do `head`.
  *
- * O `head` é monotónico e conta os registos confirmados, portanto
- * `(head₂ − head₁) / Δt` **é** a taxa de inserção real — não uma estimativa.
- * Não é preciso endpoint novo nenhum para a obter.
+ * O `head` é monotónico e conta registos confirmados, portanto
+ * `(head₂ − head₁)/Δt` **é** a taxa de inserção real — não uma estimativa, e
+ * não precisa de endpoint novo nenhum.
  *
- * A taxa mostrada é calculada sobre uma janela (default 5 s) em vez de sobre
- * duas amostras seguidas: com polling de 1 s, o ruído do agendador faz a
- * diferença entre amostras saltar de forma que não corresponde a nada real.
+ * A taxa sai de uma janela (default 5 s) e não de duas amostras seguidas: com
+ * sondagem a 1 s, o ruído do agendador faz a diferença entre amostras saltar de
+ * forma que não corresponde a nada real.
  */
 export class Ritmo {
   constructor({ janelaMs = 5000, maxAmostras = 90 } = {}) {
     this.janelaMs = janelaMs;
     this.maxAmostras = maxAmostras;
-    this.amostras = []; // { t, head }
-    this.serie = []; // taxa instantânea por amostra, para o sparkline
+    this.amostras = [];
+    this.serie = [];
   }
 
   /** Devolve a taxa (ev/s) ou `null` enquanto não houver duas amostras. */
   registar(head, agora = performance.now()) {
+    // Um `head` não numérico (campo em falta, `null`, resposta doutro serviço)
+    // envenenaria a série com NaN e o sparkline deixava de desenhar sem dizer
+    // porquê. Ignorar a amostra é melhor do que propagar o lixo.
+    if (!Number.isFinite(head)) return this.taxa();
+
     const ultima = this.amostras[this.amostras.length - 1];
 
     // `head` a recuar significa outro servidor ou log recriado: o histórico
-    // anterior deixa de ser comparável e mantê-lo produziria uma taxa negativa
-    // ou um pico absurdo.
+    // deixa de ser comparável e mantê-lo dava taxa negativa ou um pico absurdo.
     if (ultima && head < ultima.head) {
       this.amostras = [];
       this.serie = [];
@@ -154,21 +197,20 @@ export class Ritmo {
     this.amostras.push({ t: agora, head });
     if (this.amostras.length > this.maxAmostras) this.amostras.shift();
 
-    if (ultima) {
-      const dt = (agora - ultima.t) / 1000;
-      if (dt > 0) {
-        this.serie.push(Math.max(0, (head - ultima.head) / dt));
+    const anterior = ultima;
+    if (anterior) {
+      const dt = (agora - anterior.t) / 1000;
+      if (dt > 0 && head >= anterior.head) {
+        this.serie.push((head - anterior.head) / dt);
         if (this.serie.length > this.maxAmostras) this.serie.shift();
       }
     }
-
     return this.taxa();
   }
 
   taxa() {
     if (this.amostras.length < 2) return null;
     const fim = this.amostras[this.amostras.length - 1];
-    // A amostra mais antiga ainda dentro da janela.
     let inicio = this.amostras[0];
     for (const a of this.amostras) {
       if (fim.t - a.t <= this.janelaMs) {
@@ -178,7 +220,8 @@ export class Ritmo {
     }
     const dt = (fim.t - inicio.t) / 1000;
     if (dt <= 0) return null;
-    return Math.max(0, (fim.head - inicio.head) / dt);
+    const r = (fim.head - inicio.head) / dt;
+    return Number.isFinite(r) ? Math.max(0, r) : null;
   }
 
   limpar() {
@@ -188,65 +231,126 @@ export class Ritmo {
 }
 
 /**
- * Fluxo de appends ao vivo (SSE).
+ * Fluxo de appends ao vivo (SSE), sobre `fetch` e não sobre `EventSource`.
  *
- * O log já emite cada append confirmado num broadcast interno
- * (`Log::tail_subscribe`, heraclitus-log/src/lib.rs:1091) — falta só um
- * endpoint que o exponha. Enquanto o servidor não tiver `/live/events`, isto
- * reporta `indisponivel` e **não** entra em ciclo de reconexão: um 404 em
- * repetição só enche a consola e esconde o problema real.
+ * **Porque não `EventSource`:** ele não deixa enviar cabeçalhos. Assim que o
+ * servidor tiver `rest_basic_auth` — que é o que produção exige — o fluxo
+ * levava 401 e não havia forma de o autenticar sem pôr o segredo no URL, onde
+ * acabaria em logs de acesso e no histórico do browser. Além disso o
+ * `EventSource` esconde o código HTTP: um 404, um 401 e uma quebra de rede
+ * chegam todos como o mesmo `onerror` anónimo, e era impossível dizer ao
+ * utilizador o que se passa. Com `fetch` vê-se o estado e envia-se o
+ * `Authorization`.
+ *
+ * O custo é ter de partir o protocolo SSE à mão — são ~20 linhas: blocos
+ * separados por linha em branco, linhas `data:` concatenadas.
  */
 export function ligarFluxo({ aoEvento, aoEstado }) {
-  let fonte = null;
-  let vivo = false;
+  let ctrl = null;
+  let parado = false;
+  let tentativa = 0;
 
   const fechar = () => {
-    if (fonte) {
-      fonte.close();
-      fonte = null;
-    }
+    parado = true;
+    if (ctrl) ctrl.abort();
+    ctrl = null;
   };
 
-  const abrir = () => {
-    fechar();
+  const correr = async () => {
+    ctrl = new AbortController();
+    let resp;
     try {
-      fonte = new EventSource(API.base() + '/live/events');
-    } catch {
-      aoEstado({ estado: 'indisponivel', motivo: 'O browser não conseguiu abrir o fluxo.' });
-      return;
+      resp = await fetch(API.base() + '/live/events', {
+        headers: Object.assign({ Accept: 'text/event-stream' }, API.cabecalhos()),
+        cache: 'no-store',
+        signal: ctrl.signal,
+      });
+    } catch (e) {
+      if (parado || e.name === 'AbortError') return;
+      // Mesmo diagnóstico do `get`: distinguir CORS de rede.
+      let falha = Falha.REDE;
+      try {
+        await fetch(API.base() + '/live/events', { mode: 'no-cors', cache: 'no-store' });
+        falha = Falha.CORS;
+      } catch {
+        /* fica REDE */
+      }
+      return desistir(falha);
     }
 
-    fonte.onopen = () => {
-      vivo = true;
-      aoEstado({ estado: 'ligado' });
-    };
+    if (!resp.ok || !resp.body) {
+      const f =
+        resp.status === 404
+          ? Falha.AUSENTE
+          : resp.status === 401 || resp.status === 403
+            ? Falha.AUTH
+            : Falha.HTTP;
+      return desistir(f, resp.status);
+    }
 
-    fonte.onmessage = (m) => {
-      try {
-        aoEvento(JSON.parse(m.data));
-      } catch {
-        /* linha malformada: ignorar em vez de derrubar o fluxo */
-      }
-    };
+    tentativa = 0;
+    aoEstado({ estado: 'ligado' });
 
-    fonte.onerror = () => {
-      // O EventSource não expõe o código HTTP. Se nunca chegou a abrir, o
-      // endpoint provavelmente não existe — desiste e diz isso, em vez de
-      // reconectar para sempre contra um 404.
-      if (!vivo) {
-        fechar();
-        aoEstado({
-          estado: 'indisponivel',
-          motivo:
-            'O servidor não expõe `/live/events`. O fluxo de appends existe no ' +
-            'log (Log::tail_subscribe) mas ainda não tem endpoint HTTP.',
-        });
-      } else {
-        aoEstado({ estado: 'reconectando' });
+    const leitor = resp.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    try {
+      for (;;) {
+        const { done, value } = await leitor.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        // O SSE aceita \n\n e \r\n\r\n como fim de bloco.
+        buf = buf.replace(/\r\n/g, '\n');
+        let i;
+        while ((i = buf.indexOf('\n\n')) >= 0) {
+          const bloco = buf.slice(0, i);
+          buf = buf.slice(i + 2);
+          const dados = bloco
+            .split('\n')
+            .filter((l) => l.startsWith('data:'))
+            .map((l) => l.slice(5).replace(/^ /, ''))
+            .join('\n');
+          if (!dados) continue; // keep-alive (comentário `:`)
+          try {
+            aoEvento(JSON.parse(dados));
+          } catch {
+            /* linha malformada: ignorar em vez de derrubar o fluxo */
+          }
+        }
       }
-    };
+    } catch (e) {
+      if (parado || e.name === 'AbortError') return;
+    }
+
+    if (parado) return;
+    // O servidor fechou. Reconectar com recuo, porque aqui já se sabe que o
+    // endpoint existe e responde — foi a ligação que caiu.
+    aoEstado({ estado: 'reconectando' });
+    agendar();
   };
 
-  abrir();
-  return { fechar, reabrir: abrir };
+  /**
+   * Falhas estruturais (não existe, não autoriza, CORS) NÃO são retentadas: um
+   * ciclo contra um 404 só enche a consola e esconde o problema real.
+   */
+  const desistir = (falha, estado) => {
+    const e = explicarFalha(falha, estado);
+    aoEstado({ estado: 'indisponivel', falha, motivo: e.longo, curto: e.curto });
+  };
+
+  const agendar = () => {
+    if (parado) return;
+    tentativa = Math.min(tentativa + 1, 6);
+    setTimeout(correr, Math.min(1000 * 2 ** (tentativa - 1), 30000));
+  };
+
+  correr();
+  return {
+    fechar,
+    reabrir: () => {
+      parado = false;
+      tentativa = 0;
+      correr();
+    },
+  };
 }

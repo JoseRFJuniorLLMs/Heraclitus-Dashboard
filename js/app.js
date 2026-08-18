@@ -36,9 +36,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     ${ForensicAI.render()}
   `;
 
+  // Marcação central de proveniência. As secções ligadas a dados reais são
+  // exatamente estas duas; TODAS as outras mostram dados de demonstração e têm
+  // de o dizer — na interface, não só no README.
+  //
+  // Estava a ser feito de forma dispersa e incompleta: 8 das 10 secções não
+  // tinham marca nenhuma, e várias exibiam números grandes e convincentes
+  // (12.000.000 de eventos na linha do tempo, 2.200 na conformidade) que um
+  // visitante não tinha como distinguir de medições. Fazer isto num sítio só
+  // garante que uma secção nova nasce marcada por omissão, em vez de nascer a
+  // parecer real.
+  const LIGADAS = new Set(['soc', 'exec']);
+  for (const sec of document.querySelectorAll('#main-content > section')) {
+    if (LIGADAS.has(sec.id)) continue;
+    const titulo = sec.querySelector('.secttl');
+    if (!titulo || titulo.querySelector('.tag-demo')) continue;
+    const marca = document.createElement('span');
+    marca.className = 'tag tag-demo';
+    marca.textContent = 'dados de demonstração';
+    marca.title =
+      'Esta área ainda não está ligada ao HeraclitusDB. Os valores são ' +
+      'ilustrativos e não devem ser lidos como medições.';
+    titulo.appendChild(marca);
+  }
+
   Header.init();
   Navigation.init();
   SOCPanel.init();
+  ExecPanel.init(); // faltava: o painel executivo nunca era inicializado
   TimeMachine.init();
   AttackReplay.init();
   AttackGraph.init();

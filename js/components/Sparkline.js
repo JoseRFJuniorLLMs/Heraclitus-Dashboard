@@ -58,6 +58,14 @@ export const Sparkline = {
       area.setAttribute('d', '');
       fim.setAttribute('opacity', '0');
       svg.setAttribute('aria-label', 'taxa de inserção: sem dados suficientes');
+      // Limpar a série guardada, senão o cruzamento de leitura continuava a
+      // mostrar valores da ligação anterior sobre um gráfico já vazio — um
+      // número morto que parecia vivo.
+      svg.__serie = null;
+      const cruz = document.getElementById(`${id}-cruz`);
+      const lida = document.getElementById(`${id}-lida`);
+      if (cruz) cruz.setAttribute('opacity', '0');
+      if (lida) lida.textContent = '';
       return;
     }
 

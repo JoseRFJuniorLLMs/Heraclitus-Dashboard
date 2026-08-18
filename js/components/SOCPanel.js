@@ -34,7 +34,8 @@ export const SOCPanel = {
   ritmo: new Ritmo({ janelaMs: 5000, maxAmostras: 90 }),
   fluxo: null,
   linhas: [],
-  ligado: false,
+  /** `null` = ainda nao sondado; evita anunciar falha antes da 1a tentativa. */
+  ligado: null,
 
   render() {
     const semFonte = (titulo) =>
@@ -48,7 +49,7 @@ export const SOCPanel = {
         </div>
         <p class="sub">Fluxo de eventos de firewalls, servidores, bancos, APIs e dispositivos de rede, com prova criptográfica na ingestão.</p>
 
-        <div id="aviso" class="aviso" hidden></div>
+        <div id="aviso" class="aviso" role="alert" aria-live="assertive" hidden></div>
 
         <div class="grid k4">
           <div class="kpi hero">
@@ -163,7 +164,11 @@ export const SOCPanel = {
       }
     }
 
-    const taxa = this.ritmo.registar(s.head ?? 0);
+    // `s.head` cru, sem `?? 0`: um campo em falta viraria 0, que é MENOR que o
+    // head anterior e disparava o reset de "log recriado", apagando o histórico
+    // do sparkline por causa de uma resposta incompleta. O `Ritmo` ignora
+    // valores não numéricos.
+    const taxa = this.ritmo.registar(s.head);
     this.por('eps', taxa === null ? '…' : Math.round(taxa).toLocaleString('pt-BR'));
     Sparkline.update('spark-eps', this.ritmo.serie);
 
@@ -174,10 +179,18 @@ export const SOCPanel = {
     this.por('ngraf', num(s.graph_nodes));
     this.por('earest', num(s.tgraph_edges));
     this.por('lat', `${latencia.toFixed(1)}<small> ms</small>`, true);
+
+    // O Painel Executivo escuta em vez de sondar por conta própria: dois
+    // painéis a bater no mesmo endpoint em temporizadores independentes seria
+    // o dobro do tráfego para exatamente o mesmo número.
+    document.dispatchEvent(new CustomEvent('hera:stats', { detail: s }));
   },
 
   semLigacao(r) {
-    if (this.ligado || this.ligado === false) {
+    // Só na TRANSIÇÃO. Antes estava `if (this.ligado || this.ligado === false)`,
+    // que é sempre verdadeiro — reescrevia o selo e o aviso a cada segundo sem
+    // nada ter mudado.
+    if (this.ligado !== false) {
       this.ligado = false;
       window.LIVE = false;
       const conn = document.getElementById('conn');
@@ -187,6 +200,7 @@ export const SOCPanel = {
           explicarFalha(r.falha, r.estado).curto + ' · ' + API.base();
       }
     }
+    document.dispatchEvent(new CustomEvent('hera:sem-ligacao'));
     this.ritmo.limpar();
     Sparkline.update('spark-eps', []);
     // Traços, não números plausíveis. Um painel sem ligação tem de PARECER
@@ -239,18 +253,44 @@ export const SOCPanel = {
       alvo.textContent = 'não verificado';
       nota.textContent = `Falhou: ${e.curto}.`;
       cartao.className = 'kpi span2';
+      document.dispatchEvent(new CustomEvent('hera:verify', { detail: { erro: e.curto } }));
       return;
     }
 
     const d = r.dados || {};
-    // O relatório traz por segmento se a raiz recomputada bate com a guardada.
-    const ok = d.ok === true || d.merkle_ok === d.segments || d.corrupt === 0;
-    alvo.textContent = ok ? 'íntegro' : 'FALHA DE INTEGRIDADE';
-    cartao.className = ok ? 'kpi span2 ok' : 'kpi span2 bad';
-    nota.textContent =
-      `Verificado agora, em ${seg}s. ` +
-      (d.segments !== undefined ? `${d.segments} segmentos, ${d.records ?? '?'} registos.` : '') +
-      ' Vale para este instante, não para sempre.';
+    // Só se declara íntegro com um sinal POSITIVO do relatório. A ausência de
+    // campos conhecidos não é prova de integridade — é ausência de prova, e
+    // tratá-la como "ok" era exatamente o erro do painel antigo.
+    const ok =
+      d.ok === true ||
+      (typeof d.segments === 'number' && d.merkle_ok === d.segments) ||
+      (typeof d.corrupt === 'number' && d.corrupt === 0 && d.segments > 0);
+
+    const detalhe =
+      d.segments !== undefined ? `${d.segments} segmentos, ${d.records ?? '?'} registos.` : '';
+    const quando = new Date().toLocaleString('pt-BR');
+
+    if (ok) {
+      alvo.textContent = 'íntegro';
+      cartao.className = 'kpi span2 ok';
+      nota.textContent = `Verificado agora, em ${seg}s. ${detalhe} Vale para este instante, não para sempre.`;
+      document.dispatchEvent(
+        new CustomEvent('hera:verify', { detail: { ok: true, quando, detalhe } })
+      );
+    } else if (d.segments === undefined && d.ok === undefined) {
+      // Respondeu, mas sem nada que se reconheça como veredicto.
+      alvo.textContent = 'inconclusivo';
+      cartao.className = 'kpi span2';
+      nota.textContent = `O servidor respondeu em ${seg}s mas sem um veredicto reconhecível.`;
+      document.dispatchEvent(
+        new CustomEvent('hera:verify', { detail: { erro: 'resposta sem veredicto' } })
+      );
+    } else {
+      alvo.textContent = 'FALHA DE INTEGRIDADE';
+      cartao.className = 'kpi span2 bad';
+      nota.textContent = `Verificado agora, em ${seg}s. ${detalhe}`;
+      document.dispatchEvent(new CustomEvent('hera:verify', { detail: { ok: false, quando } }));
+    }
   },
 
   // ── fluxo de appends ────────────────────────────────────────────────────
@@ -287,14 +327,21 @@ export const SOCPanel = {
     const corpo = document.querySelector('#stream tbody');
     if (!corpo) return;
     corpo.innerHTML = this.linhas
-      .map(
-        (e) => `<tr>
-          <td class="mono">${hora(e.t)}</td>
-          <td class="mono">${num(e.lsn)}</td>
-          <td>${esc(e.agent_id)}</td>
-          <td>${esc(e.kind)}</td>
-          <td class="mono">${num(e.bytes)}</td>
-        </tr>`
+      .map((e) =>
+        // O canal do servidor tem 4096 de folga; um cliente mais lento que a
+        // ingestão fica para trás e o broadcast descarta. O servidor avisa com
+        // `{saltados: n}` — e essa linha TEM de se ver. Uma tabela que salta
+        // 200 mil eventos em silêncio mente sobre o que mostra.
+        e.saltados !== undefined
+          ? `<tr class="saltados"><td colspan="5">⚠ ${num(e.saltados)} eventos saltados —
+               a ingestão está mais rápida do que este painel consegue acompanhar.</td></tr>`
+          : `<tr>
+              <td class="mono">${hora(e.t_ms)}</td>
+              <td class="mono">${num(e.lsn)}</td>
+              <td>${esc(e.agent_id)}</td>
+              <td>${esc(e.kind)}</td>
+              <td class="mono">${num(e.bytes)}</td>
+            </tr>`
       )
       .join('');
   },
@@ -342,8 +389,13 @@ export const SOCPanel = {
 const num = (v) => (v === undefined || v === null ? SEM_FONTE : Number(v).toLocaleString('pt-BR'));
 const esc = (s) =>
   String(s ?? '—').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-const hora = (t) => {
-  if (!t) return '—';
-  const d = new Date(t);
-  return isNaN(d) ? '—' : d.toLocaleTimeString('pt-BR', { hour12: false });
+/**
+ * O servidor envia `t_ms` — milissegundos desde a época, já extraídos do HLC
+ * (`ts_hlc >> 16`). A conversão é feita no servidor porque o `>>` do JavaScript
+ * é de 32 bits e truncava um HLC de 64.
+ */
+const hora = (ms) => {
+  if (!Number.isFinite(ms) || ms <= 0) return '—';
+  const d = new Date(ms);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleTimeString('pt-BR', { hour12: false });
 };

@@ -26,12 +26,24 @@ export const Header = {
     const configurar = () => {
       const atual = API.base();
       const v = prompt('Endpoint REST do HeraclitusDB:', atual);
-      if (!v || v.trim() === atual) return;
-      API.definirBase(v.trim());
+      if (v === null) return; // cancelou
+      if (v.trim() && v.trim() !== atual) API.definirBase(v.trim());
+
+      // Credenciais, quando o servidor tem `rest_basic_auth`. Pergunta-se
+      // sempre porque não há forma de saber de antemão se são precisas — e
+      // deixar em branco é a resposta certa quando não são.
+      const cred = prompt(
+        'Credenciais Basic (utilizador:senha), se o servidor as exigir.\n' +
+          'Deixe vazio se não houver. Ficam só neste separador, nunca em disco.',
+        API.credenciais() || ''
+      );
+      if (cred !== null) API.definirCredenciais(cred.trim() || null);
+
       // Sem `location.reload()`: a próxima sondagem (1 s) já usa o endereço
-      // novo. Recarregar a página perdia o histórico do sparkline e piscava o
-      // painel inteiro por causa de uma mudança de uma linha.
-      document.getElementById('connlbl').textContent = 'a ligar · ' + API.base();
+      // novo. Recarregar perdia o histórico do sparkline e piscava o painel
+      // inteiro por causa de uma mudança de uma linha.
+      const rot = document.getElementById('connlbl');
+      if (rot) rot.textContent = 'a ligar · ' + API.base();
       btn.className = 'conn demo';
     };
 
