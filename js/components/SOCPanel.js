@@ -38,8 +38,14 @@ export const SOCPanel = {
   ligado: null,
 
   render() {
+    // A marca "sem fonte" era so um `::after` de CSS mais um `title`. Nenhum
+    // dos dois chega a um leitor de ecra: o conteudo gerado por CSS nao e
+    // anunciado de forma fiavel e o `title` e ignorado na maioria dos casos.
+    // Quem usa leitor recebia o traco `—` sem qualquer razao para ele. Passa a
+    // haver texto REAL no DOM, escondido visualmente mas lido.
     const semFonte = (titulo) =>
       `title="Sem origem de dados no servidor. ${titulo}" data-semfonte="1"`;
+    const razao = (t) => `<span class="so-leitor">Sem origem de dados no servidor. ${t}</span>`;
 
     return `
       <section id="soc" class="on">
@@ -56,6 +62,7 @@ export const SOCPanel = {
             <div class="lb">Eventos / segundo <span class="fonte">medido do <code>/stats</code></span></div>
             <div class="v" id="eps">${SEM_FONTE}</div>
             ${Sparkline.render('spark-eps', { rotulo: 'taxa de inserção' })}
+            <div class="nota" id="eps-resumo" aria-live="polite"></div>
           </div>
           <div class="kpi ok">
             <div class="lb">Eventos no log <span class="fonte"><code>head</code></span></div>
@@ -99,25 +106,26 @@ export const SOCPanel = {
             </div>
           </div>
           <div class="kpi" ${semFonte('Viria de uma regra de deteção sobre os eventos; ainda não existe.')}>
-            <div class="lb">Eventos suspeitos</div>
+            <div class="lb">Eventos suspeitos ${razao('Viria de uma regra de deteção sobre os eventos; ainda não existe.')}</div>
             <div class="v">${SEM_FONTE}</div>
           </div>
           <div class="kpi" ${semFonte('Viria de um motor de correlação de incidentes; ainda não existe.')}>
-            <div class="lb">Último selo ICP-Brasil</div>
+            <div class="lb">Último selo ICP-Brasil ${razao('Viria de um motor de correlação de incidentes; ainda não existe.')}</div>
             <div class="v" style="font-size:18px">${SEM_FONTE}</div>
           </div>
         </div>
 
-        <div class="card">
-          <h3>Mapa vivo da infraestrutura</h3>
+        <div class="card" data-ilustrativo="1">
+          <h3>Topologia <span class="tag tag-demo">ilustrativa</span></h3>
+          <p class="nota">
+            Estas nove máquinas são um exemplo de arquitetura, <strong>não</strong> um
+            inventário monitorizado. Nenhuma foi medida. Quando existir um endpoint de
+            topologia, o mapa volta a ter estado — e aí as cores querem dizer alguma coisa.
+          </p>
           <div class="soc" style="background:#fff;border-color:var(--line)">
-            <svg id="map" viewBox="0 0 880 300" style="width:100%;height:auto"></svg>
-          </div>
-          <div class="legend">
-            <span><i style="background:#41d160"></i>fluxo normal</span>
-            <span><i style="background:#FFCD07"></i>anomalia</span>
-            <span><i style="background:#ff5b4a"></i>ataque</span>
-            <span class="nota">Topologia ilustrativa — ainda não vem do servidor.</span>
+            <svg id="map" viewBox="0 0 880 300" role="img"
+                 aria-label="Diagrama ilustrativo de uma arquitetura de rede com nove componentes. Sem dados de estado."
+                 style="width:100%;height:auto"></svg>
           </div>
         </div>
 
@@ -215,6 +223,16 @@ export const SOCPanel = {
     const taxa = this.ritmo.registar(s.head);
     this.por('eps', taxa === null ? '…' : Math.round(taxa).toLocaleString('pt-BR'));
     Sparkline.update('spark-eps', this.ritmo.serie);
+    // O sparkline so se lia com o ponteiro por cima. Um resumo textual da
+    // serie deixa o minimo/maximo disponivel a quem navega por teclado ou usa
+    // leitor de ecra — e a quem simplesmente nao quer andar a apontar.
+    const vs = this.ritmo.serie.map((x) => (typeof x === 'number' ? x : x.v));
+    const resumo = document.getElementById('eps-resumo');
+    if (resumo) {
+      resumo.textContent = vs.length
+        ? `últimos ${vs.length}s: mín ${Math.round(Math.min(...vs))} · máx ${Math.round(Math.max(...vs))} ev/s`
+        : '';
+    }
 
     this.por('sealed', num(s.head));
     this.por('memt', num(s.memtable));
@@ -290,9 +308,12 @@ export const SOCPanel = {
     const nota = document.getElementById('verify-nota');
     const botao = document.getElementById('btn-verify');
     const cartao = document.getElementById('kpi-integ');
-    if (!alvo) return;
+    // Guardas em TODOS, nao so no primeiro: se a marcacao mudar, o codigo
+    // rebentava a meio de uma operacao que ja tinha sido lancada no servidor.
+    if (!alvo || !nota || !botao || !cartao) return;
 
     botao.disabled = true;
+    botao.setAttribute('aria-busy', 'true');
     alvo.textContent = 'a verificar…';
     nota.textContent = 'A reler e re-hashar todos os segmentos.';
     cartao.className = 'kpi span2';
@@ -301,6 +322,10 @@ export const SOCPanel = {
     const r = await API.verify();
     const seg = ((performance.now() - t0) / 1000).toFixed(1);
     botao.disabled = false;
+    botao.removeAttribute('aria-busy');
+    // Devolver o foco: desativar o botao a meio descarta-o para o body, e quem
+    // navega por teclado ficava sem saber onde estava.
+    try { botao.focus({ preventScroll: true }); } catch { /* sem foco */ }
 
     const quando = new Date().toLocaleString('pt-BR');
 
@@ -311,6 +336,16 @@ export const SOCPanel = {
     if (!r.ok) {
       const motivo = r.corpo?.error || explicarFalha(r.falha, r.estado).curto;
       const adulteracao = r.estado === 500 && !!r.corpo?.error;
+      // Um TIMEOUT nao significa que o servidor parou: ele continua a reler e
+      // re-hashar todos os segmentos. Reativar o botao convidava a cliques
+      // repetidos que empilhavam verificacoes caras umas sobre as outras.
+      if (r.falha === Falha.TIMEOUT) {
+        botao.disabled = true;
+        nota.textContent =
+          'Excedeu o tempo de espera — mas o servidor CONTINUA a verificar. ' +
+          'O botão fica bloqueado 2 min para não empilhar verificações.';
+        setTimeout(() => { botao.disabled = false; }, 120000);
+      }
       alvo.textContent = adulteracao ? 'FALHA DE INTEGRIDADE' : 'não verificado';
       cartao.className = adulteracao ? 'kpi span2 bad' : 'kpi span2';
       nota.textContent = motivo;
@@ -472,21 +507,31 @@ export const SOCPanel = {
       Internet: '🌐', Firewall: '🧱', Roteador: '📡', 'Servidor A': '🖥️',
       'Servidor B': '🖥️', API: '⚙️', 'Active Dir.': '🔑', Postgres: '🛢️', Backup: '🔄',
     };
-    const nodes = base.map(([n, x, y]) => [n, x, y, hot[n] || '#41d160']);
+    // Cinzento, sem verde e sem pulsar.
+    //
+    // O verde vinha por OMISSAO — `hot` esta sempre vazio porque nunca houve
+    // fonte de estado — e a legenda ao lado dizia que verde e "fluxo normal".
+    // Nove maquinas nomeadas (Postgres, Active Directory, Firewall), a pulsar,
+    // todas verdes: quem olhava concluia que estavam a ser monitorizadas e
+    // estavam bem. Num painel forense o verde nao e decoracao, e um veredicto —
+    // e este era emitido sobre infraestrutura que nao existe.
+    //
+    // Pior: isto vivia dentro da Central de Comando, o unico painel que NAO
+    // leva selo de demonstracao por ter mostradores reais. Conteudo fabricado
+    // encostado a numeros medidos.
+    const NEUTRO = '#8a94a6';
+    const nodes = base.map(([n, x, y]) => [n, x, y, hot[n] || NEUTRO]);
     const edges = [[0,1],[1,2],[1,3],[1,4],[3,5],[4,5],[3,6],[5,7],[6,7],[7,8]];
     let h = '';
     edges.forEach(([a, b]) => {
-      const c = nodes[b][3] === '#ff5b4a' || nodes[a][3] === '#ff5b4a' ? '#ff5b4a' : '#a2b4cd';
+      const c = '#c3cbd8';
       h += `<line x1="${nodes[a][1]}" y1="${nodes[a][2]}" x2="${nodes[b][1]}" y2="${nodes[b][2]}" stroke="${c}" stroke-width="2" opacity=".8"/>`;
     });
     nodes.forEach(([n, x, y, c]) => {
       h += `
         <circle cx="${x}" cy="${y}" r="16" fill="#f8f9fa" stroke="${c}" stroke-width="2"/>
-        <circle cx="${x}" cy="${y}" r="16" fill="none" stroke="${c}" stroke-width="2" opacity=".4">
-          <animate attributeName="r" values="16;24;16" dur="2.4s" repeatCount="indefinite"/>
-        </circle>
         <text x="${x}" y="${y}" font-size="16" text-anchor="middle" dominant-baseline="central">${icons[n] || '💻'}</text>
-        <text x="${x}" y="${y + 32}" fill="var(--azul-esc)" font-weight="600" font-size="11" text-anchor="middle" font-family="Arial">${n}</text>`;
+        <text x="${x}" y="${y + 32}" fill="var(--muted)" font-weight="600" font-size="11" text-anchor="middle" font-family="Arial">${n}</text>`;
     });
     const mapa = document.getElementById('map');
     if (mapa) mapa.innerHTML = h;
@@ -494,8 +539,14 @@ export const SOCPanel = {
 };
 
 const num = (v) => (v === undefined || v === null ? SEM_FONTE : Number(v).toLocaleString('pt-BR'));
+// Escapa tambem a aspa SIMPLES: os valores entram em template literals que
+// podem acabar dentro de atributos, e `'` sozinho ja chega para escapar de um
+// atributo delimitado por plicas. O `kind` vem de `EventKind::Custom(s)`, que
+// nao e um conjunto fechado — o servidor aceita a string que o produtor mandar.
 const esc = (s) =>
-  String(s ?? '—').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  String(s ?? '—').replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+  );
 /**
  * O servidor envia `t_ms` — milissegundos desde a época, já extraídos do HLC
  * (`ts_hlc >> 16`). A conversão é feita no servidor porque o `>>` do JavaScript

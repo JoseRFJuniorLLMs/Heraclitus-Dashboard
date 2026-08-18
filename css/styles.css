@@ -194,3 +194,29 @@ tr.saltados td {
   border: 1px solid #E5B93C;
   font-weight: 600;
 }
+
+/* Correcoes de contraste apanhadas na revisao.
+   O `.aviso strong` usava var(--vermelho) #E52207 sobre var(--vermelho-bg)
+   #FBE9E7 — 3,6:1, reprova no AA para texto normal, e e exatamente a parte
+   que carrega a mensagem. Escurece-se so o negrito. */
+.aviso strong { color: #8A1206; }
+
+/* O anel de foco era var(--amarelo) #FFCD07, que este repo ja documenta como
+   1,5:1 sobre branco — praticamente invisivel. Duplo anel: azul escuro por
+   dentro para contraste sobre claro, branco por fora para o destacar sobre
+   fundos escuros como o cabecalho. */
+.btn:focus-visible,
+.conn:focus-visible {
+  outline: 3px solid var(--azul-esc);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px #fff;
+}
+
+/* Texto so para tecnologia assistiva: presente no DOM e lido, invisivel no
+   ecra. Substitui os `::after` de CSS e os `title`, que os leitores de ecra
+   nao anunciam de forma fiavel. */
+.so-leitor {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+}

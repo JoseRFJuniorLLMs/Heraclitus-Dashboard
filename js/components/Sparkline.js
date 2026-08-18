@@ -21,6 +21,12 @@ const PAD = 3; // folga vertical para o ponto final não ficar cortado
 export const Sparkline = {
   /** Marcação inicial. `id` identifica esta instância no DOM. */
   render(id, { rotulo = 'taxa de inserção' } = {}) {
+    // `rotulo` entra dentro de um atributo HTML. Hoje é sempre uma constante do
+    // próprio painel, mas um atributo interpolado sem escape é uma porta que
+    // fica aberta à espera do primeiro valor que venha de fora.
+    rotulo = String(rotulo).replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+    );
     return `
       <div class="spark" id="${id}-wrap">
         <svg id="${id}" viewBox="0 0 ${L} ${A}" preserveAspectRatio="none"

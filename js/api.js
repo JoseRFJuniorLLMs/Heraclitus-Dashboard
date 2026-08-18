@@ -33,17 +33,51 @@ export const API = {
   base() {
     return (localStorage.getItem('hera_api') || PADRAO).replace(/\/+$/, '');
   },
+  /**
+   * Devolve `{ok}` ou `{erro}`. Valida em vez de aceitar tudo.
+   *
+   * Duas razões, ambas com dentes:
+   *  - um endereço **sem esquema** (`127.0.0.1:7475`) é tratado pelo `fetch`
+   *    como caminho RELATIVO, o pedido vai parar ao servidor do painel e o
+   *    diagnóstico sai "endpoint inexistente" — a apontar para o lado errado;
+   *  - um endereço **fora do loopback** faz o painel enviar as credenciais
+   *    Basic de administração, em claro, para uma máquina qualquer. Um erro de
+   *    escrita no prompt passa a fuga de credenciais.
+   */
   definirBase(v) {
-    localStorage.setItem('hera_api', v.replace(/\/+$/, ''));
+    const limpo = String(v || '').trim().replace(/\/+$/, '');
+    let u;
+    try {
+      u = new URL(limpo);
+    } catch {
+      return { erro: 'Endereço inválido. Tem de incluir o esquema, por exemplo http://127.0.0.1:7475' };
+    }
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+      return { erro: `Esquema não suportado: ${u.protocol}` };
+    }
+    const local = ['localhost', '127.0.0.1', '::1', '[::1]'].includes(u.hostname);
+    if (!local && u.protocol !== 'https:') {
+      return {
+        erro:
+          `${u.hostname} não é loopback e não usa HTTPS. As credenciais de ` +
+          'administração viajariam em claro. Use HTTPS ou um endereço local.',
+      };
+    }
+    localStorage.setItem('hera_api', limpo);
+    return { ok: true };
   },
 
   /**
    * Credenciais Basic, quando o servidor tem `rest_basic_auth`.
    *
-   * Ficam em `sessionStorage` e não em `localStorage`: morrem com o separador.
-   * São credenciais de administração de uma base de dados — deixá-las em disco
-   * indefinidamente, num painel que pode ficar aberto num ecrã partilhado, é
-   * pior do que a inconveniência de as reintroduzir.
+   * Ficam em `sessionStorage` e não em `localStorage`: morrem com o separador,
+   * em vez de ficarem indefinidamente numa máquina que pode ser partilhada.
+   *
+   * **Ressalva honesta:** `sessionStorage` NÃO é "nunca em disco" — o browser
+   * persiste-o para poder restaurar separadores, e uma sessão restaurada traz
+   * as credenciais de volta. É melhor que `localStorage`, não é um cofre. Para
+   * um segredo que não pode tocar no disco, o caminho é servir painel e API na
+   * mesma origem e usar um cookie `HttpOnly` — que o JavaScript nunca vê.
    */
   credenciais() {
     return sessionStorage.getItem('hera_auth') || null;
@@ -114,17 +148,35 @@ export const API = {
       try {
         const dados = texto ? await r.text() : await r.json();
         return { ok: true, dados, latencia };
-      } catch {
+      } catch (e) {
+        // O timeout continua armado durante a LEITURA do corpo, não só durante
+        // o handshake. Se abortar aqui, o `json()` rejeita com `AbortError` —
+        // e tratá-lo como erro de formato dizia ao operador "resposta
+        // inválida", mandando-o procurar um bug no servidor quando o servidor
+        // está bem e só demorou. Apanhado ao vivo: com o compilador a saturar
+        // a máquina, o painel acusava JSON inválido enquanto o `curl` mostrava
+        // JSON perfeito.
+        if (e && e.name === 'AbortError') {
+          return { ok: false, falha: Falha.TIMEOUT, latencia };
+        }
         return { ok: false, falha: Falha.FORMATO, latencia };
       }
     } catch (e) {
       const latencia = performance.now() - t0;
       if (e.name === 'AbortError') return { ok: false, falha: Falha.TIMEOUT, latencia };
+      // A sonda que distingue CORS de rede tinha de ter orcamento proprio:
+      // sem `signal` nem timeout, um servidor que aceita a ligacao e nunca
+      // responde deixava o `get` pendurado MUITO alem do `ms` prometido — e
+      // com sondagem a 1 s isso acumula pedidos em voo.
+      const ctrlSonda = new AbortController();
+      const alarmeSonda = setTimeout(() => ctrlSonda.abort(), 1500);
       try {
-        await fetch(url, { mode: 'no-cors', cache: 'no-store' });
+        await fetch(url, { mode: 'no-cors', cache: 'no-store', signal: ctrlSonda.signal });
         return { ok: false, falha: Falha.CORS, latencia };
       } catch {
         return { ok: false, falha: Falha.REDE, latencia };
+      } finally {
+        clearTimeout(alarmeSonda);
       }
     } finally {
       clearTimeout(alarme);
@@ -305,11 +357,17 @@ export function ligarFluxo({ aoEvento, aoEstado }) {
       if (parado || e.name === 'AbortError') return;
       // Mesmo diagnóstico do `get`: distinguir CORS de rede.
       let falha = Falha.REDE;
+      const cs = new AbortController();
+      const ca = setTimeout(() => cs.abort(), 1500);
       try {
-        await fetch(API.base() + '/live/events', { mode: 'no-cors', cache: 'no-store' });
+        await fetch(API.base() + '/live/events', {
+          mode: 'no-cors', cache: 'no-store', signal: cs.signal,
+        });
         falha = Falha.CORS;
       } catch {
         /* fica REDE */
+      } finally {
+        clearTimeout(ca);
       }
       return desistir(falha);
     }

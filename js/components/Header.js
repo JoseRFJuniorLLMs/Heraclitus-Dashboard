@@ -27,17 +27,40 @@ export const Header = {
       const atual = API.base();
       const v = prompt('Endpoint REST do HeraclitusDB:', atual);
       if (v === null) return; // cancelou
-      if (v.trim() && v.trim() !== atual) API.definirBase(v.trim());
+      if (v.trim() && v.trim() !== atual) {
+        const r = API.definirBase(v.trim());
+        // O `definirBase` passou a RECUSAR enderecos sem esquema (que o fetch
+        // trataria como caminho relativo) e enderecos fora do loopback sem
+        // HTTPS (que enviariam as credenciais de administracao em claro).
+        // Ignorar a recusa deixava o painel a apontar para o sitio errado sem
+        // ninguem saber porque.
+        if (r && r.erro) {
+          alert(['Endereço não aceite:', '', r.erro].join('\n'));
+          return;
+        }
+      }
 
-      // Credenciais, quando o servidor tem `rest_basic_auth`. Pergunta-se
-      // sempre porque não há forma de saber de antemão se são precisas — e
-      // deixar em branco é a resposta certa quando não são.
+      // Credenciais, quando o servidor tem `rest_basic_auth`.
+      //
+      // NÃO se pré-preenche com a credencial atual: punha a password em claro
+      // num campo visível, num painel que pode estar num ecrã partilhado. Diz-se
+      // apenas se já existe uma.
+      const tem = !!API.credenciais();
       const cred = prompt(
-        'Credenciais Basic (utilizador:senha), se o servidor as exigir.\n' +
-          'Deixe vazio se não houver. Ficam só neste separador, nunca em disco.',
-        API.credenciais() || ''
+        [
+          'Credenciais Basic (utilizador:senha), se o servidor as exigir.',
+          tem ? 'Já existem credenciais guardadas neste separador.' : '',
+          'Vazio = manter as atuais. Escreva "-" para as apagar.',
+        ]
+          .filter(Boolean)
+          .join('\n'),
+        ''
       );
-      if (cred !== null) API.definirCredenciais(cred.trim() || null);
+      if (cred !== null) {
+        const t = cred.trim();
+        if (t === '-') API.definirCredenciais(null);
+        else if (t) API.definirCredenciais(t);
+      }
 
       // Sem `location.reload()`: a próxima sondagem (1 s) já usa o endereço
       // novo. Recarregar perdia o histórico do sparkline e piscava o painel
