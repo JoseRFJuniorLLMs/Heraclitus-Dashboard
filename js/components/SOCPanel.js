@@ -411,15 +411,23 @@ export const SOCPanel = {
     if (this.linhas.length > 50) this.linhas.pop();
     // Redesenhar a tabela inteira POR EVENTO era viável a 10 eventos/s e
     // suicida a 12 000: o separador bloqueava assim que uma ingestão a sério
-    // começasse — exatamente o momento em que alguém está a olhar. Agora
-    // acumula-se e pinta-se no máximo uma vez por frame; a 12 000 ev/s vêem-se
-    // 60 atualizações por segundo com as 50 linhas mais recentes, que é tudo o
-    // que um olho aproveita.
+    // começasse. Coalesce-se, portanto.
+    //
+    // Mas **não** com `requestAnimationFrame`, que foi a primeira tentativa:
+    // um separador oculto não compõe frames, logo o rAF nunca dispara e a
+    // tabela congela para SEMPRE enquanto os eventos continuam a entrar.
+    // Medido: 50 eventos recebidos, pedido de desenho pendente, tabela ainda
+    // no texto inicial. Um painel num segundo monitor adormecido, ou atrás de
+    // outro separador, ficava parado sem nada a indicá-lo — e voltar a olhar
+    // não o descongelava.
+    //
+    // `setTimeout` dispara em separadores ocultos (estrangulado para ~1/s, que
+    // para uma tabela é de sobra) e coalesce igualmente bem.
     if (this.pintar) return;
-    this.pintar = requestAnimationFrame(() => {
+    this.pintar = setTimeout(() => {
       this.pintar = null;
       this.desenharLinhas();
-    });
+    }, 100);
   },
 
   desenharLinhas() {
