@@ -4,6 +4,7 @@ export const Navigation = {
       <div class="grp">Operação</div>
       <a data-s="soc" class="active"><span class="ic">◉</span> Central de Comando (SOC)</a>
       <a data-s="exec"><span class="ic">▤</span> Painel Executivo</a>
+      <a data-s="fontes"><span class="ic">◇</span> Fontes de ingestão</a>
       <div class="grp">Investigação</div>
       <a data-s="time"><span class="ic">⏱</span> Linha do Tempo Forense</a>
       <a data-s="replay"><span class="ic">▶</span> Replay de Ataque</a>
@@ -14,6 +15,7 @@ export const Navigation = {
       <a data-s="merkle"><span class="ic">▦</span> Visualizador Merkle</a>
       <div class="grp">Governança</div>
       <a data-s="titular"><span class="ic">👤</span> Titular dos dados (LGPD)</a>
+      <a data-s="atributos"><span class="ic">▩</span> Mapa de dados (art. 37)</a>
       <a data-s="comp"><span class="ic">✓</span> Conformidade</a>
       <div class="grp">Inteligência</div>
       <a data-s="ia"><span class="ic">✦</span> IA Forense</a>
