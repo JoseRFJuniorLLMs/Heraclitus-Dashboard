@@ -238,3 +238,15 @@ tr.saltados td {
 
 .tipos { display: flex; flex-wrap: wrap; gap: 6px; }
 #titular .card + .card { margin-top: 14px; }
+
+/* Seletor de modo: SOC | Investigacao | Auditor. */
+.modos { display: flex; gap: 4px; margin: 0 0 14px; }
+.modo {
+  flex: 1; font: inherit; font-size: 12px; font-weight: 600;
+  padding: 7px 4px; cursor: pointer;
+  background: var(--card); color: var(--muted);
+  border: 1px solid var(--line); border-radius: 6px;
+}
+.modo:hover { color: var(--azul); border-color: var(--azul); }
+.modo.on { background: var(--azul); color: #fff; border-color: var(--azul); }
+.modo:focus-visible { outline: 3px solid var(--azul-esc); outline-offset: 2px; }

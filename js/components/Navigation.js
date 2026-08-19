@@ -14,6 +14,7 @@ export const Navigation = {
       <a data-s="custody"><span class="ic">🛡</span> Cadeia de Custódia</a>
       <a data-s="merkle"><span class="ic">▦</span> Visualizador Merkle</a>
       <div class="grp">Governança</div>
+      <a data-s="auditor"><span class="ic">⚖</span> Painel do Auditor</a>
       <a data-s="titular"><span class="ic">👤</span> Titular dos dados (LGPD)</a>
       <a data-s="atributos"><span class="ic">▩</span> Mapa de dados (art. 37)</a>
       <a data-s="comp"><span class="ic">✓</span> Conformidade</a>

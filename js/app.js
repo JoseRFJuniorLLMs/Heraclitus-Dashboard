@@ -6,6 +6,7 @@ import { ExecPanel } from './components/ExecPanel.js';
 import { Titular } from './components/Titular.js';
 import { Fontes } from './components/Fontes.js';
 import { Atributos } from './components/Atributos.js';
+import { Modos } from './components/Modos.js';
 import { TimeMachine } from './components/TimeMachine.js';
 import { AttackReplay } from './components/AttackReplay.js';
 import { AttackGraph } from './components/AttackGraph.js';
@@ -23,7 +24,7 @@ window.LIVE = false;
 document.addEventListener("DOMContentLoaded", async () => {
   $('#govbar-container').innerHTML = GovBar.render();
   $('#header-container').innerHTML = Header.render();
-  $('#nav').innerHTML = Navigation.render();
+  $('#nav').innerHTML = Modos.barra() + Navigation.render();
 
   const main = $('#main-content');
   main.innerHTML = `
@@ -32,6 +33,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     ${Titular.render()}
     ${Fontes.render()}
     ${Atributos.render()}
+    ${Modos.render()}
     ${TimeMachine.render()}
     ${AttackReplay.render()}
     ${AttackGraph.render()}
@@ -52,7 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // visitante não tinha como distinguir de medições. Fazer isto num sítio só
   // garante que uma secção nova nasce marcada por omissão, em vez de nascer a
   // parecer real.
-  const LIGADAS = new Set(['soc', 'exec', 'titular', 'fontes', 'atributos', 'custody']);
+  const LIGADAS = new Set(['soc', 'exec', 'titular', 'fontes', 'atributos', 'custody', 'auditor']);
   for (const sec of document.querySelectorAll('#main-content > section')) {
     if (LIGADAS.has(sec.id)) continue;
     const titulo = sec.querySelector('.secttl');
@@ -73,6 +75,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   Titular.init();
   Fontes.init();
   Atributos.init();
+  Modos.init(); // por ultimo: filtra a navegacao ja construida
   TimeMachine.init();
   AttackReplay.init();
   AttackGraph.init();
