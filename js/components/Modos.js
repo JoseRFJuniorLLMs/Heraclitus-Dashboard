@@ -31,17 +31,17 @@ const MODOS = {
   soc: {
     rotulo: 'SOC',
     dica: 'Operação: o que está a entrar, de onde, e se parou.',
-    seccoes: ['soc', 'fontes', 'exec'],
+    seccoes: ['soc', 'fontes', 'diff', 'exec'],
   },
   investigacao: {
     rotulo: 'Investigação',
     dica: 'Mergulho num caso: linha do tempo, grafo, causalidade.',
-    seccoes: ['time', 'replay', 'graph', 'why', 'ia'],
+    seccoes: ['time', 'diff', 'replay', 'graph', 'why', 'ia'],
   },
   auditor: {
     rotulo: 'Auditor',
     dica: 'Proveniência, integridade e dados pessoais — para TCU, CGU e ANPD.',
-    seccoes: ['auditor', 'custody', 'titular', 'atributos', 'merkle', 'comp'],
+    seccoes: ['auditor', 'diff', 'custody', 'titular', 'atributos', 'merkle', 'comp'],
   },
 };
 

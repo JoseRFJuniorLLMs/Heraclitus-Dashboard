@@ -7,6 +7,7 @@ import { Titular } from './components/Titular.js';
 import { Fontes } from './components/Fontes.js';
 import { Atributos } from './components/Atributos.js';
 import { Modos } from './components/Modos.js';
+import { Diff } from './components/Diff.js';
 import { TimeMachine } from './components/TimeMachine.js';
 import { AttackReplay } from './components/AttackReplay.js';
 import { AttackGraph } from './components/AttackGraph.js';
@@ -34,6 +35,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     ${Fontes.render()}
     ${Atributos.render()}
     ${Modos.render()}
+    ${Diff.render()}
     ${TimeMachine.render()}
     ${AttackReplay.render()}
     ${AttackGraph.render()}
@@ -54,7 +56,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // visitante não tinha como distinguir de medições. Fazer isto num sítio só
   // garante que uma secção nova nasce marcada por omissão, em vez de nascer a
   // parecer real.
-  const LIGADAS = new Set(['soc', 'exec', 'titular', 'fontes', 'atributos', 'custody', 'auditor']);
+  const LIGADAS = new Set(['soc', 'exec', 'titular', 'fontes', 'atributos', 'custody', 'auditor', 'diff']);
   for (const sec of document.querySelectorAll('#main-content > section')) {
     if (LIGADAS.has(sec.id)) continue;
     const titulo = sec.querySelector('.secttl');
@@ -75,6 +77,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   Titular.init();
   Fontes.init();
   Atributos.init();
+  Diff.init();
   Modos.init(); // por ultimo: filtra a navegacao ja construida
   TimeMachine.init();
   AttackReplay.init();

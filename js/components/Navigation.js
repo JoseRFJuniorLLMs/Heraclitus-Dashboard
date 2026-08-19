@@ -8,6 +8,7 @@ export const Navigation = {
       <div class="grp">Investigação</div>
       <a data-s="time"><span class="ic">⏱</span> Linha do Tempo Forense</a>
       <a data-s="replay"><span class="ic">▶</span> Replay de Ataque</a>
+      <a data-s="diff"><span class="ic">⇄</span> Comparar dois momentos</a>
       <a data-s="graph"><span class="ic">⬡</span> Grafo de Ataques</a>
       <a data-s="why"><span class="ic">⌖</span> Investigação Causal (WHY)</a>
       <div class="grp">Evidências</div>

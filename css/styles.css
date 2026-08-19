@@ -250,3 +250,29 @@ tr.saltados td {
 .modo:hover { color: var(--azul); border-color: var(--azul); }
 .modo.on { background: var(--azul); color: #fff; border-color: var(--azul); }
 .modo:focus-visible { outline: 3px solid var(--azul-esc); outline-offset: 2px; }
+
+/* --- Diff historico (AS OF <-> AS OF) ------------------------------------
+   A tabela por campo repete-se N vezes dentro do mesmo cartao, por isso o
+   espacamento vem do container (gap/flex) e nao de margens por elemento: com
+   margens, o primeiro e o ultimo bloco ficavam com metade do respiro dos do
+   meio, e a colisao com o `margin` do `.card` era invisivel no codigo. */
+.dz-lsn { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+.dz-lsn label { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.dz-lsn input {
+  width: 110px; padding: 7px 9px; font-size: 13px;
+  font-family: ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: inherit;
+}
+.dz-lsn input:focus-visible { outline: 3px solid var(--azul-esc); outline-offset: 1px; }
+
+#dz-tabela { display: flex; flex-direction: column; gap: 20px; }
+.dz-campo { display: flex; flex-direction: column; gap: 8px; }
+.dz-campo-h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.dz-campo-h strong { font-size: 13px; color: var(--azul-esc); }
+.dz-campo table { min-width: 0; }
+
+/* "novo" e "calou-se" sao as DUAS leituras deste ecra, e tem de se distinguir
+   sem depender so da cor — o rotulo ja e a distincao; a cor reforca. */
+.pill.novo { background: var(--azul-bg); color: var(--azul-esc); }
+.pill.silencio { background: #FFF4D6; color: #946200; }
+#dz-presets { display: flex; gap: 8px; flex-wrap: wrap; }
