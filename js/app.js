@@ -16,6 +16,7 @@ import { CustodyChain } from './components/CustodyChain.js';
 import { MerkleViewer } from './components/MerkleViewer.js';
 import { CompliancePanel } from './components/CompliancePanel.js';
 import { ForensicAI } from './components/ForensicAI.js';
+import { LoginModal } from './components/LoginModal.js';
 
 window.$ = s => document.querySelector(s);
 window.$$ = s => document.querySelectorAll(s);
@@ -46,16 +47,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     ${ForensicAI.render()}
   `;
 
-  // Marcação central de proveniência. As secções ligadas a dados reais são
-  // exatamente estas duas; TODAS as outras mostram dados de demonstração e têm
-  // de o dizer — na interface, não só no README.
-  //
-  // Estava a ser feito de forma dispersa e incompleta: 8 das 10 secções não
-  // tinham marca nenhuma, e várias exibiam números grandes e convincentes
-  // (12.000.000 de eventos na linha do tempo, 2.200 na conformidade) que um
-  // visitante não tinha como distinguir de medições. Fazer isto num sítio só
-  // garante que uma secção nova nasce marcada por omissão, em vez de nascer a
-  // parecer real.
+  // Modal de login/autenticação RBAC no body
+  const modalContainer = document.createElement('div');
+  modalContainer.innerHTML = LoginModal.render();
+  document.body.appendChild(modalContainer);
+
   const LIGADAS = new Set(['soc', 'exec', 'titular', 'fontes', 'atributos', 'custody', 'auditor', 'diff']);
   for (const sec of document.querySelectorAll('#main-content > section')) {
     if (LIGADAS.has(sec.id)) continue;
@@ -71,14 +67,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   Header.init();
+  LoginModal.init();
   Navigation.init();
   SOCPanel.init();
-  ExecPanel.init(); // faltava: o painel executivo nunca era inicializado
+  ExecPanel.init();
   Titular.init();
   Fontes.init();
   Atributos.init();
   Diff.init();
-  Modos.init(); // por ultimo: filtra a navegacao ja construida
+  Modos.init();
   TimeMachine.init();
   AttackReplay.init();
   AttackGraph.init();
