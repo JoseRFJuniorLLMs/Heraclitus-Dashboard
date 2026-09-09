@@ -1,51 +1,10 @@
 <!doctype html>
-<html lang="pt-BR">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Heraclitus • Temporal Reconstruction Workbench</title>
-  <link rel="stylesheet" href="css/styles.css">
-</head>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Heraclitus • SOC</title><link rel="stylesheet" href="/css/soc.css"></head>
 <body>
-  <div role="status" style="padding:14px;background:#503b12;color:#fff;border-bottom:2px solid #ffcf66;font-weight:600">
-    WORKBENCH EXPERIMENTAL — as telas temporais usam dados, hashes e verificações simulados.
-    Não são evidências do banco conectado nem certificação de integridade. Não usar estes resultados em decisões operacionais.
-  </div>
-
-  <!-- BARRA DE GOVERNO & BRANDING -->
-  <div id="govbar-container"></div>
-  <div id="header-container"></div>
-
-  <!-- BARRA TEMPORAL GLOBAL PERSISTENTE -->
-  <div id="temporal-spine-container"></div>
-
-  <!-- CONTEÚDO PRINCIPAL (NAV LATERAL + VISTAS REGIONAIS) -->
-  <div class="wrap">
-    <nav id="nav"></nav>
-    <main id="main-content"></main>
-  </div>
-
-  <!-- COMMAND PALETTE (CTRL+K) -->
-  <div id="command-palette-container"></div>
-
-  <!-- DIÁLOGO DE AUTENTICAÇÃO LOCAL -->
-  <dialog id="login">
-    <form id="login-form">
-      <span class="eyebrow">ACESSO AUTENTICADO LOOPBACK</span>
-      <h2>Conectar ao HeraclitusDB REST</h2>
-      <p>Insira as credenciais configuradas na instância HeraclitusDB (porta 7475). A credencial é mantida temporariamente em memória.</p>
-      <label>Usuário
-        <input id="username" value="admin" autocomplete="username" required>
-      </label>
-      <label>Senha
-        <input id="password" type="password" autocomplete="current-password" required>
-      </label>
-      <p id="login-error" role="alert"></p>
-      <button class="primary" type="submit">Conectar à Instância ➔</button>
-    </form>
-  </dialog>
-
-  <!-- SCRIPT PRINCIPAL MODULAR TS/JS -->
-  <script type="module" src="js/app.js"></script>
-</body>
-</html>
+<aside><a class="brand" href="#overview"><span class="mark">H</span><span>HERACLITUS<small>SECURITY OPERATIONS</small></span></a><div class="environment">WSL / DEVELOPMENT <span>RC 1.0.6</span></div><nav aria-label="Áreas SOC" id="nav"></nav><footer>Dados reais. Evidência rastreável.<br>Operação de leitura · loopback</footer></aside>
+<div class="workspace"><header><div><span class="eyebrow">CENTRO DE OPERAÇÕES</span><h1 id="title">Visão operacional</h1></div><div class="tools"><span id="connection" role="status">Desconectado</span><button id="refresh">Atualizar</button><button id="pause" aria-pressed="false">Pausar</button><button id="logout">Sair</button></div></header>
+<main><div class="notice" id="notice" role="status">Conecte-se para consultar a instância. Nenhum dado demonstrativo é exibido.</div><div class="toolbar"><label>Filtrar nesta resposta <input id="search" type="search" placeholder="ID, origem, estado, categoria…"></label><label>Severidade mínima <select id="severity"><option value="">Todas</option><option>3</option><option>5</option><option>8</option><option>10</option></select></label><label>AS OF LSN <input id="asof" type="number" min="0" step="1" placeholder="Atual"></label><label>Limite <select id="limit"><option>100</option><option>200</option><option>500</option><option>1000</option></select></label><button id="export">Exportar resposta JSON</button></div><div id="view" aria-live="polite"></div><p id="freshness" class="muted"></p></main>
+</div>
+<dialog id="login"><form id="login-form"><span class="eyebrow">ACESSO LOCAL AUTENTICADO</span><h2>Entre no centro de operações</h2><p>Use a credencial configurada na instância WSL. A senha fica somente na memória desta página.</p><label>Usuário<input id="username" value="admin" autocomplete="username" required></label><label>Senha<input id="password" type="password" autocomplete="current-password" required></label><p id="login-error" role="alert"></p><button class="primary" type="submit">Conectar ao HeraclitusDB →</button><small>Sem credenciais padrão · nenhum envio externo</small></form></dialog>
+<dialog id="detail"><div class="detail-head"><h2 id="detail-title">Evidência</h2><button id="close-detail">Fechar</button></div><div id="detail-actions"></div><pre id="detail-json"></pre></dialog>
+<script type="module" src="/js/soc.js"></script></body></html>

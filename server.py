@@ -23,7 +23,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('X-Frame-Options', 'DENY')
         self.send_header('Referrer-Policy', 'no-referrer')
-        self.send_header('Content-Security-Policy', "default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:7475 http://localhost:7475; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+        self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
         self.end_headers()
         self.wfile.write(body)
 
@@ -42,7 +42,7 @@ class Handler(BaseHTTPRequestHandler):
             rel_path = parsed.path.lstrip('/')
             # Only public UI assets, never repository metadata, env or Python.
             public_asset = re.fullmatch(r'(?:css/[A-Za-z0-9_/-]+\.css|js/[A-Za-z0-9_/-]+\.js)', rel_path)
-            if rel_path not in ('', 'index.html', 'workbench.html', 'soc.html') and not public_asset:
+            if rel_path not in ('', 'index.html') and not public_asset:
                 return self.error(404, 'Recurso indisponível')
             if not rel_path or rel_path == 'index.html':
                 file_path = ROOT / 'index.html'

@@ -1,204 +1,345 @@
-import { temporal } from '../temporal.js';
-import { GOLDEN_DEMO } from '../demoData.js';
+import { API, explicarFalha } from '../api.js';
+
+/**
+ * Diff histórico — o que mudou entre dois instantes do log.
+ *
+ * ## Porque é que um diff num log append-only não é o que parece
+ *
+ * A palavra "diff" faz esperar adições e **remoções**. Aqui não há remoções:
+ * num log append-only nada é apagado, por isso a coluna "removido" não existe —
+ * e inventá-la seria mentir sobre o que o sistema garante.
+ *
+ * O que existe são as duas perguntas que quem investiga faz de facto:
+ *
+ *  - **apareceu** — um valor cujo *primeiro* registo cai dentro da janela. Um
+ *    IP, um utilizador, um comando que o sistema nunca tinha visto. É aqui que
+ *    mora "esta máquina começou a falar com um destino novo às 03:14".
+ *  - **calou-se** — um valor que estava a produzir eventos e parou. Numa
+ *    plataforma forense isto pesa tanto como o resto: uma fonte que emudece
+ *    pode ser o atacante a desligar o registo. Um SIEM que só sabe contar o que
+ *    chega nunca vê o que deixou de chegar.
+ *
+ * ## Contra o quê se compara
+ *
+ * Cada janela é comparada com a **janela anterior de igual duração**, e essa
+ * escolha não é decorativa. A definição ingénua de "calou-se" — *não apareceu
+ * nesta janela* — é verdade sobre quase tudo num log com história: medido aqui,
+ * numa janela de 24 h, 527 dos 561 valores "calaram-se" por esse critério. Um
+ * número grande, alarmante, e sem informação nenhuma. Contra a janela anterior,
+ * "calou-se" volta a significar o que a palavra promete: *estava a falar e
+ * parou*.
+ *
+ * ## Campos quase-únicos
+ *
+ * Num campo onde cada evento traz um valor diferente — um `ts`, um `uuid`, uma
+ * assinatura — "valor nunca antes visto" não é sinal nenhum: *todos* os valores
+ * são novos, por construção. Somá-los à manchete enche-a de ruído (neste log,
+ * 321 "valores novos" dos quais a esmagadora maioria eram carimbos de tempo).
+ * Esses campos ficam **fora dos números do topo** e são marcados na lista, em
+ * vez de silenciosamente descartados: quem lê tem de conseguir ver o que não
+ * foi contado, e porquê.
+ *
+ * ## Ingestão, não ocorrência
+ *
+ * A janela é sobre o carimbo do `append` — quando o registo *entrou*. Não é
+ * quando o facto aconteceu no mundo. Um lote importado ontem, de logs da semana
+ * passada, cai na janela de ontem. O ecrã diz isto em vez de deixar alguém
+ * concluir o contrário a partir de um eixo temporal com ar de verdade.
+ */
+
+const PRESETS = [
+  { rot: '1 h', ms: 3_600_000 },
+  { rot: '24 h', ms: 86_400_000 },
+  { rot: '7 dias', ms: 604_800_000 },
+  { rot: '30 dias', ms: 2_592_000_000 },
+];
 
 export const Diff = {
+  ultimo: null,
+
   render() {
-    const a = temporal.range.a.lsn;
-    const b = temporal.range.b.lsn;
-    const diffData = GOLDEN_DEMO.getDiff(a, b);
-
     return `
-      <section id="diff" class="view-section">
+      <section id="diff">
         <div class="secttl">
-          <h2>Compare State A ↔ State B</h2>
-          <span class="tag tag-primary">DIFERENÇA TEMPORAL</span>
+          <h2>Comparar dois momentos</h2>
+          <span class="tag">AS OF ↔ AS OF</span>
         </div>
-        <p class="sub">Comparação exata entre dois estados históricos da base de dados com classificação da semântica de alteração e encadeamento causal.</p>
+        <p class="sub">
+          O que existe agora que não existia antes — e o que existia e deixou de aparecer.
+        </p>
 
-        <!-- CABEÇALHO DUAL STATE -->
-        <div class="diff-header-grid">
-          <div class="state-card state-a">
-            <span class="eyebrow">ESTADO A</span>
-            <h3 class="font-mono">LSN ${a.toLocaleString('pt-BR')}</h3>
-            <p class="muted font-mono">Hash: ${diffData.hashA}</p>
-            <button id="btn-set-cur-a" class="btn-sm">Capturar Cursor Global em A</button>
+        <div class="card">
+          <h3>Janela</h3>
+          <div class="kpi-acao" id="dz-presets">
+            ${PRESETS.map(
+              (p, i) =>
+                `<button class="btn${i ? ' ghost' : ''}" data-janela="${p.ms}">últimas ${p.rot}</button>`
+            ).join('')}
           </div>
-
-          <div class="diff-vs-badge">⇄</div>
-
-          <div class="state-card state-b">
-            <span class="eyebrow">ESTADO B</span>
-            <h3 class="font-mono">LSN ${b.toLocaleString('pt-BR')}</h3>
-            <p class="muted font-mono">Hash: ${diffData.hashB}</p>
-            <button id="btn-set-cur-b" class="btn-sm">Capturar Cursor Global em B</button>
+          <div class="dz-lsn">
+            <label>ou por LSN: de
+              <input id="dz-de" type="number" min="0" step="1" inputmode="numeric" placeholder="0" />
+            </label>
+            <label>até
+              <input id="dz-ate" type="number" min="0" step="1" inputmode="numeric" placeholder="head" />
+            </label>
+            <button class="btn ghost" id="dz-lsn-btn">Comparar</button>
           </div>
-        </div>
-
-        <!-- RESUMO DE ALTERAÇÕES -->
-        <div class="diff-summary-bar margin-top">
-          <div class="sum-item created"><strong>+${diffData.summary.created}</strong> Criados</div>
-          <div class="sum-item changed"><strong>~${diffData.summary.changed}</strong> Alterados</div>
-          <div class="sum-item removed"><strong>-${diffData.summary.semanticRemoved}</strong> Remoções Semânticas</div>
-          <div class="sum-item expired"><strong>!${diffData.summary.validityExpired}</strong> Expirações de Validade</div>
-          <div class="sum-item superseded"><strong>↳${diffData.summary.superseded}</strong> Fatos Substituídos</div>
-          <div class="sum-item shredded"><strong>🔒${diffData.summary.cryptoShredded}</strong> Crypto-Shredded</div>
+          <p class="nota" id="dz-janela">—</p>
         </div>
 
-        <!-- LEGENDA SEMÂNTICA DE REMOÇÃO (SPEC §15) -->
-        <div class="card margin-top">
-          <div class="hd">
-            <span class="sec-ico">⚖</span>
-            <h2>Semântica de Remoção e Alteração</h2>
+        <div class="grid k4">
+          <div class="kpi">
+            <div class="lb">Eventos na janela <span class="fonte"><code>/diff</code></span></div>
+            <div class="v" id="dz-eventos">—</div>
           </div>
-          <div class="bd">
-            <div class="semantic-legend-grid">
-              <div class="sem-box sem-impossible">
-                <strong>PHYSICAL DELETE</strong>
-                <p>Impossível no log canônico append-only (o histórico físico nunca é apagado).</p>
-              </div>
-              <div class="sem-box sem-removal">
-                <strong>SEMANTIC REMOVAL</strong>
-                <p>Estado derivado desativou o elemento via tombstone ou ordem de revogação.</p>
-              </div>
-              <div class="sem-box sem-expired">
-                <strong>VALIDITY EXPIRATION</strong>
-                <p>Fato deixou de ser válido na dimensão de Valid Time no domínio do cliente.</p>
-              </div>
-              <div class="sem-box sem-superseded">
-                <strong>SUPERSEDED FACT</strong>
-                <p>Fato substituído por versão/afirmação mais recente recebida no log.</p>
-              </div>
-              <div class="sem-box sem-shredded">
-                <strong>CRYPTO-SHREDDED</strong>
-                <p>Dado criptograficamente triturado com remoção de chave (prova LGPD Art. 18).</p>
-              </div>
-            </div>
+          <div class="kpi">
+            <div class="lb">Valores nunca antes vistos</div>
+            <div class="v" id="dz-novos">—</div>
+            <p class="nota">primeiro registo na janela; sem campos quase-únicos</p>
+          </div>
+          <div class="kpi">
+            <div class="lb">Valores que se calaram</div>
+            <div class="v" id="dz-silencio">—</div>
+            <p class="nota">ativos na janela anterior; zero nesta</p>
+          </div>
+          <div class="kpi">
+            <div class="lb">Campos com atividade</div>
+            <div class="v" id="dz-campos">—</div>
           </div>
         </div>
 
-        <!-- TABELA DETALHADA DE DIFERENÇAS COM WHY? -->
-        <div class="card margin-top">
-          <div class="hd">
-            <span class="sec-ico">🔍</span>
-            <h2>Diferenças de Estado A → B</h2>
-          </div>
-          <div class="bd scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Alvo / Entidade</th>
-                  <th>Tipo</th>
-                  <th>Semântica da Alteração</th>
-                  <th>Detalhes da Mudança</th>
-                  <th>LSN de Origem</th>
-                  <th>Evento Causal</th>
-                  <th>Investigação</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${diffData.items.map(item => `
-                  <tr>
-                    <td><code class="font-mono"><strong>${item.id}</strong></code></td>
-                    <td><span class="badge b-sup">${item.type}</span></td>
-                    <td><span class="badge ${this._getSemanticBadgeClass(item.change)}">${item.change}</span></td>
-                    <td>${item.detail}</td>
-                    <td class="num font-mono">${item.lsn.toLocaleString('pt-BR')}</td>
-                    <td><code class="font-mono">${item.whyEvent}</code></td>
-                    <td>
-                      <button class="btn-sm btn-why" data-event="${item.whyEvent}" data-cause="${item.cause}">
-                        [ Why? ] ➔
-                      </button>
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
+        <div class="card">
+          <h3>Por campo</h3>
+          <p class="nota">
+            <strong>novo</strong> = o primeiro registo deste valor cai na janela.
+            <strong>janela anterior</strong> = quantos eventos produziu na janela anterior de
+            igual duração — é contra essa coluna que «calou-se» e «disparou» se medem.
+          </p>
+          <div id="dz-tabela"><p class="nota">Escolhe uma janela acima.</p></div>
         </div>
 
-        <!-- DRAWER DE INVESTIGAÇÃO CAUSAL (WHY?) -->
-        <div id="why-drawer" class="drawer">
-          <div class="drawer-header">
-            <h3>Causal Chain (WHY Did This Change?)</h3>
-            <button id="close-why-drawer" class="btn-close">✕</button>
-          </div>
-          <div class="drawer-body" id="why-drawer-body">
-            <p class="muted">Clique em [ Why? ] em qualquer item da tabela para inspecionar a causa de origem.</p>
-          </div>
+        <div class="card">
+          <h3>Como ler isto</h3>
+          <p class="nota">
+            <strong>Não há coluna «removido»</strong> — e não é um esquecimento. O log é
+            append-only: nada é apagado, por isso um diff aqui nunca pode mostrar uma
+            remoção. O que substitui essa coluna é <em>calou-se</em>: o valor continua no
+            registo, mas parou de produzir eventos.
+          </p>
+          <p class="nota">
+            <strong>Tudo se compara com a janela anterior de igual duração.</strong> Sem esse
+            termo de comparação, «calou-se» significaria apenas «não apareceu agora» — o que é
+            verdade sobre quase todos os valores de um log com história, e por isso inútil.
+            Medido neste log: numa janela de 24 h, 527 de 561 valores «calavam-se» por esse
+            critério ingénuo. Contra a janela anterior, sobram os que de facto pararam.
+          </p>
+          <p class="nota">
+            <strong>O tempo é o da ingestão</strong>, não o da ocorrência. A janela usa o
+            carimbo do momento em que o registo entrou no log. Um lote importado hoje, de
+            logs da semana passada, cai na janela de hoje. Para uma janela que não dependa
+            de relógio nenhum, usa a comparação por LSN — é a forma que um auditor cita.
+          </p>
         </div>
+
+        <div id="dz-aviso" class="aviso" role="alert" aria-live="polite" hidden></div>
       </section>
     `;
   },
 
   init() {
-    this._bindEvents();
-  },
+    // Carregamento preguicoso: o diff percorre todas as chaves do indice, e
+    // fazer isso no arranque penaliza quem nunca abre este ecra. Dispara na
+    // primeira vez que a seccao e aberta, e nunca mais automaticamente — dai
+    // em diante quem escolhe a janela e o utilizador.
+    const entrada = document.querySelector('#nav a[data-s="diff"]');
+    if (entrada) {
+      entrada.addEventListener('click', () => {
+        if (this.ultimo) return;
+        this.carregar(`?de_ms=${Date.now() - 86_400_000}&topo=8`);
+      });
+    }
 
-  _bindEvents() {
-    const btnA = document.getElementById('btn-set-cur-a');
-    if (btnA) btnA.onclick = () => temporal.setRangeA(temporal.cursor.lsn);
-
-    const btnB = document.getElementById('btn-set-cur-b');
-    if (btnB) btnB.onclick = () => temporal.setRangeB(temporal.cursor.lsn);
-
-    const whyBtns = document.querySelectorAll('.btn-why');
-    whyBtns.forEach(btn => {
-      btn.onclick = () => {
-        const evtId = btn.dataset.event;
-        const cause = btn.dataset.cause;
-        const drawer = document.getElementById('why-drawer');
-        const drawerBody = document.getElementById('why-drawer-body');
-        if (drawer && drawerBody) {
-          drawerBody.innerHTML = `
-            <div class="why-waterfall">
-              <h4>Cadeia Causal para o evento <code>${evtId}</code>:</h4>
-              <div class="waterfall-step step-1">
-                <span class="step-num">1</span>
-                <div class="step-content">
-                  <strong>Evento Ingestado no Log Canônico</strong>
-                  <p class="font-mono">ID: ${evtId} (LSN 18,311,491)</p>
-                </div>
-              </div>
-              <div class="waterfall-step step-2">
-                <span class="step-num">2</span>
-                <div class="step-content">
-                  <strong>Causa de Origem Medida</strong>
-                  <p>${cause}</p>
-                </div>
-              </div>
-              <div class="waterfall-step step-3">
-                <span class="step-num">3</span>
-                <div class="step-content">
-                  <strong>Resultado no Estado Derivado</strong>
-                  <p>Mutação gravada com prova criptográfica Blake3 e carimbo de tempo.</p>
-                </div>
-              </div>
-              <div class="margin-top">
-                <button class="btn-primary" onclick="temporal.setCursor(18311491n, 'AS_OF_LSN')">Viajar para o LSN do Evento ➔</button>
-              </div>
-            </div>
-          `;
-          drawer.classList.add('open');
-        }
+    document.querySelectorAll('#dz-presets [data-janela]').forEach((b) => {
+      b.onclick = () => {
+        document.querySelectorAll('#dz-presets .btn').forEach((x) => x.classList.add('ghost'));
+        b.classList.remove('ghost');
+        this.carregar(`?de_ms=${Date.now() - Number(b.dataset.janela)}&topo=8`);
       };
     });
-
-    const closeWhy = document.getElementById('close-why-drawer');
-    if (closeWhy) {
-      closeWhy.onclick = () => {
-        const drawer = document.getElementById('why-drawer');
-        if (drawer) drawer.classList.remove('open');
+    const btn = document.getElementById('dz-lsn-btn');
+    if (btn) {
+      btn.onclick = () => {
+        const de = document.getElementById('dz-de').value.trim();
+        const ate = document.getElementById('dz-ate').value.trim();
+        if (de === '' && ate === '') {
+          this.aviso('Indica pelo menos um dos dois LSN, ou usa um dos botões de janela.');
+          return;
+        }
+        document.querySelectorAll('#dz-presets .btn').forEach((x) => x.classList.add('ghost'));
+        const p = new URLSearchParams({ topo: '8' });
+        if (de !== '') p.set('de', de);
+        if (ate !== '') p.set('ate', ate);
+        this.carregar('?' + p);
       };
     }
   },
 
-  _getSemanticBadgeClass(changeType) {
-    switch (changeType) {
-      case 'SEMANTIC_REMOVAL': return 'b-ext';
-      case 'SUPERSEDED': return 'b-esp';
-      case 'VALIDITY_EXPIRED': return 'b-anu';
-      case 'CRYPTO_SHRED': return 'b-sup';
-      default: return 'b-sup';
+  async carregar(qs) {
+    txt('dz-eventos', '…');
+    const r = await API.get('/diff' + qs, { ms: 60000 });
+    if (!r.ok) {
+      ['dz-eventos', 'dz-novos', 'dz-silencio', 'dz-campos'].forEach((i) => txt(i, '—'));
+      this.aviso(
+        `<strong>Não foi possível comparar:</strong> ${esc(explicarFalha(r.falha, r.estado).longo)}`
+      );
+      return;
     }
-  }
+    this.aviso(null);
+    this.ultimo = r.dados;
+    this.pintar(r.dados);
+  },
+
+  pintar(d) {
+    const campos = d.campos || [];
+    // Campos onde quase todo o evento traz um valor distinto (ts, uuid,
+    // assinaturas): "valor novo" ali é uma tautologia, não um sinal. Ficam fora
+    // das somas do topo — e o ecrã diz que ficaram, em vez de os apagar.
+    const uteis = campos.filter((c) => !quaseUnico(c));
+    const soma = (k) => uteis.reduce((a, c) => a + (c[k] || 0), 0);
+    const ativos = campos.filter((c) => c.eventos > 0).length;
+    const ignorados = campos.length - uteis.length;
+
+    txt('dz-eventos', fmt(d.eventos || 0));
+    txt('dz-novos', fmt(soma('valores_novos')));
+    txt('dz-silencio', fmt(soma('valores_silenciosos')));
+    txt('dz-campos', `${fmt(ativos)} de ${fmt(campos.length)}`);
+    const nn = document.querySelector('#dz-novos')?.closest('.kpi')?.querySelector('.nota');
+    if (nn) {
+      nn.textContent = ignorados
+        ? `primeiro registo na janela · ${ignorados} campo(s) quase-único(s) fora da conta`
+        : 'primeiro registo dentro da janela';
+    }
+
+    const cs = document.getElementById('dz-silencio')?.closest('.kpi');
+    if (cs) cs.className = soma('valores_silenciosos') > 0 ? 'kpi warn' : 'kpi';
+
+    txt(
+      'dz-janela',
+      `LSN ${fmt(d.de)} → ${fmt(d.ate)} (head ${fmt(d.head)}) · ` +
+        `${quando(d.de_ms)} → ${quando(d.ate_ms)} · tempo de ingestão · ` +
+        `comparada com LSN ${fmt(d.anterior_de)} → ${fmt(d.anterior_ate)}`
+    );
+    const de = document.getElementById('dz-de');
+    const ate = document.getElementById('dz-ate');
+    if (de && ate) {
+      de.value = d.de;
+      ate.value = d.ate;
+    }
+
+    const alvo = document.getElementById('dz-tabela');
+    if (!alvo) return;
+    const comAtividade = campos.filter((c) => c.eventos > 0 || c.eventos_anterior > 0);
+    if (!comAtividade.length) {
+      alvo.innerHTML = '<p class="nota">Nenhum campo com atividade nesta janela.</p>';
+      return;
+    }
+
+    alvo.innerHTML = comAtividade
+      .map((c) => {
+        const linhas = (c.topo || [])
+          .filter((v) => v.eventos > 0 || v.anterior > 0)
+          .map(
+            (v) => `
+              <tr>
+                <td class="mono">${esc(corta(v.valor))}${
+                  v.novo ? ' <span class="pill novo">novo</span>' : ''
+                }</td>
+                <td class="mono">${fmt(v.eventos)}</td>
+                <td class="mono">${v.anterior ? fmt(v.anterior) : '—'}</td>
+                <td class="mono">${variacao(v)}</td>
+              </tr>`
+          )
+          .join('');
+        return `
+          <div class="dz-campo">
+            <div class="dz-campo-h">
+              <strong class="mono">${esc(c.campo)}</strong>
+              ${
+                quaseUnico(c)
+                  ? '<span class="pill y" title="Quase um valor distinto por evento — ' +
+                    '«valor novo» não distingue nada aqui, por isso este campo fica fora ' +
+                    'dos totais do topo.">quase-único</span>'
+                  : ''
+              }
+              <span class="nota">
+                ${fmt(c.eventos)} evento(s) · ${fmt(c.eventos_anterior)} na anterior ·
+                ${c.valores_novos ? `<span class="pill novo">${fmt(c.valores_novos)} novo(s)</span>` : 'sem valores novos'}
+                ${
+                  c.valores_silenciosos
+                    ? ` · <span class="pill silencio">${fmt(c.valores_silenciosos)} calado(s)</span>`
+                    : ''
+                }
+                · ${fmt(c.valores_total)} valores distintos no total
+              </span>
+            </div>
+            ${
+              linhas
+                ? `<table><thead><tr><th>valor</th><th>na janela</th><th>janela anterior</th><th>variação</th></tr></thead><tbody>${linhas}</tbody></table>`
+                : '<p class="nota">Nenhum valor ativo — só valores que se calaram.</p>'
+            }
+          </div>`;
+      })
+      .join('');
+  },
+
+  aviso(html) {
+    const el = document.getElementById('dz-aviso');
+    if (!el) return;
+    if (!html) {
+      el.hidden = true;
+      el.innerHTML = '';
+      return;
+    }
+    el.hidden = false;
+    el.innerHTML = html;
+  },
 };
+
+const txt = (id, v) => {
+  const el = document.getElementById(id);
+  if (el) el.textContent = v;
+};
+const fmt = (n) => Number(n || 0).toLocaleString('pt-BR');
+/**
+ * Um campo onde quase todo o evento traz um valor diferente.
+ *
+ * O limiar (90 %) é uma escolha, não uma medição — mas a alternativa era pior:
+ * sem ele, a manchete «valores nunca antes vistos» é dominada por carimbos de
+ * tempo, e um operador lê 321 onde o sinal real era 6. Campos com poucos
+ * eventos ficam de fora da regra: com 3 eventos e 3 valores, a razão é 1 sem
+ * que isso diga o que quer que seja sobre o campo.
+ */
+const quaseUnico = (c) => (c.postings_total || 0) >= 20 && c.valores_total >= 0.9 * c.postings_total;
+/**
+ * Variação face à janela anterior.
+ *
+ * Sem base de comparação não há percentagem que se possa escrever: dividir por
+ * zero dá infinito, e «+100%» ou «+∞%» seriam grandezas inventadas. Um valor que
+ * não existia antes é **novo** — uma afirmação diferente, e mais forte, do que
+ * qualquer percentagem.
+ */
+const variacao = (v) => {
+  if (!v.anterior) return v.eventos ? '<span class="pill novo">novo</span>' : '—';
+  if (!v.eventos) return '<span class="pill silencio">parou</span>';
+  const p = Math.round(((v.eventos - v.anterior) / v.anterior) * 100);
+  if (p === 0) return 'igual';
+  return `<span class="pill ${p > 0 ? 'b' : 'y'}">${p > 0 ? '+' : ''}${fmt(p)}%</span>`;
+};
+const corta = (s) => (String(s).length > 56 ? String(s).slice(0, 55) + '…' : String(s));
+const quando = (ms) =>
+  ms ? new Date(Number(ms)).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+const esc = (s) =>
+  String(s ?? '').replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+  );
