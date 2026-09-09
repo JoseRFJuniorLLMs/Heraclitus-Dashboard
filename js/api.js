@@ -16,7 +16,9 @@
  *   GET /live/events   -> SSE com metadados de cada append confirmado
  */
 
-const PADRAO = 'http://127.0.0.1:7475';
+const PADRAO = (typeof window !== 'undefined' && window.location.port === '9337')
+  ? window.location.origin + '/api'
+  : 'http://127.0.0.1:7475';
 
 /** Distingue os modos de falha em vez de os colapsar num `catch` só. */
 export const Falha = {
@@ -31,7 +33,14 @@ export const Falha = {
 
 export const API = {
   base() {
-    return (localStorage.getItem('hera_api') || PADRAO).replace(/\/+$/, '');
+    const salvo = localStorage.getItem('hera_api');
+    if (salvo) {
+      if (typeof window !== 'undefined' && window.location.port === '9337' && salvo.includes(':7475')) {
+        return window.location.origin + '/api';
+      }
+      return salvo.replace(/\/+$/, '');
+    }
+    return PADRAO;
   },
   /**
    * Devolve `{ok}` ou `{erro}`. Valida em vez de aceitar tudo.
