@@ -69,6 +69,110 @@ function table(parent, original) {
   }
   t.append(tbody); wrap.append(t); parent.append(wrap, element('p', `${rows.length} exibidos / ${original.length} retornados. Limite de consulta não equivale ao total do banco.`, 'muted'));
 }
+function factLsn(row) {
+  const value = row.lsn ?? row.at_lsn ?? row.last_seen_lsn;
+  return Number.isSafeInteger(value) && value >= 0 ? value : null;
+}
+function investigation(parent, entries) {
+  const p = panel('Reconstituição dos fatos');
+  p.append(element('p', 'Ordem pelo horário do fato em UTC. LSN representa a ordem de conhecimento no banco; não é uma conversão da data. Relações apresentadas são as declaradas nos registros, não causalidade inferida.', 'notice'));
+  const controls = element('div', null, 'timeline-controls'), previous = element('button','← Anterior'), next = element('button','Próximo →'), position = element('span');
+  controls.append(previous,position,next);
+  const evidence = element('div'), historical = panel('Estado conhecido e mudanças no log');
+  let cursor=0, version=0;
+  const lsns=entries.map(e=>factLsn(e.row)).filter(v=>v!==null);
+  const compare=element('button','Consultar estado histórico e comparar A/B');
+  const output=element('div');
+  historical.append(element('p','Comparação das projeções SOC entre os LSN mínimo e máximo deste recorte. Não representa todo o banco nem necessariamente o início/fim civil do dia. Consultas de listas são limitadas a 1.000 registros.', 'muted'),compare,output);
+  compare.disabled=!lsns.length;
+  if(!lsns.length) output.append(element('p','Os registros não fornecem LSN utilizável: reconstrução histórica indisponível.'));
+  compare.onclick=async()=>{
+    const revision=++version, session=auth, page=active;
+    compare.disabled=true;output.replaceChildren(element('p','Consultando projeções históricas…'));
+    const start=Math.min(...lsns),end=Math.max(...lsns);
+    const paths=[`/security/events/counts?as_of_lsn=${start}`,`/security/events/counts?as_of_lsn=${end}`,`/sentinel/incidents?as_of_lsn=${end}&limit=1000`,`/cases?as_of_lsn=${end}`];
+    const results=await Promise.allSettled(paths.map(path=>api(path)));
+    if(revision!==version||auth!==session||active!==page||!parent.isConnected) return;
+    output.replaceChildren();compare.disabled=false;
+    output.append(element('p',`Conhecimento em A = LSN ${start}; B = LSN ${end}. Eventos com LSN em (A, B] são acréscimos no log, não necessariamente alterações de uma entidade.`));
+    results.forEach((result,i)=>{const d=element('details');d.append(element('summary',paths[i]),element('pre',result.status==='fulfilled'?JSON.stringify(result.value,null,2):result.reason.message));output.append(d);});
+    if(results[0].status==='fulfilled'&&results[1].status==='fulfilled') {
+      const changes=[];
+      function diff(a,b,path='counts') { if(typeof a==='number'&&typeof b==='number') {if(a!==b) changes.push({campo:path,antes:a,depois:b,delta:b-a});return;} if(a&&b&&typeof a==='object'&&typeof b==='object') for(const key of new Set([...Object.keys(a),...Object.keys(b)])) {if(!(key in a)||!(key in b)) changes.push({campo:path+'.'+key,antes:a[key]??null,depois:b[key]??null});else diff(a[key],b[key],path+'.'+key);} }
+      diff(results[0].value.counts,results[1].value.counts);
+      output.append(element('h4','Mudanças nas contagens SOC'),element('pre',JSON.stringify(changes,null,2)),element('p','Contagem igual não prova ausência de mudanças. Consulte as evidências originais.', 'muted'));
+    }
+  };
+  function paint() {
+    const {row,time}=entries[cursor];position.textContent=`Fato ${cursor+1} de ${entries.length}`;
+    previous.disabled=cursor===0;next.disabled=cursor===entries.length-1;
+    evidence.replaceChildren(element('h4',`${new Date(time).toISOString()} · ${row.kind ?? row.category ?? row.activity ?? 'Registro'}`),element('p',`Fonte: ${summary(row.source ?? row.datasource_id ?? row.agent_id)} · LSN: ${fmt(factLsn(row))}`));
+    const open=element('button','Abrir evidência original');open.onclick=()=>showDetail(row);evidence.append(open);
+    for(const key of ['parents','relations','edges','incident_id','evidence','proof','forge']) if(row[key]!=null) {const d=element('details');d.append(element('summary',key),element('pre',JSON.stringify(row[key],null,2)));evidence.append(d);}
+    evidence.append(element('pre',JSON.stringify(row,null,2)));
+  }
+  previous.onclick=()=>{if(cursor>0)cursor--;paint();};next.onclick=()=>{if(cursor<entries.length-1)cursor++;paint();};
+  const chronology=element('details');chronology.append(element('summary','Cronologia completa do recorte'));
+  entries.forEach(({row,time},i)=>{const button=element('button',`${i+1} · ${new Date(time).toISOString()} · ${summary(row.source ?? row.datasource_id ?? row.agent_id)} · ${row.kind ?? row.category ?? 'Registro'}`);button.onclick=()=>{cursor=i;paint();};chronology.append(button);});
+  p.append(controls,evidence,chronology,historical);parent.append(p);paint();
+}
+// Calendar and A/B selection describe only this response, never the whole log.
+function timeline(parent, original) {
+  const entries = original.map(row => {
+    const raw = row.timestamp ?? row.observed_at ?? row.created_at ?? row.time ?? row.ts;
+    const time = typeof raw === 'string' ? Date.parse(raw) : (Number.isSafeInteger(raw) && raw > 0 && raw <= 8640000000000000 ? raw : NaN);
+    return {row, time};
+  }).filter(e => Number.isFinite(e.time)).sort((a,b) => a.time-b.time);
+  if (!entries.length) { table(parent, original); return; }
+  const box = panel('Linha do tempo · janela A → B');
+  box.append(element('p', 'Recorte local da resposta carregada, não um replay nem uma verificação de integridade. Calendário em UTC; registros sem data válida ficam fora do gráfico.', 'muted'));
+  const readout = element('p', '', 'timeline-readout');
+  const calendar = element('div', null, 'timeline-calendar');
+  const chart = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  chart.setAttribute('viewBox', '0 0 1000 220'); chart.setAttribute('class', 'timeline-chart');
+  chart.setAttribute('role', 'img'); chart.setAttribute('aria-label', 'Eventos acumulados na resposta e limites A e B');
+  function svg(tag, attrs) { const node = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const [k,v] of Object.entries(attrs)) node.setAttribute(k, String(v)); chart.append(node); return node; }
+  const x = i => 25 + i * 950 / Math.max(1, entries.length-1);
+  svg('polyline', {points: entries.map((_,i) => `${x(i)},${195-(i+1)*170/entries.length}`).join(' '), class:'timeline-line'});
+  const shade = svg('rect', {y:20,height:175,class:'timeline-window'});
+  const markA = svg('line', {y1:15,y2:200,class:'timeline-marker timeline-a'});
+  const markB = svg('line', {y1:15,y2:200,class:'timeline-marker timeline-b'});
+  const controls = element('div', null, 'timeline-controls');
+  function slider(name, value) { const label = element('label', name), input = element('input'); input.type='range'; input.min='0'; input.max=String(entries.length-1); input.step='1'; input.value=String(value); input.disabled=entries.length===1; input.setAttribute('aria-label', name); label.append(input); controls.append(label); return input; }
+  const a=slider('A · Início',0), b=slider('B · Fim',entries.length-1);
+  const reset=element('button','Todo o intervalo'); controls.append(reset);
+  const results=element('div');
+  const days=new Map();
+  entries.forEach((entry,i) => { const key=new Date(entry.time).toISOString().slice(0,10); if(!days.has(key)) days.set(key,[]); days.get(key).push(i); });
+  // Bounded calendar: most recent 371 UTC days, with real dates rather than a fixed year.
+  const last=Math.floor(entries.at(-1).time/86400000)*86400000;
+  const first=Math.max(Math.floor(entries[0].time/86400000)*86400000,last-370*86400000);
+  const cells=[];
+  for(let day=first;day<=last;day+=86400000) {
+    const key=new Date(day).toISOString().slice(0,10), indices=days.get(key)||[];
+    const cell=element('button','',`timeline-day level-${Math.min(4,indices.length)}`);
+    cell.title=`${key} · ${indices.length} eventos na resposta`;
+    cell.setAttribute('aria-label',cell.title); cell.disabled=!indices.length;
+    cell.onclick=()=>{a.value=String(indices[0]);b.value=String(indices.at(-1));paint();};
+    calendar.append(cell); cells.push({cell,indices});
+  }
+  function paint(changed) {
+    let start=Number(a.value),end=Number(b.value);
+    if(start>end) { if(changed===a) end=start; else start=end; }
+    a.value=String(start); b.value=String(end);
+    readout.textContent=`A: ${new Date(entries[start].time).toISOString()} → B: ${new Date(entries[end].time).toISOString()} · ${end-start+1}/${entries.length} eventos com data · ${original.length-entries.length} sem data válida`;
+    for(const [mark,i] of [[markA,start],[markB,end]]) { mark.setAttribute('x1',x(i));mark.setAttribute('x2',x(i)); }
+    shade.setAttribute('x',x(start));shade.setAttribute('width',Math.max(2,x(end)-x(start)));
+    cells.forEach(({cell,indices})=>cell.classList.toggle('selected',indices.some(i=>i>=start&&i<=end)));
+    results.replaceChildren();investigation(results,entries.slice(start,end+1));table(results,entries.slice(start,end+1).map(e=>e.row));
+  }
+  a.oninput=()=>paint(a);b.oninput=()=>paint(b);
+  reset.onclick=()=>{a.value='0';b.value=String(entries.length-1);paint();};
+  box.append(readout,calendar,element('p','Calendário: últimos 371 dias disponíveis · menos → mais eventos', 'muted'),chart,controls,results);
+  parent.append(box);paint();
+  const undated=original.filter(row=>!entries.some(e=>e.row===row));
+  if(undated.length) { const details=element('details');details.append(element('summary',`${undated.length} registros sem data reconhecida`));table(details,undated);parent.append(details); }
+}
 function render() {
   const view = $('#view'); view.replaceChildren();
   if (data == null) return empty(view, 'Aguardando consulta', 'Conecte-se e atualize para consultar dados reais.');
@@ -99,7 +203,7 @@ function render() {
   } else {
     const p = panel(pages[active][0]);
     if (active === 'storage') p.append(element('pre', JSON.stringify(data, null, 2)));
-    else { const rows = rowsOf(data); table(p, rows); if (!rows.length && Object.keys(data).length) { const details = element('details'), s = element('summary', 'Ver resposta e metadados da API'); details.append(s, element('pre', JSON.stringify(data, null, 2))); p.append(details); } }
+    else { const rows = rowsOf(data); if (['events','incidents','actions'].includes(active)) timeline(p, rows); else table(p, rows); if (!rows.length && Object.keys(data).length) { const details = element('details'), s = element('summary', 'Ver resposta e metadados da API'); details.append(s, element('pre', JSON.stringify(data, null, 2))); p.append(details); } }
     view.append(p);
     if (active === 'actions') view.append(element('p', 'Consulta de propostas, aprovações e resultados. Aprovar ou executar ações externas não está habilitado neste painel.', 'notice'));
   }

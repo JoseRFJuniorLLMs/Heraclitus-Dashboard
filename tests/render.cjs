@@ -13,7 +13,7 @@ class E {
   set innerHTML(_) { throw new Error('Unsafe innerHTML'); }
 }
 const nodes = new Map();
-const document = {querySelector(s){if(!nodes.has(s))nodes.set(s,new E());return nodes.get(s);},createElement(t){return new E(t);},querySelectorAll(){return [];}};
+const document = {querySelector(s){if(!nodes.has(s))nodes.set(s,new E());return nodes.get(s);},createElement(t){return new E(t);},createElementNS(ns,t){return new E(t);},querySelectorAll(){return [];}};
 const context = vm.createContext({document,location:{hash:''},window:{addEventListener(){}},setInterval(){},setTimeout(){},URLSearchParams,TextEncoder,performance,console});
 vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../js/soc.js'),'utf8') + '\nthis.test={rowsOf,table,element,render,setPage:(page,value)=>{active=page;data=value;}};', context);
 const t=context.test;
@@ -33,3 +33,14 @@ assert(flat(document.querySelector('#view')).some(e=>e.textContent==='Banco novo
 t.setPage('events',null);t.render();
 assert(flat(document.querySelector('#view')).some(e=>e.textContent==='Aguardando consulta'));
 console.log('7 DOM contracts passed: shapes, empty/error states, filtering and escaped untrusted data');
+document.querySelector('#search').value='';
+t.setPage('events',{events:[{id:'a',observed_at:1700000000000},{id:'b',observed_at:1700086400000},{id:'undated'}]});t.render();
+const timelineNodes=flat(document.querySelector('#view'));
+const sliders=timelineNodes.filter(e=>e.type==='range');
+assert.equal(sliders.length,2);
+sliders[0].value='1';sliders[0].oninput();
+assert.equal(sliders[1].value,'1');
+sliders[1].value='0';sliders[1].oninput();
+assert.equal(sliders[0].value,'0');
+assert(timelineNodes.some(e=>e.textContent==='1 registros sem data reconhecida'));
+console.log('Timeline contracts passed: numeric source dates, A/B crossing, undated evidence retained');
