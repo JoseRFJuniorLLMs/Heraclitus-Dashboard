@@ -33,14 +33,14 @@ export const Falha = {
 
 export const API = {
   base() {
-    const salvo = localStorage.getItem('hera_api');
-    if (salvo) {
-      if (typeof window !== 'undefined' && window.location.port === '9337' && salvo.includes(':7475')) {
-        return window.location.origin + '/api';
+    if (typeof window !== 'undefined' && window.location.port === '9337') {
+      const salvo = localStorage.getItem('hera_api');
+      if (salvo && (salvo.includes('7475') || salvo === 'http://127.0.0.1:7475' || salvo === 'http://localhost:7475')) {
+        localStorage.removeItem('hera_api');
       }
-      return salvo.replace(/\/+$/, '');
+      return (localStorage.getItem('hera_api') || (window.location.origin + '/api')).replace(/\/+$/, '');
     }
-    return PADRAO;
+    return (localStorage.getItem('hera_api') || PADRAO).replace(/\/+$/, '');
   },
   /**
    * Devolve `{ok}` ou `{erro}`. Valida em vez de aceitar tudo.
