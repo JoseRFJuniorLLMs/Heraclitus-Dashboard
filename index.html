@@ -1,21 +1,51 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Heraclitus Forensic Layer</title>
+  <title>Heraclitus • Temporal Reconstruction Workbench</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+  <div role="status" style="padding:14px;background:#503b12;color:#fff;border-bottom:2px solid #ffcf66;font-weight:600">
+    WORKBENCH EXPERIMENTAL — as telas temporais usam dados, hashes e verificações simulados.
+    Não são evidências do banco conectado nem certificação de integridade. Não usar estes resultados em decisões operacionais.
+  </div>
 
+  <!-- BARRA DE GOVERNO & BRANDING -->
   <div id="govbar-container"></div>
   <div id="header-container"></div>
 
+  <!-- BARRA TEMPORAL GLOBAL PERSISTENTE -->
+  <div id="temporal-spine-container"></div>
+
+  <!-- CONTEÚDO PRINCIPAL (NAV LATERAL + VISTAS REGIONAIS) -->
   <div class="wrap">
     <nav id="nav"></nav>
     <main id="main-content"></main>
   </div>
 
+  <!-- COMMAND PALETTE (CTRL+K) -->
+  <div id="command-palette-container"></div>
+
+  <!-- DIÁLOGO DE AUTENTICAÇÃO LOCAL -->
+  <dialog id="login">
+    <form id="login-form">
+      <span class="eyebrow">ACESSO AUTENTICADO LOOPBACK</span>
+      <h2>Conectar ao HeraclitusDB REST</h2>
+      <p>Insira as credenciais configuradas na instância HeraclitusDB (porta 7475). A credencial é mantida temporariamente em memória.</p>
+      <label>Usuário
+        <input id="username" value="admin" autocomplete="username" required>
+      </label>
+      <label>Senha
+        <input id="password" type="password" autocomplete="current-password" required>
+      </label>
+      <p id="login-error" role="alert"></p>
+      <button class="primary" type="submit">Conectar à Instância ➔</button>
+    </form>
+  </dialog>
+
+  <!-- SCRIPT PRINCIPAL MODULAR TS/JS -->
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

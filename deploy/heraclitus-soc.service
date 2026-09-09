@@ -1,0 +1,21 @@
+[Unit]
+Description=Heraclitus SOC dashboard (loopback read-only)
+After=network.target heraclitus-dev.service
+
+[Service]
+Type=simple
+User=junior
+Group=junior
+WorkingDirectory=/home/junior/heraclitus-soc
+ExecStart=/usr/bin/python3 /home/junior/heraclitus-soc/server.py
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+UMask=0077
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

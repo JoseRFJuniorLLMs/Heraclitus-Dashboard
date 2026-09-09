@@ -1,26 +1,31 @@
 export const Navigation = {
   render() {
     return `
-      <div class="grp">Operação</div>
-      <a data-s="soc" class="active"><span class="ic">◉</span> Central de Comando (SOC)</a>
-      <a data-s="exec"><span class="ic">▤</span> Painel Executivo</a>
-      <a data-s="fontes"><span class="ic">◇</span> Fontes de ingestão</a>
-      <div class="grp">Investigação</div>
-      <a data-s="time"><span class="ic">⏱</span> Linha do Tempo Forense</a>
-      <a data-s="replay"><span class="ic">▶</span> Replay de Ataque</a>
-      <a data-s="diff"><span class="ic">⇄</span> Comparar dois momentos</a>
-      <a data-s="graph"><span class="ic">⬡</span> Grafo de Ataques</a>
-      <a data-s="why"><span class="ic">⌖</span> Investigação Causal (WHY)</a>
-      <div class="grp">Evidências</div>
+      <div class="grp">▣ Temporal Explorer</div>
+      <a data-s="timeline" class="active"><span class="ic">⏱</span> Timeline & History River</a>
+      <a data-s="state"><span class="ic">⚡</span> State Explorer (AS OF)</a>
+      <a data-s="diff"><span class="ic">⇄</span> Compare A ↔ B</a>
+
+      <div class="grp">◎ Investigation</div>
+      <a data-s="graph"><span class="ic">⬡</span> Provenance Explorer</a>
+      <a data-s="waterfall"><span class="ic">🌊</span> Causal Waterfall</a>
       <a data-s="custody"><span class="ic">🛡</span> Cadeia de Custódia</a>
-      <a data-s="merkle"><span class="ic">▦</span> Visualizador Merkle</a>
-      <div class="grp">Governança</div>
-      <a data-s="auditor"><span class="ic">⚖</span> Painel do Auditor</a>
-      <a data-s="titular"><span class="ic">👤</span> Titular dos dados (LGPD)</a>
-      <a data-s="atributos"><span class="ic">▩</span> Mapa de dados (art. 37)</a>
-      <a data-s="comp"><span class="ic">✓</span> Conformidade</a>
-      <div class="grp">Inteligência</div>
-      <a data-s="ia"><span class="ic">✦</span> IA Forense</a>
+
+      <div class="grp">▶ Reconstruction</div>
+      <a data-s="replay"><span class="ic">▶</span> Replay Lab & Determinismo</a>
+
+      <div class="grp">◆ Evidence & Integrity</div>
+      <a data-s="merkle"><span class="ic">▦</span> Integrity & Merkle Proofs</a>
+
+      <div class="grp">◇ Data & Engine</div>
+      <a data-s="watermarks-view"><span class="ic">🌊</span> View Lag Watermarks</a>
+      <a data-s="fontes"><span class="ic">◇</span> Sources & Gap Health</a>
+
+      <div class="grp">⚡ Sentinel Lens</div>
+      <a data-s="soc"><span class="ic">◉</span> Live Incident Lens</a>
+
+      <div class="grp">⚙ System</div>
+      <a data-s="exec"><span class="ic">▤</span> System Health & Stats</a>
     `;
   },
   init() {
@@ -28,8 +33,9 @@ export const Navigation = {
       a.onclick = () => {
         $$('#nav a').forEach(x => x.classList.remove('active'));
         a.classList.add('active');
-        $$('section').forEach(s => s.classList.remove('on'));
-        $('#' + a.dataset.s).classList.add('on');
+        $$('.view-section').forEach(s => s.classList.remove('on'));
+        const target = $('#' + a.dataset.s);
+        if (target) target.classList.add('on');
       };
     });
   }

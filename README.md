@@ -1,4 +1,93 @@
-# Heraclitus Forensic Layer — dashboard (DSgov)
+# Heraclitus SOC — WSL development
+
+## Código atual e deploy
+
+O `index.html` atual carrega o novo **Temporal Reconstruction Workbench**
+(`js/app.js`). As novas áreas temporais usam `GOLDEN_DEMO`, incluindo eventos,
+hashes e resultados de verificação simulados; o aviso no topo é obrigatório.
+Essas telas não estão qualificadas como SOC de produção com evidências reais.
+O cliente `js/soc.js` da versão anterior permanece preservado neste commit.
+Não confundir os testes DOM desse cliente com qualificação de todas as novas telas.
+
+O servidor só publica HTML de entrada e assets CSS/JS. Arquivos internos,
+metadados Git e ambientes virtuais são bloqueados. Execute os testes:
+
+```bash
+python3 tests/test_server.py
+node tests/render.cjs
+```
+
+A seção abaixo registra a implantação SOC anterior; a substituição pela nova
+tela temporal requer escolher explicitamente entre demonstração e SOC real.
+
+## Versão operacional de setembro de 2026
+
+O entrypoint foi reconstruído: `index.html`, `css/soc.css`, `js/soc.js` e
+`server.py`. As telas antigas continuam no repositório para referência, mas
+**não são servidas nem importadas**. Não executar `main.py`: é o gerador legado.
+
+Execute `python3 server.py` e abra **http://127.0.0.1:9337**. Python 3.10+
+e um HeraclitusDB REST autenticado em `127.0.0.1:7475` são necessários.
+Nenhuma dependência pip/npm, CDN ou serviço externo é usado pelo painel.
+
+### Recursos implementados
+
+- Visão operacional: head, ingestão observada, memtable e índices.
+- Postura SOC: incidentes ativos/críticos e estado real do Sentinel.
+- Eventos de segurança, incidentes, ações/aprovações, sensores e fontes.
+- Casos, consulta de evidências/explicação causal por incidente, estado do log.
+- Conformidade real e verificação de integridade somente sob demanda.
+- Busca local na resposta, severidade mínima e AS OF LSN onde a API suporta.
+- Limites explícitos, inspeção JSON e exportação com origem e horário.
+- Atualização da visão geral a cada 15 segundos; demais áreas sob demanda.
+- Estados distintos: aguardando, vazio, erro e indisponível. Sem dados fictícios.
+
+### Segurança e limitações
+
+Somente leitura: o proxy bloqueia operações de escrita, execução e replay.
+Autenticação Basic/Bearer é validada pelo banco, não substituída pelo painel.
+O header fica somente em memória JavaScript até sair/recarregar; não há
+localStorage, sessionStorage ou senha no código. O gerenciador de senhas do
+navegador continua sob controle do usuário. Cuidado com exportações: podem
+conter identificadores e evidências sensíveis.
+
+Proxy de origem fixa, allowlist de rotas, Host validado, CSP sem scripts inline,
+sem CORS amplo, sem logs de credenciais ou consultas. Conteúdo vindo da API é
+renderizado com textContent, nunca HTML. Respostas limitadas a 8 MiB.
+Servidor Python destina-se ao desenvolvimento local; não é um gateway de
+produção. Para acesso remoto: TLS e um reverse proxy endurecido são requisitos.
+Não existem classificação por IA, certificação jurídica, ingestão automática
+ou coletores inventados. O Sentinel observe não executa respostas autônomas.
+
+### Deploy atual WSL
+
+Distribuição: Ubuntu-24.04. Usuário: junior.
+
+```bash
+systemctl status heraclitus-dev heraclitus-soc
+sudo systemctl restart heraclitus-soc
+journalctl -u heraclitus-soc -n 40
+```
+
+Banco: `/home/junior/heraclitus-dev-rc-74f921f` (instância nova vazia,
+credencial dev definida pelo proprietário; não é padrão do produto).
+Dashboard: `/home/junior/heraclitus-soc`. Ambos enabled no systemd.
+A instalação antiga `/home/junior/heraclitus` não foi alterada nem migrada.
+Os serviços iniciam quando a distribuição WSL inicia; isso **não** instala
+uma tarefa de boot do Windows. Uma sessão WSL oculta foi mantida aberta para
+evitar suspensão ociosa nesta sessão Windows. Não use este ambiente como HA.
+
+Os testes `tests/smoke.py` recebem a credencial via stdin e verificam o deploy
+real, incluindo bloqueios de Host, leitura anônima, senha errada e escrita.
+O teste não cria dados. Não se importam dados por decisão do usuário; ao ativar
+Sentinel observe, o próprio banco pode registrar checkpoints/eventos internos.
+Isso não é carga de eventos SOC nem dado demonstrativo.
+
+---
+
+## Documentação histórica (UI anterior; não descreve o deploy atual)
+
+### Heraclitus Forensic Layer — dashboard (DSgov)
 
 Front-end da **Heraclitus Forensic Layer** no padrão visual do Governo Federal
 (DSgov): *"a primeira plataforma que transforma logs em provas jurídicas."*
