@@ -2,6 +2,7 @@ import { GovBar } from './components/GovBar.js';
 import { Header } from './components/Header.js';
 import { Navigation } from './components/Navigation.js';
 import { PlatformOverview } from './components/PlatformOverview.js';
+import { Capabilities } from './components/Capabilities.js';
 import { PublicData } from './components/PublicData.js';
 import { AgentBlackBox } from './components/AgentBlackBox.js';
 import { SOCPanel } from './components/SOCPanel.js';
@@ -33,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#nav').innerHTML = Navigation.render();
   $('#main-content').innerHTML = `
     ${PlatformOverview.render()}
+    ${Capabilities.render()}
     ${PublicData.render()}
     ${Fontes.render()}
     ${Atributos.render()}
@@ -54,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
   `;
 
   const modalContainer=document.createElement('div'); modalContainer.innerHTML=LoginModal.render(); document.body.appendChild(modalContainer);
-  Header.init(); LoginModal.init(); Navigation.init(); PlatformOverview.init(); PublicData.init();
+  Header.init(); LoginModal.init(); Navigation.init(); PlatformOverview.init(); Capabilities.init(); PublicData.init();
   Fontes.init(); Atributos.init(); TimeMachine.init(); Diff.init(); Cases.init(); AttackGraph.init(); AttackReplay.init();
   CausalInvestigation.init(); CustodyChain.init(); MerkleViewer.init(); CompliancePanel.init(); AgentBlackBox.init();
   SOCPanel.init(); ExecPanel.init(); Titular.init(); ForensicAI.init(); Modos.init();
