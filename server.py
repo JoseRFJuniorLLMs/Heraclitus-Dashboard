@@ -20,6 +20,7 @@ import re
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
+RELEASE = "2026.09.14-r3"
 MAX_RESPONSE = 8 * 1024 * 1024
 MAX_PATH = 4096
 CORE_HOST = os.getenv("HERACLITUS_REST_HOST", "127.0.0.1")
@@ -63,11 +64,17 @@ class Handler(BaseHTTPRequestHandler):
     server_version="HeraclitusDashboard/3"
     def log_message(self,*_): pass
     def _security_headers(self):
-        self.send_header("Cache-Control","no-store");self.send_header("X-Content-Type-Options","nosniff");self.send_header("X-Frame-Options","DENY");self.send_header("Referrer-Policy","no-referrer");self.send_header("Permissions-Policy","camera=(), microphone=(), geolocation=(), payment=()");self.send_header("Content-Security-Policy","default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+        self.send_header("Cache-Control","no-store")
+        self.send_header("X-Heraclitus-Dashboard-Release",RELEASE)
+        self.send_header("X-Content-Type-Options","nosniff")
+        self.send_header("X-Frame-Options","DENY")
+        self.send_header("Referrer-Policy","no-referrer")
+        self.send_header("Permissions-Policy","camera=(), microphone=(), geolocation=(), payment=()")
+        self.send_header("Content-Security-Policy","default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
     def send_body(self,status:int,body:bytes,content_type="application/json; charset=utf-8"):
         self.send_response(status);self.send_header("Content-Type",content_type);self.send_header("Content-Length",str(len(body)));self._security_headers();self.end_headers();self.wfile.write(body)
     def error(self,status:int,message:str,*,code:str|None=None):self.send_body(status,_json_bytes({"error":code or "DASHBOARD_ERROR","message":message}))
-    def do_OPTIONS(self):self.send_response(204);self.send_header("Allow","GET, OPTIONS");self.end_headers()
+    def do_OPTIONS(self):self.send_response(204);self.send_header("Allow","GET, OPTIONS");self._security_headers();self.end_headers()
     def _host_ok(self)->bool:return self.headers.get("Host","") in ALLOWED_HOSTS
     def _serve_static(self,path:str):
         rel=path.lstrip("/");file_path=ROOT/"index.html" if rel in("","index.html") else (ROOT/rel).resolve() if PUBLIC_ASSET.fullmatch(rel) else None
@@ -132,6 +139,7 @@ class Handler(BaseHTTPRequestHandler):
         if len(self.path)>MAX_PATH:return self.error(414,"Consulta demasiado longa",code="URI_TOO_LONG")
         parsed=urlsplit(self.path)
         if not _valid_query(parsed.query):return self.error(400,"Query contém caracteres não permitidos",code="BAD_QUERY")
+        if parsed.path=="/dashboard-api/status":return self.send_body(200,_json_bytes({"product":"HeraclitusDB Platform Console","release":RELEASE,"read_only":True}))
         if parsed.path=="/public-api/status":return self._public_status()
         if parsed.path.startswith("/public-api/portal/"):return self._public_portal(parsed.path.removeprefix("/public-api/portal/"),parsed.query)
         if parsed.path.startswith("/public-api/pncp/"):return self._public_pncp(parsed.path.removeprefix("/public-api/pncp/"),parsed.query)
@@ -148,5 +156,5 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):self.error(405,"Dashboard é somente leitura; mutações não são expostas",code="READ_ONLY")
 
 if __name__=="__main__":
-    print(f"HeraclitusDB Platform Dashboard em http://{DASHBOARD_BIND}:{DASHBOARD_PORT}")
+    print(f"HeraclitusDB Platform Dashboard {RELEASE} em http://{DASHBOARD_BIND}:{DASHBOARD_PORT}")
     ThreadingHTTPServer((DASHBOARD_BIND,DASHBOARD_PORT),Handler).serve_forever()
