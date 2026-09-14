@@ -1,0 +1,40 @@
+export const USE_CASES = Object.freeze([
+  {
+    id:'labra',
+    name:'LABRA-AGU',
+    subtitle:'Recuperação de ativos · sistema pericial de IA',
+    repo:'https://github.com/JoseRFJuniorLLMs/LABRA-AGU',
+    snapshot:'9b5d9bcada759e23e12c2d995be17dca6e42a8e1',
+    runtime:'http://127.0.0.1:8770',
+    runtimeLabel:'Agente investigativo original',
+    accent:'cyan',
+    capabilities:['Alertas de Fraude','Mapa de Relações','Emitir Diretriz','Heraclitus Explorer','Agente investigativo sobre o log real'],
+    sourceUi:'dashboard/src/App.jsx + serve.py',
+  },
+  {
+    id:'aeb',
+    name:'AEB-STREAM',
+    subtitle:'Operação espacial · órbita, telemetria e anomalias',
+    repo:'https://github.com/JoseRFJuniorLLMs/AEB',
+    snapshot:'b8e9de466e9071a4b1c490a4faabb249dda36e9b',
+    runtime:'http://127.0.0.1:7480',
+    runtimeLabel:'Dashboard orbital original',
+    accent:'space',
+    capabilities:['Globo 3D','Satélites brasileiros','Estações terrenas','Telemetria','Anomalias ACT-R'],
+    sourceUi:'dashboard.py',
+  },
+  {
+    id:'cgee',
+    name:'CGEE',
+    subtitle:'Integridade orçamentária · SIOP, AS OF, WHY e Merkle',
+    repo:'https://github.com/JoseRFJuniorLLMs/CGEE',
+    snapshot:'31951717036bd39d9bc898a80686f3907ffd8699',
+    runtime:'http://127.0.0.1:8000',
+    runtimeLabel:'Painel de integridade original',
+    accent:'budget',
+    capabilities:['Linha do tempo viva','Heatmap estilo GitHub','Exercícios','WHY por portaria','Verificação do log'],
+    sourceUi:'painel.html + painel_server.py',
+  },
+]);
+
+export const USE_CASE_BY_ID = new Map(USE_CASES.map(item => [item.id,item]));
