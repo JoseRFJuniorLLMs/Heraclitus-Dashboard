@@ -1,24 +1,8 @@
-export const AttackReplay = {
-  render() {
-    return `
-      <section id="replay">
-        <div class="secttl"><h2>Replay de Ataque</h2><span class="tag">reconstituição</span></div>
-        <p class="sub">Quando um incidente acontece, o sistema monta o replay automático. Cada passo tem hash, prova e cadeia causal.</p>
-        <div class="card"><h3>INC-2026-0012 · acesso indevido a banco</h3>
-          <div class="flow" id="replayflow"></div>
-        </div>
-      </section>
-    `;
-  },
-  init() {
-    const steps = [
-      {t:'02:13', n:'Login VPN', h:'b3:9f2a…'},{t:'02:14', n:'Privilégio elevado', k:'warn', h:'b3:1d04…'},
-      {t:'02:15', n:'Movimento lateral', k:'warn', h:'b3:77e1…'},{t:'02:16', n:'Banco acessado', k:'bad', h:'b3:c0de…'},
-      {t:'02:17', n:'DELETE users', k:'bad', h:'b3:9911…'},{t:'02:18', n:'Exfiltração 3GB', k:'bad', h:'b3:beef…'}
-    ];
-    $('#replayflow').innerHTML = steps.map((s, i) => `
-      <div class="step ${s.k || ''}"><div class="t">${s.t || ''}</div><div class="n">${s.n}</div>${s.h ? `<div class="t mono">${s.h}</div>` : ''}</div>
-      ${i < steps.length - 1 ? '<div class="arrow">→</div>' : ''}
-    `).join('');
-  }
+import { API, explicarFalha } from '../api.js';
+const esc=s=>String(s??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export const AttackReplay={
+ render(){return `<section id="replay"><div class="secttl"><h2>Reconstituição de incidente</h2><span class="tag">evidência Sentinel</span></div><p class="sub">Substitui o incidente demonstrativo hardcoded da versão anterior. Se não há incidente real, a tela fica vazia.</p><div class="card"><label>Incidente<select id="rp-id"><option value="">carregar…</option></select></label><div class="acao"><button class="btn" id="rp-run">Abrir evidências</button></div><div id="rp-out" class="vazio-block">Nenhum incidente selecionado.</div></div></section>`},
+ init(){document.getElementById('rp-run').onclick=()=>this.run();this.list();},
+ async list(){const r=await API.get('/sentinel/incidents?limit=100',{ms:15000}),s=document.getElementById('rp-id');if(!r.ok){s.innerHTML='<option value="">indisponível</option>';return;}const rows=r.dados.incidents||r.dados.items||[];s.innerHTML='<option value="">selecione</option>'+rows.map(x=>`<option value="${esc(x.incident_id||x.id)}">${esc(x.incident_id||x.id)} · ${esc(x.state||x.severity)}</option>`).join('');},
+ async run(){const id=document.getElementById('rp-id').value,out=document.getElementById('rp-out');if(!id){out.textContent='Selecione um incidente real.';return;}out.textContent='Consultando…';const r=await API.get(`/sentinel/incidents/${encodeURIComponent(id)}/evidence`,{ms:20000});if(!r.ok){out.textContent=explicarFalha(r.falha,r.estado).longo;return;}const rows=r.dados.evidence||r.dados.events||r.dados.items||[];if(!Array.isArray(rows)||!rows.length){const p=document.createElement('pre');p.textContent=JSON.stringify(r.dados,null,2);out.replaceChildren(p);return;}const ol=document.createElement('ol');ol.className='evidence-list';for(const x of rows){const li=document.createElement('li');const d=document.createElement('details');const s=document.createElement('summary');s.textContent=`${x.kind||x.type||'evidência'} · LSN ${x.lsn??x.integrity?.lsn??'—'}`;const p=document.createElement('pre');p.textContent=JSON.stringify(x,null,2);d.append(s,p);li.append(d);ol.append(li);}out.replaceChildren(ol);}
 };

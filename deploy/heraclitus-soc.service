@@ -1,5 +1,5 @@
 [Unit]
-Description=Heraclitus SOC dashboard (loopback read-only)
+Description=HeraclitusDB Platform Dashboard (loopback read-only)
 After=network.target heraclitus-dev.service
 
 [Service]
@@ -7,6 +7,7 @@ Type=simple
 User=junior
 Group=junior
 WorkingDirectory=/home/junior/heraclitus-soc
+EnvironmentFile=-/home/junior/heraclitus-soc/.env
 ExecStart=/usr/bin/python3 /home/junior/heraclitus-soc/server.py
 Restart=on-failure
 RestartSec=3

@@ -1,23 +1,8 @@
-export const CausalInvestigation = {
-  render() {
-    return `
-      <section id="why">
-        <div class="secttl"><h2>Investigação Causal</h2><span class="tag">WHY()</span></div>
-        <p class="sub">Um clique substitui o cruzamento manual de logs: o sistema renderiza a cadeia de causalidade mínima do incidente.</p>
-        <div class="card">
-          <button class="btn" id="runWhyBtn">⌖ Encontrar causa raiz</button>
-          <div class="flow" id="whyflow" style="margin-top:16px"></div>
-        </div>
-      </section>
-    `;
-  },
-  init() {
-    const whySteps = [{n:'Servidor caiu',k:'bad'},{n:'Banco indisponível',k:'bad'},{n:'Consulta lenta',k:'warn'},{n:'Índice removido',k:'warn'},{n:'Administrador X'},{n:'VPN'},{n:'IP 187.* '},{n:'País: —'}];
-    $('#runWhyBtn').onclick = () => {
-      $('#whyflow').innerHTML = whySteps.map((s, i) => `
-        <div class="step ${s.k || ''}"><div class="n">${s.n}</div></div>
-        ${i < whySteps.length - 1 ? '<div class="arrow">→</div>' : ''}
-      `).join('');
-    };
-  }
+import { API, explicarFalha } from '../api.js';
+const esc=s=>String(s??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export const CausalInvestigation={
+ render(){return `<section id="why"><div class="secttl"><h2>Investigação causal</h2><span class="tag">Sentinel WHY</span></div><p class="sub">A cadeia só é mostrada quando o Sentinel a devolve. A interface não inventa “causa raiz”.</p><div class="card"><div class="query-grid"><label>Incidente<select id="why-id"><option value="">carregar incidentes…</option></select></label></div><div class="acao"><button class="btn" id="why-run">Consultar WHY</button></div><div id="why-out" class="vazio-block">Nenhuma consulta.</div></div></section>`},
+ init(){document.getElementById('why-run').onclick=()=>this.run();this.incidents();},
+ async incidents(){const q=await API.get('/sentinel/incidents?limit=100',{ms:15000}),s=document.getElementById('why-id');if(!q.ok){s.innerHTML='<option value="">indisponível</option>';return;}const rows=q.dados.incidents||q.dados.items||[];s.innerHTML='<option value="">selecione</option>'+rows.map(r=>`<option value="${esc(r.incident_id||r.id)}">${esc(r.incident_id||r.id)} · ${esc(r.title||r.state||r.severity)}</option>`).join('');},
+ async run(){const id=document.getElementById('why-id').value,out=document.getElementById('why-out');if(!id){out.textContent='Selecione um incidente real.';return;}out.textContent='Consultando…';const r=await API.get(`/sentinel/incidents/${encodeURIComponent(id)}/why`,{ms:20000});if(!r.ok){const e=explicarFalha(r.falha,r.estado);out.textContent=e.longo;return;}const p=document.createElement('pre');p.className='json-view';p.textContent=JSON.stringify(r.dados,null,2);out.replaceChildren(p);}
 };
