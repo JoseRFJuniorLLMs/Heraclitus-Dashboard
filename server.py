@@ -6,12 +6,13 @@ Read-only surfaces:
 * /public-api/*  -> tightly allow-listed Brazilian government open-data APIs
 
 The process defaults to loopback, never proxies arbitrary hosts/paths, and keeps
-public-source credentials server-side.
+server-side credentials outside browser JavaScript.
 """
 from __future__ import annotations
 
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import base64
 import http.client
 import json
 import mimetypes
@@ -20,11 +21,13 @@ import re
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
-RELEASE = "2026.09.14-r4"
+RELEASE = "2026.09.14-r5"
 MAX_RESPONSE = 8 * 1024 * 1024
 MAX_PATH = 4096
 CORE_HOST = os.getenv("HERACLITUS_REST_HOST", "127.0.0.1")
 CORE_PORT = int(os.getenv("HERACLITUS_REST_PORT", "7475"))
+CORE_USERNAME = os.getenv("HERACLITUS_REST_USERNAME", "").strip()
+CORE_PASSWORD = os.getenv("HERACLITUS_REST_PASSWORD", "")
 AGENT_HOST = os.getenv("HERACLITUS_AGENT_HOST", "127.0.0.1")
 AGENT_PORT = int(os.getenv("HERACLITUS_AGENT_PORT", "8080"))
 DASHBOARD_BIND = os.getenv("HERACLITUS_DASHBOARD_BIND", "127.0.0.1")
@@ -32,6 +35,15 @@ DASHBOARD_PORT = int(os.getenv("HERACLITUS_DASHBOARD_PORT", "9337"))
 PORTAL_API_KEY = os.getenv("PORTAL_TRANSPARENCIA_API_KEY", "").strip()
 _default_hosts = f"localhost:{DASHBOARD_PORT},127.0.0.1:{DASHBOARD_PORT},[::1]:{DASHBOARD_PORT}"
 ALLOWED_HOSTS = {h.strip() for h in os.getenv("HERACLITUS_DASHBOARD_ALLOWED_HOSTS", _default_hosts).split(",") if h.strip()}
+
+if bool(CORE_USERNAME) != bool(CORE_PASSWORD):
+    raise RuntimeError("Configure HERACLITUS_REST_USERNAME e HERACLITUS_REST_PASSWORD juntos")
+if ":" in CORE_USERNAME:
+    raise RuntimeError("HERACLITUS_REST_USERNAME não pode conter ':' em autenticação Basic")
+CORE_AUTH_HEADER = None
+if CORE_USERNAME and CORE_PASSWORD:
+    token = base64.b64encode(f"{CORE_USERNAME}:{CORE_PASSWORD}".encode("utf-8")).decode("ascii")
+    CORE_AUTH_HEADER = f"Basic {token}"
 
 CORE_READ_ROUTES = re.compile(
     r"^/(?:"
@@ -61,7 +73,7 @@ def _json_bytes(value)->bytes:return json.dumps(value,ensure_ascii=False,separat
 def _valid_query(query:str)->bool:return len(query)<=MAX_PATH and (not query or bool(SAFE_QUERY.fullmatch(query)))
 
 class Handler(BaseHTTPRequestHandler):
-    server_version="HeraclitusDashboard/4"
+    server_version="HeraclitusDashboard/5"
     def log_message(self,*_): pass
     def _security_headers(self):
         self.send_header("Cache-Control","no-store")
@@ -81,14 +93,20 @@ class Handler(BaseHTTPRequestHandler):
         if file_path is None or (file_path!=ROOT/"index.html" and ROOT not in file_path.parents) or not file_path.is_file():return self.error(404,"Recurso indisponível")
         mime,_=mimetypes.guess_type(str(file_path));mime="application/javascript; charset=utf-8" if file_path.suffix==".js" else "text/css; charset=utf-8" if file_path.suffix==".css" else "text/html; charset=utf-8" if file_path.suffix==".html" else mime
         return self.send_body(200,file_path.read_bytes(),mime or "application/octet-stream")
-    def _auth_headers(self,require_auth=False):
+    def _auth_headers(self,require_auth=False,*,core_fallback=False):
+        # Explicit browser credentials take precedence. For Core only, a local
+        # server-side Basic credential can be supplied through .env so the WSL
+        # console starts already authenticated. This fallback is NEVER used for
+        # Agent or public-data upstreams.
         auth=self.headers.get("Authorization","")
+        if not auth and core_fallback and CORE_AUTH_HEADER:
+            auth=CORE_AUTH_HEADER
         if require_auth and (not auth.startswith(("Basic ","Bearer ")) or len(auth)>8192):return None
-        headers={"Accept":"application/json","User-Agent":"Heraclitus-Dashboard/4"}
+        headers={"Accept":"application/json","User-Agent":"Heraclitus-Dashboard/5"}
         if auth and len(auth)<=8192:headers["Authorization"]=auth
         return headers
-    def _proxy(self,host:str,port:int,target:str,*,https=False,require_auth=False,extra_headers=None,timeout=15):
-        headers=self._auth_headers(require_auth)
+    def _proxy(self,host:str,port:int,target:str,*,https=False,require_auth=False,core_fallback=False,extra_headers=None,timeout=15):
+        headers=self._auth_headers(require_auth,core_fallback=core_fallback)
         if headers is None:return self.error(401,"Autenticação HeraclitusDB necessária",code="AUTH_REQUIRED")
         if extra_headers:headers.update(extra_headers)
         connection=(http.client.HTTPSConnection if https else http.client.HTTPConnection)(host,port,timeout=timeout)
@@ -98,8 +116,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_body(response.status,body,response.getheader("Content-Type","application/json; charset=utf-8"))
         except (OSError,http.client.HTTPException,TimeoutError):return self.error(502,"Fonte de dados indisponível ou timeout",code="UPSTREAM_UNAVAILABLE")
         finally:connection.close()
-    def _proxy_sse(self,host:str,port:int,target:str,*,require_auth=True,timeout=75):
-        headers=self._auth_headers(require_auth)
+    def _proxy_sse(self,host:str,port:int,target:str,*,require_auth=True,core_fallback=False,timeout=75):
+        headers=self._auth_headers(require_auth,core_fallback=core_fallback)
         if headers is None:return self.error(401,"Autenticação HeraclitusDB necessária",code="AUTH_REQUIRED")
         headers["Accept"]="text/event-stream"
         connection=http.client.HTTPConnection(host,port,timeout=timeout)
@@ -139,7 +157,7 @@ class Handler(BaseHTTPRequestHandler):
         if len(self.path)>MAX_PATH:return self.error(414,"Consulta demasiado longa",code="URI_TOO_LONG")
         parsed=urlsplit(self.path)
         if not _valid_query(parsed.query):return self.error(400,"Query contém caracteres não permitidos",code="BAD_QUERY")
-        if parsed.path=="/dashboard-api/status":return self.send_body(200,_json_bytes({"product":"HeraclitusDB Platform Console","release":RELEASE,"read_only":True}))
+        if parsed.path=="/dashboard-api/status":return self.send_body(200,_json_bytes({"product":"HeraclitusDB Platform Console","release":RELEASE,"read_only":True,"core_auth_mode":"server_env" if CORE_AUTH_HEADER else "browser_memory"}))
         if parsed.path=="/public-api/status":return self._public_status()
         if parsed.path.startswith("/public-api/portal/"):return self._public_portal(parsed.path.removeprefix("/public-api/portal/"),parsed.query)
         if parsed.path.startswith("/public-api/pncp/"):return self._public_pncp(parsed.path.removeprefix("/public-api/pncp/"),parsed.query)
@@ -150,11 +168,12 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path.startswith("/api/"):
             route=parsed.path.removeprefix("/api")
             if not CORE_READ_ROUTES.fullmatch(route):return self.error(403,"Rota Core fora do escopo somente-leitura",code="ROUTE_DENIED")
-            if route=="/live/events":return self._proxy_sse(CORE_HOST,CORE_PORT,route+(f"?{parsed.query}" if parsed.query else ""))
-            return self._proxy(CORE_HOST,CORE_PORT,route+(f"?{parsed.query}" if parsed.query else ""),require_auth=(route!="/healthz"),timeout=65 if route.startswith("/verify") else 20)
+            if route=="/live/events":return self._proxy_sse(CORE_HOST,CORE_PORT,route+(f"?{parsed.query}" if parsed.query else ""),core_fallback=True)
+            return self._proxy(CORE_HOST,CORE_PORT,route+(f"?{parsed.query}" if parsed.query else ""),require_auth=(route!="/healthz"),core_fallback=True,timeout=65 if route.startswith("/verify") else 20)
         return self._serve_static(parsed.path)
     def do_POST(self):self.error(405,"Dashboard é somente leitura; mutações não são expostas",code="READ_ONLY")
 
 if __name__=="__main__":
-    print(f"HeraclitusDB Platform Dashboard {RELEASE} em http://{DASHBOARD_BIND}:{DASHBOARD_PORT}")
+    auth_mode="server-env" if CORE_AUTH_HEADER else "browser"
+    print(f"HeraclitusDB Platform Dashboard {RELEASE} em http://{DASHBOARD_BIND}:{DASHBOARD_PORT} · core-auth={auth_mode}")
     ThreadingHTTPServer((DASHBOARD_BIND,DASHBOARD_PORT),Handler).serve_forever()
