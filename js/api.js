@@ -101,7 +101,7 @@ export const API = {
   definirCredenciais(v) { authMemory = v || null; },
   cabecalhos: authHeaders,
   get(caminho, opts) { return request(this.base(), caminho, opts); },
-  agentGet(caminho, opts) { return request(this.agentBase(), caminho, opts); },
+  agentGet(caminho, opts) { return request(this.agentBase(), caminho, { ...(opts || {}), auth: false }); },
   publicGet(caminho, opts) { return request(this.publicBase(), caminho, { ...(opts || {}), auth: false }); },
   stats() { return this.get('/stats'); },
   state() { return this.get('/state'); },
