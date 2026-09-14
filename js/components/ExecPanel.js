@@ -69,8 +69,8 @@ export const ExecPanel = {
             <span>
               <strong>Não verificado nesta sessão.</strong>
               A cadeia Merkle só pode ser declarada íntegra depois de
-              <code>db.verify()</code> correr de facto. Use “Verificar agora” na
-              Central de Comando; o resultado aparece aqui, com a hora.
+              <code>db.verify()</code> correr de facto. Use “Verificar agora” em
+              Sentinel / SOC; o resultado aparece aqui, com a hora.
             </span>
           </div>
         </div>

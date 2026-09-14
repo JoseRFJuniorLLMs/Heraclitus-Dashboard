@@ -39,6 +39,16 @@ class ServerTests(unittest.TestCase):
     def test_host_restricted(self):
         self.assertEqual(self.request('/', host='evil.example:9337')[0], 403)
 
+    def test_dashboard_release_is_observable(self):
+        status, body, headers = self.request('/dashboard-api/status')
+        self.assertEqual(status, 200)
+        payload = json.loads(body)
+        self.assertEqual(payload['product'], 'HeraclitusDB Platform Console')
+        self.assertEqual(payload['release'], dashboard.RELEASE)
+        self.assertTrue(payload['read_only'])
+        self.assertEqual(headers['X-Heraclitus-Dashboard-Release'], dashboard.RELEASE)
+        self.assertEqual(self.request('/')[2]['X-Heraclitus-Dashboard-Release'], dashboard.RELEASE)
+
     def test_core_routes_are_read_only_and_allow_real_dashboard_contract(self):
         for path in ['/api/stats','/api/diff','/api/replay','/api/verify/12','/api/titular/test','/api/cases','/api/live/events']:
             self.assertEqual(self.request(path)[0], 401, path)
@@ -66,6 +76,7 @@ class ServerTests(unittest.TestCase):
         headers=self.request('/')[2]
         self.assertEqual(headers['X-Frame-Options'],'DENY')
         self.assertEqual(headers['X-Content-Type-Options'],'nosniff')
+        self.assertEqual(headers['X-Heraclitus-Dashboard-Release'], dashboard.RELEASE)
         self.assertNotIn("script-src 'self' 'unsafe-inline'", headers['Content-Security-Policy'])
         self.assertIn("connect-src 'self'", headers['Content-Security-Policy'])
 

@@ -1,35 +1,132 @@
+const RELEASE = '2026.09.14-r3';
+
+const GROUPS = [
+  {
+    title: 'Plataforma',
+    items: [
+      ['overview', '◆', 'Visão geral', 'motor, índices e integridade'],
+      ['capabilities', '▦', 'Capacidades & runtime', 'o que existe e o que está ativo'],
+      ['public', '▣', 'Dados públicos', 'Portal da Transparência e PNCP'],
+      ['fontes', '◇', 'Fontes & ingestão', 'origens, silêncio e retenção'],
+      ['atributos', '▤', 'Mapa de dados', 'campos e cardinalidades'],
+    ],
+  },
+  {
+    title: 'Tempo & investigação',
+    items: [
+      ['time', '◫', 'Linha do tempo', 'atividade e janelas temporais'],
+      ['diff', '⇄', 'Comparar A/B', 'mudanças entre dois estados'],
+      ['cases', '▥', 'Casos', 'investigações persistidas'],
+      ['graph', '⬡', 'Grafo & relações', 'entidades e vínculos'],
+      ['replay', '▷', 'Reconstituição', 'replay verificável'],
+      ['why', '⌖', 'WHY / causalidade', 'origem e explicação'],
+    ],
+  },
+  {
+    title: 'Evidência',
+    items: [
+      ['custody', '◇', 'Cadeia de custódia', 'proveniência ponta a ponta'],
+      ['merkle', '▦', 'Integridade Merkle', 'provas e verificação'],
+      ['comp', '✓', 'Compliance técnico', 'estado técnico comprovável'],
+    ],
+  },
+  {
+    title: 'Módulos',
+    items: [
+      ['agent', '◎', 'Agent Black Box', 'runs, tools, policy e evidência'],
+      ['soc', '◉', 'Sentinel / SOC', 'segurança como módulo'],
+      ['ia', '✦', 'Inteligência assistida', 'explicação sem inventar fatos'],
+    ],
+  },
+  {
+    title: 'Governança',
+    items: [
+      ['exec', '▤', 'Painel executivo', 'visão de decisão'],
+      ['titular', '○', 'Titular / LGPD', 'pegada e acessos'],
+      ['auditor', '⚖', 'Auditoria', 'trilha e controles'],
+    ],
+  },
+];
+
+function item([id, icon, label, hint]) {
+  return `<a data-s="${id}" role="button" tabindex="0" title="${label}">
+    <span class="ic" aria-hidden="true">${icon}</span>
+    <span class="nav-item-copy">
+      <span class="nav-label">${label}</span>
+      <small>${hint}</small>
+    </span>
+  </a>`;
+}
+
 export const Navigation = {
-  render(){return `
-    <div class="grp">Plataforma</div>
-    <a data-s="overview" class="active"><span class="ic">⌂</span> Visão geral</a>
-    <a data-s="capabilities"><span class="ic">▦</span> Capacidades & runtime</a>
-    <a data-s="public"><span class="ic">▣</span> Dados públicos</a>
-    <a data-s="fontes"><span class="ic">◇</span> Fontes & ingestão</a>
-    <a data-s="atributos"><span class="ic">▩</span> Mapa de dados</a>
-    <div class="grp">Tempo & investigação</div>
-    <a data-s="time"><span class="ic">⏱</span> Linha do tempo</a>
-    <a data-s="diff"><span class="ic">⇄</span> Comparar A/B</a>
-    <a data-s="cases"><span class="ic">▤</span> Casos</a>
-    <a data-s="graph"><span class="ic">⬡</span> Grafo & relações</a>
-    <a data-s="replay"><span class="ic">▶</span> Reconstituição</a>
-    <a data-s="why"><span class="ic">⌖</span> WHY / causalidade</a>
-    <div class="grp">Evidência</div>
-    <a data-s="custody"><span class="ic">◆</span> Cadeia de custódia</a>
-    <a data-s="merkle"><span class="ic">▦</span> Integridade Merkle</a>
-    <a data-s="comp"><span class="ic">✓</span> Compliance técnico</a>
-    <div class="grp">Módulos</div>
-    <a data-s="agent"><span class="ic">◎</span> Agent Black Box</a>
-    <a data-s="soc"><span class="ic">◉</span> Sentinel / SOC</a>
-    <a data-s="ia"><span class="ic">✦</span> Inteligência assistida</a>
-    <div class="grp">Governança</div>
-    <a data-s="exec"><span class="ic">▤</span> Painel executivo</a>
-    <a data-s="titular"><span class="ic">👤</span> Titular / LGPD</a>
-    <a data-s="auditor"><span class="ic">⚖</span> Auditoria</a>
-  `},
-  init(){
-    const go=(id)=>{const target=document.getElementById(id);if(!target)return;$$('#nav a').forEach(x=>x.classList.toggle('active',x.dataset.s===id));$$('#main-content > section').forEach(s=>s.classList.toggle('on',s.id===id));history.replaceState(null,'','#'+id);};
-    $$('#nav a').forEach(a=>a.onclick=()=>go(a.dataset.s));
-    document.addEventListener('hera:navigate',e=>go(e.detail));
-    const initial=location.hash.slice(1); if(initial&&document.getElementById(initial))go(initial); else go('overview');
-  }
+  render() {
+    return `<div class="nav-shell">
+      <div class="nav-head">
+        <div class="nav-workspace">
+          <span class="nav-workspace-mark" aria-hidden="true">H</span>
+          <span class="nav-workspace-copy">
+            <strong>Platform Console</strong>
+            <small>operações & evidência</small>
+          </span>
+        </div>
+        <button id="nav-toggle" class="nav-toggle" type="button" aria-label="Recolher navegação" aria-expanded="true" title="Recolher navegação">
+          <span aria-hidden="true">‹</span>
+        </button>
+      </div>
+      <div class="nav-scroll">
+        ${GROUPS.map(g => `<div class="nav-group"><div class="grp">${g.title}</div>${g.items.map(item).join('')}</div>`).join('')}
+      </div>
+      <div class="nav-footer">
+        <span class="nav-release-dot" aria-hidden="true"></span>
+        <span class="nav-release-copy"><strong>HeraclitusDB Dashboard</strong><small>${RELEASE}</small></span>
+      </div>
+    </div>`;
+  },
+
+  init() {
+    const links = [...document.querySelectorAll('#nav a[data-s]')];
+    const toggle = document.getElementById('nav-toggle');
+
+    const go = (id) => {
+      const target = document.getElementById(id);
+      if (!target) return;
+      links.forEach(x => {
+        const active = x.dataset.s === id;
+        x.classList.toggle('active', active);
+        if (active) x.setAttribute('aria-current', 'page');
+        else x.removeAttribute('aria-current');
+      });
+      document.querySelectorAll('#main-content > section').forEach(s => s.classList.toggle('on', s.id === id));
+      history.replaceState(null, '', '#' + id);
+      document.getElementById('main-content')?.focus?.({ preventScroll: true });
+      if (window.matchMedia('(max-width: 900px)').matches) {
+        target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }
+    };
+
+    links.forEach(a => {
+      a.onclick = () => go(a.dataset.s);
+      a.onkeydown = e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          go(a.dataset.s);
+        }
+      };
+    });
+
+    if (toggle) {
+      toggle.onclick = () => {
+        const collapsed = document.documentElement.classList.toggle('nav-collapsed');
+        toggle.setAttribute('aria-expanded', String(!collapsed));
+        toggle.setAttribute('aria-label', collapsed ? 'Expandir navegação' : 'Recolher navegação');
+        toggle.title = collapsed ? 'Expandir navegação' : 'Recolher navegação';
+        toggle.querySelector('span').textContent = collapsed ? '›' : '‹';
+      };
+    }
+
+    document.addEventListener('hera:navigate', e => go(e.detail));
+    const initial = location.hash.slice(1);
+    if (initial && document.getElementById(initial)) go(initial);
+    else go('overview');
+  },
 };
