@@ -5,6 +5,7 @@ import { PlatformOverview } from './components/PlatformOverview.js';
 import { Capabilities } from './components/Capabilities.js';
 import { PublicData } from './components/PublicData.js';
 import { AgentBlackBox } from './components/AgentBlackBox.js';
+import { LabraAguCase } from './components/LabraAguCase.js';
 import { SOCPanel } from './components/SOCPanel.js';
 import { ExecPanel } from './components/ExecPanel.js';
 import { Titular } from './components/Titular.js';
@@ -46,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ${TimeMachine.render()}
     ${Diff.render()}
     ${Cases.render()}
+    ${LabraAguCase.render()}
     ${AttackGraph.render()}
     ${AttackReplay.render()}
     ${CausalInvestigation.render()}
@@ -75,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
   TimeMachine.init();
   Diff.init();
   Cases.init();
+  LabraAguCase.init();
   AttackGraph.init();
   AttackReplay.init();
   CausalInvestigation.init();

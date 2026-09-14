@@ -8,16 +8,17 @@ const index = read('index.html');
 const nav = read('js/components/Navigation.js');
 const header = read('js/components/Header.js');
 const platform = read('css/platform.css');
+const labraCss = read('css/labra-case.css');
 const app = read('js/app.js');
 
 const cssLinks = [...index.matchAll(/<link\s+rel="stylesheet"\s+href="([^"]+)"/g)].map(m => m[1]);
-assert.deepEqual(cssLinks, ['css/styles.css', 'css/platform.css'], 'runtime must load only base components and one platform shell stylesheet');
+assert.deepEqual(cssLinks, ['css/styles.css', 'css/platform.css', 'css/labra-case.css'], 'runtime must load the base shell and isolated use-case stylesheet only');
 assert.equal(fs.existsSync(path.join(root, 'css', 'soc.css')), false, 'legacy global SOC stylesheet must stay deleted');
 
-// Information architecture: global rail + contextual pane, not a flat 20-item sidebar.
+// Information architecture: global rail + contextual pane, not a flat mega-menu.
 for (const required of [
   'const AREAS', 'nav-rail', 'nav-context', 'nav-context-links', 'command-palette',
-  'Agent Black Box', 'Sentinel / SOC', 'Capacidades & runtime', "const RELEASE = '2026.09.14-r4'"
+  'LABRA-AGU', 'Agent Black Box', 'Sentinel / SOC', 'Capacidades & runtime', "const RELEASE = '2026.09.14-r6'"
 ]) {
   assert(nav.includes(required), `navigation architecture is missing ${required}`);
 }
@@ -43,8 +44,14 @@ for (const required of [
   assert(platform.includes(required), `platform shell CSS is missing ${required}`);
 }
 
-// Mobile navigation is a drawer. The old 20-link horizontal carousel must not return.
+// LABRA owns only its case-use namespace. It may not redefine the application shell.
+assert(labraCss.includes('.labra-case .labra-hero'));
+assert(labraCss.includes('.labra-case .labra-tabs'));
+assert(labraCss.includes('.labra-case .labra-architecture'));
+assert(!/(^|})\s*(?:body|header|nav|main|aside|html|\*)\b/.test(labraCss), 'LABRA CSS leaks a global selector into the platform shell');
+
+// Mobile navigation is a drawer. The old horizontal mega-menu must not return.
 assert(platform.includes('transform:translateX(-102%)'));
 assert(platform.includes('html.nav-mobile-open #nav { transform:translateX(0); }'));
 
-console.log('UI shell contracts OK: primary rail, contextual navigation, command palette, breadcrumb, skip-link and mobile drawer.');
+console.log('UI shell contracts OK: R6 rail/context navigation, LABRA isolated case surface, command palette, breadcrumb and mobile drawer.');

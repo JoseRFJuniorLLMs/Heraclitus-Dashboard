@@ -3,6 +3,7 @@
 Read-only surfaces:
 * /api/*         -> HeraclitusDB Core REST
 * /agent-api/*   -> Agent Evidence/Black Box API
+* /labra-api/*   -> optional local LABRA-AGU use-case runtime
 * /public-api/*  -> tightly allow-listed Brazilian government open-data APIs
 
 The process defaults to loopback, never proxies arbitrary hosts/paths, and keeps
@@ -21,7 +22,7 @@ import re
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
-RELEASE = "2026.09.14-r4"
+RELEASE = "2026.09.14-r6"
 MAX_RESPONSE = 8 * 1024 * 1024
 MAX_PATH = 4096
 CORE_HOST = os.getenv("HERACLITUS_REST_HOST", "127.0.0.1")
@@ -30,6 +31,8 @@ CORE_USERNAME = os.getenv("HERACLITUS_REST_USERNAME", "").strip()
 CORE_PASSWORD = os.getenv("HERACLITUS_REST_PASSWORD", "")
 AGENT_HOST = os.getenv("HERACLITUS_AGENT_HOST", "127.0.0.1")
 AGENT_PORT = int(os.getenv("HERACLITUS_AGENT_PORT", "8080"))
+LABRA_HOST = os.getenv("LABRA_HOST", "127.0.0.1")
+LABRA_PORT = int(os.getenv("LABRA_PORT", "8770"))
 DASHBOARD_BIND = os.getenv("HERACLITUS_DASHBOARD_BIND", "127.0.0.1")
 DASHBOARD_PORT = int(os.getenv("HERACLITUS_DASHBOARD_PORT", "9337"))
 PORTAL_API_KEY = os.getenv("PORTAL_TRANSPARENCIA_API_KEY", "").strip()
@@ -59,6 +62,7 @@ AGENT_READ_ROUTES = re.compile(
     r"^/(?:metrics|api/v1/agent/(?:status|runs(?:/[A-Za-z0-9_.:-]+(?:/timeline)?)?|tool-calls|"
     r"evidence/[A-Za-z0-9_.:-]+(?:/proof)?|policies(?:/[A-Za-z0-9_.:-]+)?|approvals(?:/[A-Za-z0-9_.:-]+)?))$"
 )
+LABRA_READ_ROUTES = re.compile(r"^/(?:health|devedores)$")
 PORTAL_DATASETS = {
     "orgaos-siafi":"orgaos-siafi","contratos":"contratos","licitacoes":"licitacoes","ceis":"ceis",
     "cnep":"cnep","cepim":"cepim","emendas":"emendas","servidores":"servidores","viagens":"viagens",
@@ -73,7 +77,7 @@ def _json_bytes(value)->bytes:return json.dumps(value,ensure_ascii=False,separat
 def _valid_query(query:str)->bool:return len(query)<=MAX_PATH and (not query or bool(SAFE_QUERY.fullmatch(query)))
 
 class Handler(BaseHTTPRequestHandler):
-    server_version="HeraclitusDashboard/5"
+    server_version="HeraclitusDashboard/6"
     def log_message(self,*_): pass
     def _security_headers(self):
         self.send_header("Cache-Control","no-store")
@@ -97,16 +101,16 @@ class Handler(BaseHTTPRequestHandler):
         # Explicit browser credentials take precedence. For Core only, a local
         # server-side Basic credential can be supplied through .env so the WSL
         # console starts already authenticated. This fallback is NEVER used for
-        # Agent or public-data upstreams.
+        # Agent, LABRA or public-data upstreams.
         auth=self.headers.get("Authorization","")
         if not auth and core_fallback and CORE_AUTH_HEADER:
             auth=CORE_AUTH_HEADER
         if require_auth and (not auth.startswith(("Basic ","Bearer ")) or len(auth)>8192):return None
-        headers={"Accept":"application/json","User-Agent":"Heraclitus-Dashboard/5"}
+        headers={"Accept":"application/json","User-Agent":"Heraclitus-Dashboard/6"}
         if auth and len(auth)<=8192:headers["Authorization"]=auth
         return headers
-    def _proxy(self,host:str,port:int,target:str,*,https=False,require_auth=False,core_fallback=False,extra_headers=None,timeout=15):
-        headers=self._auth_headers(require_auth,core_fallback=core_fallback)
+    def _proxy(self,host:str,port:int,target:str,*,https=False,require_auth=False,core_fallback=False,extra_headers=None,timeout=15,forward_browser_auth=True):
+        headers=self._auth_headers(require_auth,core_fallback=core_fallback) if forward_browser_auth else {"Accept":"application/json","User-Agent":"Heraclitus-Dashboard/6"}
         if headers is None:return self.error(401,"Autenticação HeraclitusDB necessária",code="AUTH_REQUIRED")
         if extra_headers:headers.update(extra_headers)
         connection=(http.client.HTTPSConnection if https else http.client.HTTPConnection)(host,port,timeout=timeout)
@@ -147,20 +151,24 @@ class Handler(BaseHTTPRequestHandler):
         endpoint=PORTAL_DATASETS.get(dataset)
         if not endpoint:return self.error(403,"Dataset do Portal fora da allowlist",code="PUBLIC_DATASET_DENIED")
         if not PORTAL_API_KEY:return self.error(503,"Configure PORTAL_TRANSPARENCIA_API_KEY no processo do dashboard",code="PORTAL_API_KEY_MISSING")
-        return self._proxy("api.portaldatransparencia.gov.br",443,f"/api-de-dados/{endpoint}"+(f"?{query}" if query else ""),https=True,extra_headers={"chave-api-dados":PORTAL_API_KEY},timeout=30)
+        return self._proxy("api.portaldatransparencia.gov.br",443,f"/api-de-dados/{endpoint}"+(f"?{query}" if query else ""),https=True,extra_headers={"chave-api-dados":PORTAL_API_KEY},timeout=30,forward_browser_auth=False)
     def _public_pncp(self,resource,query):
         endpoint=PNCP_RESOURCES.get(resource)
         if not endpoint:return self.error(403,"Recurso PNCP fora da allowlist",code="PUBLIC_RESOURCE_DENIED")
-        return self._proxy("pncp.gov.br",443,endpoint+(f"?{query}" if query else ""),https=True,timeout=30)
+        return self._proxy("pncp.gov.br",443,endpoint+(f"?{query}" if query else ""),https=True,timeout=30,forward_browser_auth=False)
     def do_GET(self):
         if not self._host_ok():return self.error(403,"Host não autorizado",code="HOST_DENIED")
         if len(self.path)>MAX_PATH:return self.error(414,"Consulta demasiado longa",code="URI_TOO_LONG")
         parsed=urlsplit(self.path)
         if not _valid_query(parsed.query):return self.error(400,"Query contém caracteres não permitidos",code="BAD_QUERY")
-        if parsed.path=="/dashboard-api/status":return self.send_body(200,_json_bytes({"product":"HeraclitusDB Platform Console","release":RELEASE,"read_only":True,"core_auth_mode":"server_env" if CORE_AUTH_HEADER else "browser_memory"}))
+        if parsed.path=="/dashboard-api/status":return self.send_body(200,_json_bytes({"product":"HeraclitusDB Platform Console","release":RELEASE,"read_only":True,"core_auth_mode":"server_env" if CORE_AUTH_HEADER else "browser_memory","labra_runtime":{"proxy_enabled":True,"port":LABRA_PORT}}))
         if parsed.path=="/public-api/status":return self._public_status()
         if parsed.path.startswith("/public-api/portal/"):return self._public_portal(parsed.path.removeprefix("/public-api/portal/"),parsed.query)
         if parsed.path.startswith("/public-api/pncp/"):return self._public_pncp(parsed.path.removeprefix("/public-api/pncp/"),parsed.query)
+        if parsed.path.startswith("/labra-api/"):
+            route=parsed.path.removeprefix("/labra-api")
+            if not LABRA_READ_ROUTES.fullmatch(route):return self.error(403,"Rota LABRA fora do escopo somente-leitura",code="ROUTE_DENIED")
+            return self._proxy(LABRA_HOST,LABRA_PORT,route+(f"?{parsed.query}" if parsed.query else ""),timeout=20,forward_browser_auth=False)
         if parsed.path.startswith("/agent-api/"):
             route=parsed.path.removeprefix("/agent-api")
             if not AGENT_READ_ROUTES.fullmatch(route):return self.error(403,"Rota Agent fora do escopo somente-leitura",code="ROUTE_DENIED")
@@ -175,5 +183,5 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__=="__main__":
     auth_mode="server-env" if CORE_AUTH_HEADER else "browser"
-    print(f"HeraclitusDB Platform Dashboard {RELEASE} em http://{DASHBOARD_BIND}:{DASHBOARD_PORT} · core-auth={auth_mode}")
+    print(f"HeraclitusDB Platform Dashboard {RELEASE} em http://{DASHBOARD_BIND}:{DASHBOARD_PORT} · core-auth={auth_mode} · labra={LABRA_HOST}:{LABRA_PORT}")
     ThreadingHTTPServer((DASHBOARD_BIND,DASHBOARD_PORT),Handler).serve_forever()
