@@ -1,24 +1,7 @@
-export const CompliancePanel = {
-  render() {
-    return `
-      <section id="comp">
-        <div class="secttl"><h2>Conformidade</h2><span class="tag">LGPD · PPSI · ISO 27001 · NIST</span></div>
-        <p class="sub">Status de saúde jurídica para SGD/MGI, ANPD e auditoria.</p>
-        <div class="card"><div class="verify" id="verifyline"><span style="font-size:18px">✓</span> db.verify() — todos os segmentos íntegros</div>
-          <table style="margin-top:14px"><thead><tr><th>Controle</th><th>Referência</th><th>Status</th></tr></thead><tbody id="comptbl"></tbody></table>
-        </div>
-      </section>
-    `;
-  },
-  init() {
-    const rows = [
-      ['Imutabilidade do log (append-only + Merkle)', 'PPSI / ISO 27001 A.12.4', 'g'],
-      ['Carimbo de tempo legal (ICP-Brasil)', 'MP 2.200-2 / SERPRO', 'g'],
-      ['Retenção e não-repúdio', 'LGPD Art. 37 / 46', 'g'],
-      ['Trilha de auditoria verificável (db.verify)', 'NIST 800-92', 'g'],
-      ['Cadeia de custódia digital', 'CPP / perícia', 'g'],
-      ['Reconstrução AS OF (forense)', 'PAD / sindicância', 'g']
-    ];
-    $('#comptbl').innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td class="muted" style="color:#777">${r[1]}</td><td><span class="pill ${r[2]}">conforme</span></td></tr>`).join('');
-  }
+import { API, explicarFalha } from '../api.js';
+const esc=s=>String(s??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export const CompliancePanel={
+ render(){return `<section id="comp"><div class="secttl"><h2>Compliance técnico</h2><span class="tag">evidência, não certificação</span></div><p class="sub">Mostra o estado que o servidor realmente expõe. “Configurado” ou “verificado” não significa certificação legal por CGU, TCU, ANPD, ITI ou qualquer terceiro.</p><div id="co-notice" class="aviso" hidden></div><div class="card"><div class="acao"><button class="btn" id="co-load">Atualizar estado</button></div><div id="co-body" class="vazio-block">Nenhum estado consultado.</div></div></section>`},
+ init(){document.getElementById('co-load').onclick=()=>this.load();this.load();},
+ async load(){const out=document.getElementById('co-body'),n=document.getElementById('co-notice');out.textContent='Consultando…';n.hidden=true;const r=await API.get('/compliance/status',{ms:20000});if(!r.ok){const e=explicarFalha(r.falha,r.estado);n.hidden=false;n.innerHTML=`<strong>Compliance indisponível.</strong> ${esc(e.longo)}`;out.textContent='Sem dados.';return;}const p=document.createElement('pre');p.className='json-view';p.textContent=JSON.stringify(r.dados,null,2);out.replaceChildren(p);}
 };
