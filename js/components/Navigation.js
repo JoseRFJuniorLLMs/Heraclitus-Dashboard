@@ -1,13 +1,10 @@
-const RELEASE = '2026.09.14-r8';
+const RELEASE = '2026.09.14-r9';
 
 const icon = body => `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${body}</svg>`;
 const ICONS = {
   home: icon('<path d="M4 10.5 12 4l8 6.5V20H5a1 1 0 0 1-1-1z"/><path d="M9 20v-6h6v6"/>'),
   data: icon('<ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>'),
   cases: icon('<path d="M4 7h6l2 2h8v10H4z"/><path d="M8 13h8M8 16h5"/>'),
-  labra: icon('<path d="M12 3 19 6v5c0 4.6-2.8 7.9-7 10-4.2-2.1-7-5.4-7-10V6z"/><path d="M8 12h8M10 9v6M14 9v6"/>'),
-  aeb: icon('<circle cx="12" cy="12" r="3"/><path d="M3 12c2.8-4.7 6-7 9-7s6.2 2.3 9 7c-2.8 4.7-6 7-9 7s-6.2-2.3-9-7z"/><path d="M5.5 5.5c4.6 1.3 8.9 5.6 13 13"/>'),
-  cgee: icon('<path d="M5 19V9M10 19V5M15 19v-7M20 19V8"/><path d="M3 19h19"/><path d="m5 6 5-3 5 5 5-4"/>'),
   investigate: icon('<circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 5 5"/><path d="M8 10.5h5M10.5 8v5"/>'),
   evidence: icon('<path d="M12 3 19 6v5c0 4.6-2.8 7.9-7 10-4.2-2.1-7-5.4-7-10V6z"/><path d="m9 12 2 2 4-5"/>'),
   agent: icon('<rect x="5" y="7" width="14" height="11" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 15h6"/>'),
@@ -19,10 +16,7 @@ const ICONS = {
 const AREAS = [
   {id:'home',label:'Início',icon:ICONS.home,defaultRoute:'overview',description:'Estado da plataforma e atalhos operacionais.',routes:[['overview','Visão geral']]},
   {id:'data',label:'Dados',icon:ICONS.data,defaultRoute:'public',description:'Fontes oficiais, ingestão e estrutura dos dados.',routes:[['public','Dados públicos'],['fontes','Fontes & ingestão'],['atributos','Mapa de dados']]},
-  {id:'cases',label:'Casos',icon:ICONS.cases,defaultRoute:'cases',description:'Investigações persistidas e seu contexto probatório.',routes:[['cases','Casos']]},
-  {id:'labra',label:'LABRA-AGU',icon:ICONS.labra,defaultRoute:'labra',description:'Recuperação de ativos e inteligência pericial sobre HeraclitusDB.',routes:[['labra','LABRA-AGU']]},
-  {id:'aeb',label:'AEB-STREAM',icon:ICONS.aeb,defaultRoute:'aeb',description:'Órbita, telemetria, custódia e anomalias espaciais.',routes:[['aeb','AEB-STREAM']]},
-  {id:'cgee',label:'CGEE',icon:ICONS.cgee,defaultRoute:'cgee',description:'Integridade orçamentária SIOP, viagem no tempo, WHY e Merkle.',routes:[['cgee','CGEE · Integridade Orçamentária']]},
+  {id:'cases',label:'Casos',icon:ICONS.cases,defaultRoute:'cases',description:'Aplicações completas construídas sobre HeraclitusDB e casos persistidos no Core.',routes:[['cases','Catálogo de casos'],['labra','LABRA-AGU'],['aeb','AEB-STREAM'],['cgee','CGEE · Integridade Orçamentária']]},
   {id:'investigate',label:'Investigar',icon:ICONS.investigate,defaultRoute:'time',description:'Tempo, diferenças, relações, replay e explicação.',routes:[['time','Linha do tempo'],['diff','Comparar A/B'],['graph','Grafo & relações'],['replay','Reconstituição'],['why','WHY / causalidade'],['ia','Inteligência assistida']]},
   {id:'evidence',label:'Evidência',icon:ICONS.evidence,defaultRoute:'custody',description:'Proveniência, integridade e conformidade verificável.',routes:[['custody','Cadeia de custódia'],['merkle','Integridade Merkle'],['comp','Compliance técnico']]},
   {id:'agent',label:'Agent Black Box',icon:ICONS.agent,defaultRoute:'agent',description:'Runs, ferramentas, policy e evidência de agentes.',routes:[['agent','Agent Black Box']]},
@@ -41,142 +35,36 @@ const railButton = area => `<button class="rail-item" type="button" data-area="$
 const contextLinks = area => area.routes.map(([id,label])=>`<a class="context-link" href="#${id}" data-s="${id}"><span>${escapeHtml(label)}</span></a>`).join('');
 
 export const Navigation = {
-  activeArea:'home',
-  activeRoute:'overview',
-
+  activeArea:'home',activeRoute:'overview',
   render(){
     const primary=AREAS.filter(area=>!['home','governance','system'].includes(area.id));
     const utility=AREAS.filter(area=>['governance','system'].includes(area.id));
-    return `<div class="app-nav">
-      <div class="nav-rail" aria-label="Áreas da plataforma">
-        <button class="rail-home" type="button" data-area="home" data-label="Início" aria-label="HeraclitusDB — início" title="HeraclitusDB — início"><span>H</span></button>
-        <div class="rail-stack rail-primary">${primary.map(railButton).join('')}</div>
-        <div class="rail-spacer"></div>
-        <div class="rail-stack rail-utility">${utility.map(railButton).join('')}</div>
-        <button id="nav-collapse" class="rail-control" type="button" aria-label="Recolher navegação contextual" title="Recolher navegação contextual"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 7-5 5 5 5"/></svg></button>
-      </div>
-      <div class="nav-context" id="nav-context">
-        <div class="nav-context-head"><span class="nav-kicker">Área</span><h2 id="nav-context-title">Início</h2><p id="nav-context-description">Estado da plataforma e atalhos operacionais.</p></div>
-        <nav class="nav-context-links" id="nav-context-links" aria-label="Páginas da área">${contextLinks(AREA_BY_ID.get('home'))}</nav>
-        <div class="nav-context-footer"><button id="nav-command-button" class="nav-command-button" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg><span>Ir para qualquer tela</span><kbd>Ctrl K</kbd></button><div class="nav-build"><span class="nav-build-dot" aria-hidden="true"></span><span>${RELEASE}</span></div></div>
-      </div>
-    </div>
-    <div id="command-palette" class="command-palette" hidden>
-      <button class="command-scrim" type="button" data-command-close aria-label="Fechar busca"></button>
-      <section class="command-dialog" role="dialog" aria-modal="true" aria-labelledby="command-title">
-        <div class="command-search-row"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg><label class="so-leitor" for="command-input" id="command-title">Ir para uma tela</label><input id="command-input" type="search" autocomplete="off" placeholder="Ir para uma tela…" spellcheck="false"><kbd>Esc</kbd></div>
-        <div id="command-results" class="command-results" role="listbox" aria-label="Telas disponíveis"></div>
-        <div class="command-help">Digite para filtrar · ↑ ↓ para navegar · Enter para abrir</div>
-      </section>
-    </div>`;
+    return `<div class="app-nav"><div class="nav-rail" aria-label="Áreas da plataforma">
+      <button class="rail-home" type="button" data-area="home" data-label="Início" aria-label="HeraclitusDB — início" title="HeraclitusDB — início"><span>H</span></button>
+      <div class="rail-stack rail-primary">${primary.map(railButton).join('')}</div><div class="rail-spacer"></div><div class="rail-stack rail-utility">${utility.map(railButton).join('')}</div>
+      <button id="nav-collapse" class="rail-control" type="button" aria-label="Recolher navegação contextual" title="Recolher navegação contextual"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 7-5 5 5 5"/></svg></button>
+    </div><div class="nav-context" id="nav-context"><div class="nav-context-head"><span class="nav-kicker">Área</span><h2 id="nav-context-title">Início</h2><p id="nav-context-description">Estado da plataforma e atalhos operacionais.</p></div><nav class="nav-context-links" id="nav-context-links" aria-label="Páginas da área">${contextLinks(AREA_BY_ID.get('home'))}</nav><div class="nav-context-footer"><button id="nav-command-button" class="nav-command-button" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg><span>Ir para qualquer tela</span><kbd>Ctrl K</kbd></button><div class="nav-build"><span class="nav-build-dot" aria-hidden="true"></span><span>${RELEASE}</span></div></div></div></div>
+    <div id="command-palette" class="command-palette" hidden><button class="command-scrim" type="button" data-command-close aria-label="Fechar busca"></button><section class="command-dialog" role="dialog" aria-modal="true" aria-labelledby="command-title"><div class="command-search-row"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg><label class="so-leitor" for="command-input" id="command-title">Ir para uma tela</label><input id="command-input" type="search" autocomplete="off" placeholder="Ir para uma tela…" spellcheck="false"><kbd>Esc</kbd></div><div id="command-results" class="command-results" role="listbox" aria-label="Telas disponíveis"></div><div class="command-help">Digite para filtrar · ↑ ↓ para navegar · Enter para abrir</div></section></div>`;
   },
-
   init(){
-    const contextTitle=document.getElementById('nav-context-title');
-    const contextDescription=document.getElementById('nav-context-description');
-    const contextLinksEl=document.getElementById('nav-context-links');
-    const collapse=document.getElementById('nav-collapse');
-    const mobileToggle=document.getElementById('mobile-nav-toggle');
-    const backdrop=document.getElementById('nav-backdrop');
-    const palette=document.getElementById('command-palette');
-    const commandInput=document.getElementById('command-input');
-    const commandResults=document.getElementById('command-results');
-
-    const renderArea=area=>{
-      this.activeArea=area.id;
-      document.querySelectorAll('.rail-item,[data-area].rail-home').forEach(button=>{
-        const active=button.dataset.area===area.id;
-        button.classList.toggle('active',active);
-        if(active) button.setAttribute('aria-current','page'); else button.removeAttribute('aria-current');
-      });
-      if(contextTitle) contextTitle.textContent=area.label;
-      if(contextDescription) contextDescription.textContent=area.description;
-      if(contextLinksEl) contextLinksEl.innerHTML=contextLinks(area);
-    };
-
-    const markRoute=id=>document.querySelectorAll('#nav-context-links a[data-s]').forEach(link=>{
-      const active=link.dataset.s===id;
-      link.classList.toggle('active',active);
-      if(active) link.setAttribute('aria-current','page'); else link.removeAttribute('aria-current');
-    });
-
+    const contextTitle=document.getElementById('nav-context-title'),contextDescription=document.getElementById('nav-context-description'),contextLinksEl=document.getElementById('nav-context-links'),collapse=document.getElementById('nav-collapse'),mobileToggle=document.getElementById('mobile-nav-toggle'),backdrop=document.getElementById('nav-backdrop'),palette=document.getElementById('command-palette'),commandInput=document.getElementById('command-input'),commandResults=document.getElementById('command-results');
+    const renderArea=area=>{this.activeArea=area.id;document.querySelectorAll('.rail-item,[data-area].rail-home').forEach(button=>{const active=button.dataset.area===area.id;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});if(contextTitle)contextTitle.textContent=area.label;if(contextDescription)contextDescription.textContent=area.description;if(contextLinksEl)contextLinksEl.innerHTML=contextLinks(area);};
+    const markRoute=id=>document.querySelectorAll('#nav-context-links a[data-s]').forEach(link=>{const active=link.dataset.s===id;link.classList.toggle('active',active);if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');});
     const closeMobile=()=>document.documentElement.classList.remove('nav-mobile-open');
-    const go=(id,{history=false,replace=false,focus=true}={})=>{
-      const entry=ROUTE_INDEX.get(id),target=document.getElementById(id);
-      if(!entry||!target) return;
-      if(entry.area.id!==this.activeArea) renderArea(entry.area);
-      this.activeRoute=id;
-      markRoute(id);
-      document.querySelectorAll('#main-content > section').forEach(section=>section.classList.toggle('on',section.id===id));
-      if(history&&location.hash!==`#${id}`){
-        if(replace) window.history.replaceState({route:id},'',`#${id}`);
-        else window.history.pushState({route:id},'',`#${id}`);
-      }
-      document.title=`${entry.label} · HeraclitusDB`;
-      document.dispatchEvent(new CustomEvent('hera:route-changed',{detail:{route:id,pageLabel:entry.label,areaId:entry.area.id,areaLabel:entry.area.label}}));
-      if(focus) document.getElementById('main-content')?.focus?.({preventScroll:true});
-      closeMobile();
-    };
-
-    const areaClick=areaId=>{
-      const area=AREA_BY_ID.get(areaId);
-      if(!area) return;
-      const current=ROUTE_INDEX.get(this.activeRoute);
-      go(current?.area.id===areaId?this.activeRoute:area.defaultRoute,{history:true});
-    };
-
+    const go=(id,{history=false,replace=false,focus=true}={})=>{const entry=ROUTE_INDEX.get(id),target=document.getElementById(id);if(!entry||!target)return;if(entry.area.id!==this.activeArea)renderArea(entry.area);this.activeRoute=id;markRoute(id);document.querySelectorAll('#main-content > section').forEach(section=>section.classList.toggle('on',section.id===id));if(history&&location.hash!==`#${id}`){if(replace)window.history.replaceState({route:id},'',`#${id}`);else window.history.pushState({route:id},'',`#${id}`);}document.title=`${entry.label} · HeraclitusDB`;document.dispatchEvent(new CustomEvent('hera:route-changed',{detail:{route:id,pageLabel:entry.label,areaId:entry.area.id,areaLabel:entry.area.label}}));if(focus)document.getElementById('main-content')?.focus?.({preventScroll:true});closeMobile();};
+    const areaClick=areaId=>{const area=AREA_BY_ID.get(areaId);if(!area)return;const current=ROUTE_INDEX.get(this.activeRoute);go(current?.area.id===areaId?this.activeRoute:area.defaultRoute,{history:true});};
     document.querySelectorAll('[data-area].rail-item,[data-area].rail-home').forEach(button=>button.addEventListener('click',()=>areaClick(button.dataset.area)));
-    contextLinksEl?.addEventListener('click',event=>{
-      const link=event.target.closest('a[data-s]');
-      if(!link||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||event.button===1) return;
-      event.preventDefault();
-      go(link.dataset.s,{history:true});
-    });
-    collapse?.addEventListener('click',()=>{
-      const collapsed=document.documentElement.classList.toggle('nav-panel-collapsed');
-      const label=collapsed?'Expandir navegação contextual':'Recolher navegação contextual';
-      collapse.setAttribute('aria-label',label);collapse.title=label;collapse.classList.toggle('active',collapsed);
-    });
-    const toggleMobile=()=>document.documentElement.classList.toggle('nav-mobile-open');
-    mobileToggle?.addEventListener('click',toggleMobile);
-    backdrop?.addEventListener('click',closeMobile);
-    document.addEventListener('hera:toggle-nav',toggleMobile);
-
-    const allRoutes=()=>AREAS.flatMap(area=>area.routes.map(([id,label])=>({id,label,area})));
-    let commandMatches=[],commandIndex=0;
-    const renderCommandResults=query=>{
-      const q=fold(query);
-      commandMatches=allRoutes().filter(item=>!q||fold(`${item.label} ${item.area.label} ${item.area.description}`).includes(q)).slice(0,14);
-      commandIndex=Math.min(commandIndex,Math.max(0,commandMatches.length-1));
-      if(!commandResults) return;
-      commandResults.innerHTML=commandMatches.length?commandMatches.map((item,index)=>`<button type="button" class="command-result${index===commandIndex?' selected':''}" data-route="${item.id}" role="option" aria-selected="${index===commandIndex}"><span class="command-result-icon">${item.area.icon}</span><span class="command-result-copy"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.area.label)}</small></span><span class="command-enter">↵</span></button>`).join(''):'<div class="command-empty">Nenhuma tela encontrada.</div>';
-    };
+    contextLinksEl?.addEventListener('click',event=>{const link=event.target.closest('a[data-s]');if(!link||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey||event.button===1)return;event.preventDefault();go(link.dataset.s,{history:true});});
+    collapse?.addEventListener('click',()=>{const collapsed=document.documentElement.classList.toggle('nav-panel-collapsed');const label=collapsed?'Expandir navegação contextual':'Recolher navegação contextual';collapse.setAttribute('aria-label',label);collapse.title=label;collapse.classList.toggle('active',collapsed);});
+    const toggleMobile=()=>document.documentElement.classList.toggle('nav-mobile-open');mobileToggle?.addEventListener('click',toggleMobile);backdrop?.addEventListener('click',closeMobile);document.addEventListener('hera:toggle-nav',toggleMobile);
+    const allRoutes=()=>AREAS.flatMap(area=>area.routes.map(([id,label])=>({id,label,area})));let commandMatches=[],commandIndex=0;
+    const renderCommandResults=query=>{const q=fold(query);commandMatches=allRoutes().filter(item=>!q||fold(`${item.label} ${item.area.label} ${item.area.description}`).includes(q)).slice(0,18);commandIndex=Math.min(commandIndex,Math.max(0,commandMatches.length-1));if(!commandResults)return;commandResults.innerHTML=commandMatches.length?commandMatches.map((item,index)=>`<button type="button" class="command-result${index===commandIndex?' selected':''}" data-route="${item.id}" role="option" aria-selected="${index===commandIndex}"><span class="command-result-icon">${item.area.icon}</span><span class="command-result-copy"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.area.label)}</small></span><span class="command-enter">↵</span></button>`).join(''):'<div class="command-empty">Nenhuma tela encontrada.</div>';};
     const openCommand=()=>{if(!palette)return;palette.hidden=false;document.documentElement.classList.add('command-open');if(commandInput)commandInput.value='';commandIndex=0;renderCommandResults('');requestAnimationFrame(()=>commandInput?.focus());};
     const closeCommand=()=>{if(!palette)return;palette.hidden=true;document.documentElement.classList.remove('command-open');};
-    document.getElementById('nav-command-button')?.addEventListener('click',openCommand);
-    document.addEventListener('hera:open-command',openCommand);
-    palette?.addEventListener('click',event=>{
-      if(event.target.closest('[data-command-close]')) return closeCommand();
-      const result=event.target.closest('[data-route]');
-      if(!result) return;
-      closeCommand();go(result.dataset.route,{history:true});
-    });
-    commandInput?.addEventListener('input',()=>{commandIndex=0;renderCommandResults(commandInput.value);});
-    commandInput?.addEventListener('keydown',event=>{
-      if(event.key==='ArrowDown'){event.preventDefault();commandIndex=Math.min(commandIndex+1,commandMatches.length-1);renderCommandResults(commandInput.value);}
-      else if(event.key==='ArrowUp'){event.preventDefault();commandIndex=Math.max(0,commandIndex-1);renderCommandResults(commandInput.value);}
-      else if(event.key==='Enter'&&commandMatches[commandIndex]){event.preventDefault();const route=commandMatches[commandIndex].id;closeCommand();go(route,{history:true});}
-      else if(event.key==='Escape'){event.preventDefault();closeCommand();}
-    });
-    document.addEventListener('keydown',event=>{
-      if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();openCommand();}
-      else if(event.key==='Escape'){closeCommand();closeMobile();}
-    });
-    document.addEventListener('hera:navigate',event=>go(event.detail,{history:true}));
-    window.addEventListener('popstate',()=>go(location.hash.slice(1)||'overview',{history:false,focus:false}));
-    const initial=ROUTE_INDEX.has(location.hash.slice(1))?location.hash.slice(1):'overview';
-    const entry=ROUTE_INDEX.get(initial);
-    renderArea(entry.area);
-    go(initial,{history:true,replace:true,focus:false});
+    document.getElementById('nav-command-button')?.addEventListener('click',openCommand);document.addEventListener('hera:open-command',openCommand);
+    palette?.addEventListener('click',event=>{if(event.target.closest('[data-command-close]'))return closeCommand();const result=event.target.closest('[data-route]');if(!result)return;closeCommand();go(result.dataset.route,{history:true});});
+    commandInput?.addEventListener('input',()=>{commandIndex=0;renderCommandResults(commandInput.value);});commandInput?.addEventListener('keydown',event=>{if(event.key==='ArrowDown'){event.preventDefault();commandIndex=Math.min(commandIndex+1,commandMatches.length-1);renderCommandResults(commandInput.value);}else if(event.key==='ArrowUp'){event.preventDefault();commandIndex=Math.max(0,commandIndex-1);renderCommandResults(commandInput.value);}else if(event.key==='Enter'&&commandMatches[commandIndex]){event.preventDefault();const route=commandMatches[commandIndex].id;closeCommand();go(route,{history:true});}else if(event.key==='Escape'){event.preventDefault();closeCommand();}});
+    document.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();openCommand();}else if(event.key==='Escape'){closeCommand();closeMobile();}});
+    document.addEventListener('hera:navigate',event=>go(event.detail,{history:true}));window.addEventListener('popstate',()=>go(location.hash.slice(1)||'overview',{history:false,focus:false}));const initial=ROUTE_INDEX.has(location.hash.slice(1))?location.hash.slice(1):'overview';const entry=ROUTE_INDEX.get(initial);renderArea(entry.area);go(initial,{history:true,replace:true,focus:false});
   },
 };

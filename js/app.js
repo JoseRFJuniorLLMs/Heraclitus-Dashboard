@@ -31,69 +31,23 @@ window.$$ = selector => document.querySelectorAll(selector);
 window.fmt = number => Number(number).toLocaleString('pt-BR');
 window.LIVE = false;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   $('#header-container').innerHTML = Header.render();
   $('#nav').innerHTML = Navigation.render();
-
   const commandPalette = document.getElementById('command-palette');
   if (commandPalette) document.body.appendChild(commandPalette);
 
   $('#main-content').innerHTML = `
-    ${PlatformOverview.render()}
-    ${Capabilities.render()}
-    ${PublicData.render()}
-    ${Fontes.render()}
-    ${Atributos.render()}
-    ${TimeMachine.render()}
-    ${Diff.render()}
-    ${Cases.render()}
-    ${LabraAguCase.render()}
-    ${AebStreamCase.render()}
-    ${CgeeCase.render()}
-    ${AttackGraph.render()}
-    ${AttackReplay.render()}
-    ${CausalInvestigation.render()}
-    ${CustodyChain.render()}
-    ${MerkleViewer.render()}
-    ${CompliancePanel.render()}
-    ${AgentBlackBox.render()}
-    ${SOCPanel.render()}
-    ${ExecPanel.render()}
-    ${Titular.render()}
-    ${ForensicAI.render()}
-    ${Modos.render()}
+    ${PlatformOverview.render()}${Capabilities.render()}${PublicData.render()}${Fontes.render()}${Atributos.render()}
+    ${TimeMachine.render()}${Diff.render()}${Cases.render()}${LabraAguCase.render()}${AebStreamCase.render()}${CgeeCase.render()}
+    ${AttackGraph.render()}${AttackReplay.render()}${CausalInvestigation.render()}${CustodyChain.render()}${MerkleViewer.render()}
+    ${CompliancePanel.render()}${AgentBlackBox.render()}${SOCPanel.render()}${ExecPanel.render()}${Titular.render()}${ForensicAI.render()}${Modos.render()}
   `;
 
-  const modalContainer = document.createElement('div');
-  modalContainer.innerHTML = LoginModal.render();
-  document.body.appendChild(modalContainer);
+  const modalContainer=document.createElement('div');modalContainer.innerHTML=LoginModal.render();document.body.appendChild(modalContainer);
 
-  Header.init();
-  LoginModal.init();
-  Navigation.init();
-  PlatformOverview.init();
-  Capabilities.init();
-  PublicData.init();
-  Fontes.init();
-  Atributos.init();
-  TimeMachine.init();
-  Diff.init();
-  Cases.init();
-  LabraAguCase.init();
-  AebStreamCase.init();
-  CgeeCase.init();
-  AttackGraph.init();
-  AttackReplay.init();
-  CausalInvestigation.init();
-  CustodyChain.init();
-  MerkleViewer.init();
-  CompliancePanel.init();
-  AgentBlackBox.init();
-  SOCPanel.init();
-  ExecPanel.init();
-  Titular.init();
-  ForensicAI.init();
-  Modos.init();
+  Header.init();LoginModal.init();Navigation.init();PlatformOverview.init();Capabilities.init();PublicData.init();Fontes.init();Atributos.init();TimeMachine.init();Diff.init();Cases.init();LabraAguCase.init();AebStreamCase.init();CgeeCase.init();AttackGraph.init();AttackReplay.init();CausalInvestigation.init();CustodyChain.init();MerkleViewer.init();CompliancePanel.init();AgentBlackBox.init();SOCPanel.init();ExecPanel.init();Titular.init();ForensicAI.init();Modos.init();
 
+  await LoginModal.bootstrap();
   RuntimeMonitor.init();
 });
