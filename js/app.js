@@ -30,6 +30,13 @@ window.LIVE = false;
 document.addEventListener('DOMContentLoaded', () => {
   $('#header-container').innerHTML = Header.render();
   $('#nav').innerHTML = Navigation.render();
+
+  // A command palette é global. Mantê-la dentro do drawer faria o `transform`
+  // mobile criar um containing block e arrastar um `position: fixed` para fora
+  // da viewport junto com a navegação. Porta-a para o body antes de inicializar.
+  const commandPalette = document.getElementById('command-palette');
+  if (commandPalette) document.body.appendChild(commandPalette);
+
   $('#main-content').innerHTML = `
     ${PlatformOverview.render()}
     ${Capabilities.render()}
