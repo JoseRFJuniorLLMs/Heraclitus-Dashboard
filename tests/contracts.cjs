@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.join(__dirname, '..');
 const read = p => fs.readFileSync(path.join(root,p),'utf8');
-const app=read('js/app.js'), nav=read('js/components/Navigation.js'), time=read('js/components/TimeMachine.js');
+const app=read('js/app.js'), nav=read('js/components/Navigation.js'), header=read('js/components/Header.js'), time=read('js/components/TimeMachine.js');
 const caps=read('js/components/Capabilities.js'), agent=read('js/components/AgentBlackBox.js'), publicData=read('js/components/PublicData.js');
 const why=read('js/components/CausalInvestigation.js'), replay=read('js/components/AttackReplay.js');
 const ai=read('js/components/ForensicAI.js'), comp=read('js/components/CompliancePanel.js');
@@ -15,24 +15,33 @@ assert(app.includes('PlatformOverview.render()'));
 assert(app.includes('Capabilities.render()'));
 assert(app.includes('PublicData.render()'));
 assert(app.includes('AgentBlackBox.render()'));
-assert(nav.indexOf('Visão geral') < nav.indexOf('Sentinel / SOC'));
-assert(nav.includes('Capacidades & runtime'));
 assert(nav.includes('Agent Black Box'));
+assert(nav.includes('Sentinel / SOC'));
+assert(nav.includes('Capacidades & runtime'));
 assert(caps.includes('Analytics / DataFusion / Arrow Flight'));
 assert(caps.includes('Raft / cluster'));
 assert(caps.includes('Agent Evidence & Control'));
 
-// Shell/UI contract: one global navigation system, collapsible, release-identifiable.
-assert(nav.includes('nav-shell'));
-assert(nav.includes('nav-toggle'));
-assert(nav.includes("const RELEASE = '2026.09.14-r3'"));
+// Navigation architecture: task-oriented rail + contextual children + command palette.
+assert(nav.includes("id: 'data'"));
+assert(nav.includes("id: 'investigate'"));
+assert(nav.includes("id: 'evidence'"));
+assert(nav.includes("id: 'governance'"));
+assert(nav.includes('command-palette'));
+assert(nav.includes('Ctrl K'));
+assert(nav.includes("const RELEASE = '2026.09.14-r4'"));
+assert(header.includes('header-breadcrumb'));
+assert(header.includes('global-search-button'));
 assert(index.includes('hera-dashboard-release'));
-assert(index.includes('2026.09.14-r3'));
+assert(index.includes('2026.09.14-r4'));
+assert(index.includes('class="skip-link"'));
 assert(index.includes('css/styles.css'));
 assert(index.includes('css/platform.css'));
 assert(!index.includes('css/soc.css'));
+assert(!index.includes('govbar-container'));
 assert(!fs.existsSync(path.join(root,'css','soc.css')));
-assert(platformCss.includes('html.nav-collapsed .wrap'));
+assert(platformCss.includes('html.nav-panel-collapsed .wrap'));
+assert(platformCss.includes('html.nav-mobile-open #nav'));
 assert(platformCss.includes('#soc .soc'));
 assert(platformCss.includes('@media (max-width: 900px)'));
 
@@ -64,4 +73,4 @@ assert(login.includes('Bearer/OIDC Agent'));
 assert(login.includes('Não reutilizamos o Basic do Core no Agent'));
 
 assert(index.includes('js/app.js'));
-console.log('Dashboard contracts OK: platform-first, single shell, responsive nav, no synthetic claims, public provenance and separate Agent auth.');
+console.log('Dashboard contracts OK: platform-first, contextual navigation R4, no synthetic claims, public provenance and separate Agent auth.');
