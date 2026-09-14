@@ -34,21 +34,31 @@ export const LoginModal={
     requestAnimationFrame(()=>document.getElementById('loginUser')?.focus());
   },
   hide(){const m=document.getElementById('loginModal');if(!m)return;m.style.display='none';m.setAttribute('aria-hidden','true');},
+  async readServerMode(){
+    try{const r=await fetch('/dashboard-api/status',{cache:'no-store'});if(r.ok){const status=await r.json();this.serverAuth=status?.core_auth_mode==='server_env';return status;}}catch{}
+    this.serverAuth=false;return null;
+  },
+  paintServerMode(){
+    const mode=document.getElementById('loginServerMode');if(!mode)return;
+    mode.hidden=!this.serverAuth;
+    mode.innerHTML=this.serverAuth?'<strong>Credencial server-side detectada.</strong> O Dashboard tentará conectar usando o <code>.env</code>; a senha não é enviada ao JavaScript.':'';
+  },
   async bootstrap(){
-    let status=null;try{const r=await fetch('/dashboard-api/status',{cache:'no-store'});if(r.ok)status=await r.json();}catch{}
-    this.serverAuth=status?.core_auth_mode==='server_env';
-    const mode=document.getElementById('loginServerMode');
-    if(mode&&this.serverAuth){mode.hidden=false;mode.innerHTML='<strong>Credencial server-side detectada.</strong> O Dashboard tentará conectar usando o <code>.env</code>; a senha não é enviada ao JavaScript.';}
+    await this.readServerMode();this.paintServerMode();
     const check=await API.stats();
-    if(check.ok){this.badge(this.serverAuth?'server-env':null);document.dispatchEvent(new CustomEvent('hera:core-authenticated',{detail:{mode:this.serverAuth?'server_env':'browser_memory'}}));return true;}
+    if(check.ok){this.autoShown=false;this.badge(this.serverAuth?'server-env':null);document.dispatchEvent(new CustomEvent('hera:core-authenticated',{detail:{mode:this.serverAuth?'server_env':'browser_memory'}}));return true;}
     if(check.falha==='auth'){this.show('auth');return false;}
     this.badge();return false;
   },
   init(){
-    const m=document.getElementById('loginModal'),f=document.getElementById('formLoginModal'),err=document.getElementById('loginError'),submit=document.getElementById('btnSubmitLogin');
+    const f=document.getElementById('formLoginModal'),err=document.getElementById('loginError'),submit=document.getElementById('btnSubmitLogin');
     document.getElementById('btnCloseLoginModal').onclick=()=>this.hide();document.addEventListener('hera:open-login',()=>this.show('manual'));
     document.addEventListener('hera:auth-required',()=>{if(!this.autoShown)this.show('auth');});
-    document.getElementById('btnLogout').onclick=()=>{API.definirCredenciais(null);API.definirAgentToken(null);this.serverAuth=false;this.badge();document.dispatchEvent(new CustomEvent('hera:endpoint-mudou'));this.hide();};
+    document.getElementById('btnLogout').onclick=async()=>{
+      API.definirCredenciais(null);API.definirAgentToken(null);this.autoShown=false;
+      await this.readServerMode();this.paintServerMode();this.badge();
+      document.dispatchEvent(new CustomEvent('hera:endpoint-mudou'));this.hide();
+    };
     f.onsubmit=async e=>{e.preventDefault();err.hidden=true;submit.disabled=true;submit.textContent='A verificar…';
       const core=API.definirBase(document.getElementById('loginEndpoint').value);if(core.erro){err.textContent=core.erro;err.hidden=false;submit.disabled=false;submit.textContent='Conectar ao HeraclitusDB';return;}
       const ag=API.definirAgentBase(document.getElementById('loginAgentEndpoint').value);if(ag.erro){err.textContent=ag.erro;err.hidden=false;submit.disabled=false;submit.textContent='Conectar ao HeraclitusDB';return;}
