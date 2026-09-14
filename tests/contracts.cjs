@@ -6,7 +6,7 @@ const read = p => fs.readFileSync(path.join(root,p),'utf8');
 const app=read('js/app.js'), nav=read('js/components/Navigation.js'), header=read('js/components/Header.js'), time=read('js/components/TimeMachine.js');
 const caps=read('js/components/Capabilities.js'), agent=read('js/components/AgentBlackBox.js'), publicData=read('js/components/PublicData.js');
 const why=read('js/components/CausalInvestigation.js'), replay=read('js/components/AttackReplay.js');
-const ai=read('js/components/ForensicAI.js'), comp=read('js/components/CompliancePanel.js');
+const ai=read('js/components/ForensicAI.js'), comp=read('js/components/CompliancePanel.js'), titular=read('js/components/Titular.js');
 const api=read('js/api.js'), login=read('js/components/LoginModal.js'), index=read('index.html');
 const platformCss=read('css/platform.css');
 
@@ -45,6 +45,14 @@ assert(platformCss.includes('html.nav-mobile-open #nav'));
 assert(platformCss.includes('#soc .soc'));
 assert(platformCss.includes('@media (max-width: 900px)'));
 
+// General dashboard is genuinely read-only. No component may sneak in a write.
+for (const component of fs.readdirSync(path.join(root,'js','components')).filter(f => f.endsWith('.js'))) {
+  const source = read(path.join('js','components',component));
+  assert(!/method\s*:\s*['"](?:POST|PUT|PATCH|DELETE)['"]/i.test(source), `${component} exposes a mutating HTTP method`);
+}
+assert(!titular.includes('/eliminar'));
+assert(titular.includes('Console read-only'));
+
 // No synthetic forensic claims.
 assert(!time.includes('gerarEventosSinteticos'));
 assert(!time.includes('EVENTOS_FALBACK'));
@@ -73,4 +81,4 @@ assert(login.includes('Bearer/OIDC Agent'));
 assert(login.includes('Não reutilizamos o Basic do Core no Agent'));
 
 assert(index.includes('js/app.js'));
-console.log('Dashboard contracts OK: platform-first, contextual navigation R4, no synthetic claims, public provenance and separate Agent auth.');
+console.log('Dashboard contracts OK: platform-first, contextual navigation R4, read-only UI, no synthetic claims, public provenance and separate Agent auth.');
