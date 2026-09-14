@@ -3,7 +3,7 @@ const RELEASE = '2026.09.14-r8';
 const icon = body => `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${body}</svg>`;
 const ICONS = {
   home: icon('<path d="M4 10.5 12 4l8 6.5V20H5a1 1 0 0 1-1-1z"/><path d="M9 20v-6h6v6"/>'),
-  data: icon('<ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 11v6c0 1.7 3 7 3s7-1.3 7-3v-6"/>'),
+  data: icon('<ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>'),
   cases: icon('<path d="M4 7h6l2 2h8v10H4z"/><path d="M8 13h8M8 16h5"/>'),
   labra: icon('<path d="M12 3 19 6v5c0 4.6-2.8 7.9-7 10-4.2-2.1-7-5.4-7-10V6z"/><path d="M8 12h8M10 9v6M14 9v6"/>'),
   aeb: icon('<circle cx="12" cy="12" r="3"/><path d="M3 12c2.8-4.7 6-7 9-7s6.2 2.3 9 7c-2.8 4.7-6 7-9 7s-6.2-2.3-9-7z"/><path d="M5.5 5.5c4.6 1.3 8.9 5.6 13 13"/>'),
