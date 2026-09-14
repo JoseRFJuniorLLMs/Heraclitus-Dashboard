@@ -21,7 +21,7 @@ import re
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
-RELEASE = "2026.09.14-r5"
+RELEASE = "2026.09.14-r4"
 MAX_RESPONSE = 8 * 1024 * 1024
 MAX_PATH = 4096
 CORE_HOST = os.getenv("HERACLITUS_REST_HOST", "127.0.0.1")
