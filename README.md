@@ -1,44 +1,74 @@
 # HeraclitusDB Dashboard
 
-Interface operacional da **plataforma HeraclitusDB**. O Dashboard organiza dados, investigação, evidência, módulos e governança sem transformar Sentinel ou Agent Black Box na identidade inteira do produto.
+Interface operacional da **plataforma HeraclitusDB**. O Dashboard organiza dados, investigação, evidência, módulos, casos de uso e governança sem transformar Sentinel, Agent Black Box ou uma aplicação vertical na identidade inteira do produto.
 
-## Navegação R4
+## Navegação R6
 
-A navegação não é mais uma lista plana com vinte telas. A shell usa dois níveis:
+A shell usa dois níveis: rail primário por área e navegação contextual dentro da área ativa.
 
 ```text
 HeraclitusDB
 │
-├─ rail primário
-│  ├─ Dados
-│  ├─ Casos
-│  ├─ Investigar
-│  ├─ Evidência
-│  ├─ Agent Black Box
-│  ├─ Sentinel
-│  ├─ Governança
-│  └─ Sistema
-│
-└─ painel contextual
-   └─ mostra somente as telas da área ativa
+├─ Dados
+├─ Casos
+├─ LABRA-AGU
+├─ Investigar
+├─ Evidência
+├─ Agent Black Box
+├─ Sentinel
+├─ Governança
+└─ Sistema
 ```
 
-`Ctrl+K` abre a command palette para saltar diretamente a qualquer superfície. O header mantém breadcrumb `Área / Tela`. Em telas pequenas a navegação vira drawer; não existe carrossel horizontal com vinte destinos.
+`Ctrl+K` abre a command palette para saltar diretamente a qualquer superfície. O header mantém breadcrumb `Área / Tela`. Em telas pequenas a navegação vira drawer.
 
 ## Superfícies da plataforma
 
-- **Visão geral** — head LSN, memtable, texto, vetores, grafo, entidades, ACT-R, integridade e módulos.
-- **Dados** — Portal da Transparência, PNCP, fontes ingeridas e mapa de atributos.
-- **Casos e investigação** — janelas temporais, comparação A/B, grafo, replay e WHY.
-- **Evidência** — cadeia de custódia, Merkle e estado técnico de compliance.
-- **Agent Black Box** — runs, tool calls, gateway, policy, approvals, ingest counters e integridade.
-- **Sentinel** — superfície SOC opcional. O stream SSE só fica aberto quando a tela está ativa.
-- **Governança** — painel executivo, consulta LGPD e auditoria.
-- **Sistema** — capacidades e runtime da instância.
+- **Visão geral**: head LSN, memtable, texto, vetores, grafo, entidades, ACT-R, integridade e módulos.
+- **Dados**: Portal da Transparência, PNCP, fontes ingeridas e mapa de atributos.
+- **Casos e investigação**: janelas temporais, comparação A/B, grafo, replay e WHY.
+- **LABRA-AGU**: caso de uso de recuperação de ativos e inteligência pericial, incorporado como superfície versionada da plataforma.
+- **Evidência**: cadeia de custódia, Merkle e estado técnico de compliance.
+- **Agent Black Box**: runs, tool calls, gateway, policy, approvals, ingest counters e integridade.
+- **Sentinel**: superfície SOC opcional. O stream SSE só fica aberto quando a tela está ativa.
+- **Governança**: painel executivo, consulta LGPD e auditoria.
+- **Sistema**: capacidades e runtime da instância.
+
+## Caso de uso LABRA-AGU
+
+A rota `#labra` incorpora o projeto `JoseRFJuniorLLMs/LABRA-AGU` como caso de uso de primeira classe. O snapshot de referência é fixado no commit `9b5d9bcada759e23e12c2d995be17dca6e42a8e1`, evitando que a interface atribua capacidades futuras a uma versão anterior.
+
+A superfície inclui:
+
+- arquitetura fontes → pipeline → HeraclitusDB → agente → Procuradoria;
+- capacidades de ingestão, entidade/grafo, detecção, ACT-R, causalidade, recuperação e produto jurídico;
+- catálogo de padrões de fraude;
+- as quatro superfícies do dashboard LABRA original: Alertas, Mapa de Relações, Diretrizes e Heraclitus Explorer;
+- avaliação e gates declarados pelo projeto;
+- explorador navegável de entrypoints, `agent/`, `dashboard/`, `demo/`, `evaluation/` e demais árvores;
+- documentação, PDFs e vídeos apontando para o snapshot fonte;
+- estado vivo opcional do runtime LABRA local.
+
+O código do LABRA **não é duplicado** dentro deste repositório. O `LABRA-AGU` continua sendo a fonte canônica e o Dashboard mantém um mapa versionado e rastreável do caso de uso. Isso evita dois códigos divergentes fingindo ser o mesmo produto, uma tradição de software que ninguém precisa preservar.
+
+Para habilitar o estado vivo, rode no repositório LABRA:
+
+```bash
+python3 serve.py --no-open
+```
+
+Por padrão ele escuta em `127.0.0.1:8770`. O Dashboard expõe somente leituras allow-listed:
+
+```text
+/labra-api/health     -> estado do runtime / Gemma local
+/labra-api/devedores  -> devedores reconstruídos do log HeraclitusDB pelo LABRA
+```
+
+`/investigar`, `/resumo`, diretrizes e demais mutações **não** são expostas pelo Dashboard geral.
 
 ## Runtime
 
-O estado global do Core não depende mais do Sentinel. `js/runtime.js` mantém um único heartbeat de `/stats` e distribui eventos para Overview, Executive e Sentinel. O polling desacelera quando a página está oculta. O stream `/live/events` pertence ao Sentinel e é fechado ao sair da rota.
+O estado global do Core não depende do Sentinel. `js/runtime.js` mantém um único heartbeat de `/stats` e distribui eventos para Overview, Executive e Sentinel. O polling desacelera quando a página está oculta. O stream `/live/events` pertence ao Sentinel e é fechado ao sair da rota.
 
 ## Regra de proveniência
 
@@ -68,7 +98,7 @@ python3 server.py
 
 Por padrão: `http://127.0.0.1:9337/`.
 
-Configuração do Dashboard e do Core:
+Configuração principal:
 
 ```bash
 HERACLITUS_DASHBOARD_BIND=127.0.0.1
@@ -79,6 +109,12 @@ HERACLITUS_REST_HOST=127.0.0.1
 HERACLITUS_REST_PORT=7475
 HERACLITUS_REST_USERNAME=
 HERACLITUS_REST_PASSWORD=
+
+HERACLITUS_AGENT_HOST=127.0.0.1
+HERACLITUS_AGENT_PORT=8080
+
+LABRA_HOST=127.0.0.1
+LABRA_PORT=8770
 ```
 
 Quando `HERACLITUS_REST_USERNAME` e `HERACLITUS_REST_PASSWORD` estão definidos, o proxy Python cria o header Basic **server-side** e o Dashboard já inicia autenticado no Core. A senha não chega ao JavaScript, não vai para `localStorage` e não aparece em `/dashboard-api/status`. O arquivo `.env` é ignorado pelo Git.
@@ -90,6 +126,7 @@ Superfícies do host local:
 ```text
 /api/*          -> HeraclitusDB Core REST, padrão 127.0.0.1:7475
 /agent-api/*    -> Agent Evidence API, padrão 127.0.0.1:8080
+/labra-api/*    -> LABRA-AGU local, somente health/devedores, padrão 127.0.0.1:8770
 /public-api/*   -> fontes governamentais allow-listed
 /dashboard-api/status -> diagnóstico do próprio Dashboard
 ```
@@ -100,9 +137,10 @@ Diagnóstico:
 curl -s http://127.0.0.1:9337/dashboard-api/status
 curl -I http://127.0.0.1:9337/
 curl -s http://127.0.0.1:9337/api/stats
+curl -s http://127.0.0.1:9337/labra-api/health
 ```
 
-`/dashboard-api/status` expõe apenas o modo de autenticação (`server_env` ou `browser_memory`), nunca usuário, senha ou token.
+`/dashboard-api/status` expõe o modo de autenticação e configuração operacional não secreta, nunca usuário, senha ou token.
 
 ## Modelo de escrita
 
@@ -112,16 +150,18 @@ O Dashboard geral é **somente leitura**:
 - componentes de UI não executam `POST`, `PUT`, `PATCH` ou `DELETE`;
 - crypto-shred/LGPD é exibido como estado e orientação, não como botão destrutivo;
 - aprovações de agentes e ativação de policy não são expostas nesta UI;
+- ações do LABRA que investigam, emitem diretriz ou escrevem insights não são proxied por esta console;
 - futuras mutações administrativas devem possuir superfície dedicada, autenticação forte, RBAC e trilha de auditoria.
 
 ## Autenticação e fronteiras de confiança
 
-Core e Agent são planos de identidade separados:
+Core, Agent e LABRA são fronteiras separadas:
 
 - **Core local:** pode usar Basic server-side via `.env` para auto-login no WSL.
 - **Core manual:** Basic/Bearer fornecido pelo navegador permanece somente na memória da página.
 - **Agent:** token Bearer/OIDC separado, também somente em memória.
-- o Basic do Core **nunca** é reaproveitado automaticamente no Agent.
+- **LABRA runtime:** somente leituras públicas locais allow-listed; o Dashboard não encaminha credenciais Core/Agent para ele.
+- o Basic do Core **nunca** é reaproveitado automaticamente no Agent, LABRA ou fontes públicas.
 - o fallback de `.env` é aplicado somente a chamadas `/api/*` do Core.
 
 ## Portal da Transparência
@@ -139,8 +179,9 @@ A chave é enviada pelo proxy e não chega ao JavaScript. O dashboard mantém Po
 
 - bind em loopback por padrão;
 - allowlist de `Host` contra DNS rebinding;
-- allowlists independentes para Core, Agent e dados públicos;
+- allowlists independentes para Core, Agent, LABRA e dados públicos;
 - credencial Core opcional mantida apenas no processo Python;
+- credenciais do navegador não são encaminhadas para LABRA ou dados públicos;
 - sem proxy arbitrário/SSRF;
 - limite de 8 MiB para respostas não-streaming;
 - CSP same-origin;
@@ -157,11 +198,14 @@ python3 -m py_compile server.py
 python3 -m unittest -v tests.test_server
 ```
 
-Os testes do host incluem explicitamente:
+Os gates verificam, entre outros pontos:
 
 - Core server-side recebe o Basic configurado mesmo sem login do navegador;
-- a mesma credencial **não vaza** para `/agent-api/*`;
-- sem credencial server-side o comportamento manual anterior continua válido.
+- a credencial Core não vaza para Agent nem LABRA;
+- LABRA expõe somente `/health` e `/devedores` pelo proxy;
+- o caso LABRA está pinado ao snapshot esperado e não usa iframe;
+- o CSS do caso LABRA não pode redefinir o shell global;
+- sem credencial server-side o comportamento manual do Core continua válido.
 
 O GitHub Actions executa os mesmos gates.
 
