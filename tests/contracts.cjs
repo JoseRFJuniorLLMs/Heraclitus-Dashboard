@@ -24,6 +24,7 @@ assert(agent.includes('/api/v1/agent/runs'));
 assert(publicData.includes('EXTERNA · NÃO SELADA'));
 assert(!api.includes('sessionStorage'));
 assert(!api.includes("localStorage.setItem('hera_auth'"));
+assert(api.includes("agentGet(caminho, opts) { return request(this.agentBase(), caminho, { ...(opts || {}), auth: false }); }"));
 assert(index.includes('css/platform.css'));
 assert(index.includes('js/app.js'));
 console.log('Dashboard contracts OK: platform-first, no synthetic forensic claims, Agent/Public surfaces wired.');
