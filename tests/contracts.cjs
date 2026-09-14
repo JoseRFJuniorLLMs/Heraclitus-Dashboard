@@ -5,38 +5,44 @@ const root = path.join(__dirname, '..');
 const read = p => fs.readFileSync(path.join(root,p),'utf8');
 const app=read('js/app.js'), runtime=read('js/runtime.js'), nav=read('js/components/Navigation.js'), header=read('js/components/Header.js'), time=read('js/components/TimeMachine.js');
 const caps=read('js/components/Capabilities.js'), agent=read('js/components/AgentBlackBox.js'), publicData=read('js/components/PublicData.js');
+const labra=read('js/components/LabraAguCase.js'), labraCss=read('css/labra-case.css');
 const why=read('js/components/CausalInvestigation.js'), replay=read('js/components/AttackReplay.js'), soc=read('js/components/SOCPanel.js');
 const ai=read('js/components/ForensicAI.js'), comp=read('js/components/CompliancePanel.js'), titular=read('js/components/Titular.js');
 const api=read('js/api.js'), login=read('js/components/LoginModal.js'), index=read('index.html');
 const platformCss=read('css/platform.css');
 
-// Product identity: HeraclitusDB is the platform, modules remain modules.
+// Product identity: HeraclitusDB is the platform, modules/use-cases remain subordinate surfaces.
 assert(app.includes('PlatformOverview.render()'));
 assert(app.includes('Capabilities.render()'));
 assert(app.includes('PublicData.render()'));
 assert(app.includes('AgentBlackBox.render()'));
+assert(app.includes('LabraAguCase.render()'));
+assert(app.includes('LabraAguCase.init()'));
 assert(nav.includes('Agent Black Box'));
 assert(nav.includes('Sentinel / SOC'));
+assert(nav.includes('LABRA-AGU'));
+assert(nav.includes("id:'labra'"));
 assert(nav.includes('Capacidades & runtime'));
 assert(caps.includes('Analytics / DataFusion / Arrow Flight'));
 assert(caps.includes('Raft / cluster'));
 assert(caps.includes('Agent Evidence & Control'));
 
 // Navigation architecture: task-oriented rail + contextual children + command palette.
-assert(nav.includes("id: 'data'"));
-assert(nav.includes("id: 'investigate'"));
-assert(nav.includes("id: 'evidence'"));
-assert(nav.includes("id: 'governance'"));
+assert(nav.includes("id:'data'"));
+assert(nav.includes("id:'investigate'"));
+assert(nav.includes("id:'evidence'"));
+assert(nav.includes("id:'governance'"));
 assert(nav.includes('command-palette'));
 assert(nav.includes('Ctrl K'));
-assert(nav.includes("const RELEASE = '2026.09.14-r4'"));
+assert(nav.includes("const RELEASE = '2026.09.14-r6'"));
 assert(header.includes('header-breadcrumb'));
 assert(header.includes('global-search-button'));
 assert(index.includes('hera-dashboard-release'));
-assert(index.includes('2026.09.14-r4'));
+assert(index.includes('2026.09.14-r6'));
 assert(index.includes('class="skip-link"'));
 assert(index.includes('css/styles.css'));
 assert(index.includes('css/platform.css'));
+assert(index.includes('css/labra-case.css'));
 assert(!index.includes('css/soc.css'));
 assert(!index.includes('govbar-container'));
 assert(!fs.existsSync(path.join(root,'css','soc.css')));
@@ -45,6 +51,19 @@ assert(platformCss.includes('html.nav-panel-collapsed .wrap'));
 assert(platformCss.includes('html.nav-mobile-open #nav'));
 assert(platformCss.includes('#soc .soc'));
 assert(platformCss.includes('@media (max-width: 900px)'));
+
+// LABRA-AGU is a versioned first-class use case, not an iframe or unpinned remote blob.
+assert(labra.includes("const SNAPSHOT = '9b5d9bcada759e23e12c2d995be17dca6e42a8e1'"));
+assert(labra.includes('CASO DE USO · RECUPERAÇÃO DE ATIVOS'));
+assert(labra.includes('pipeline.py'));
+assert(labra.includes('HeraclitusDB'));
+assert(labra.includes('triangulacao_offshore'));
+assert(labra.includes('evaluation/harness.py'));
+assert(labra.includes('/labra-api/health'));
+assert(labra.includes('/labra-api/devedores'));
+assert(!labra.includes('<iframe'));
+assert(labraCss.includes('.labra-case'));
+assert(!/(^|})\s*(?:body|header|nav|main|aside|html|\*)\b/.test(labraCss), 'LABRA stylesheet must not own global shell selectors');
 
 // Runtime architecture: one shared Core heartbeat; Sentinel owns only its route-scoped SSE.
 assert(app.includes("import { RuntimeMonitor } from './runtime.js'"));
@@ -95,4 +114,4 @@ assert(login.includes('Bearer/OIDC Agent'));
 assert(login.includes('Não reutilizamos o Basic do Core no Agent'));
 
 assert(index.includes('js/app.js'));
-console.log('Dashboard contracts OK: platform-first, R4 navigation, shared runtime, route-aware Sentinel, read-only UI, public provenance and separate Agent auth.');
+console.log('Dashboard contracts OK: R6 platform-first, LABRA-AGU case use, Agent/Sentinel isolation, read-only UI and public provenance.');
