@@ -1,132 +1,333 @@
-const RELEASE = '2026.09.14-r3';
+const RELEASE = '2026.09.14-r4';
 
-const GROUPS = [
+const icon = body => `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${body}</svg>`;
+const ICONS = {
+  home: icon('<path d="M4 10.5 12 4l8 6.5V20H5a1 1 0 0 1-1-1z"/><path d="M9 20v-6h6v6"/>'),
+  data: icon('<ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>'),
+  cases: icon('<path d="M4 7h6l2 2h8v10H4z"/><path d="M8 13h8M8 16h5"/>'),
+  investigate: icon('<circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 5 5"/><path d="M8 10.5h5M10.5 8v5"/>'),
+  evidence: icon('<path d="M12 3 19 6v5c0 4.6-2.8 7.9-7 10-4.2-2.1-7-5.4-7-10V6z"/><path d="m9 12 2 2 4-5"/>'),
+  agent: icon('<rect x="5" y="7" width="14" height="11" rx="3"/><path d="M12 3v4M8 12h.01M16 12h.01M9 15h6"/>'),
+  sentinel: icon('<path d="M12 3 20 6v6c0 4-3.2 7.2-8 9-4.8-1.8-8-5-8-9V6z"/><path d="M8 12h8M12 8v8"/>'),
+  governance: icon('<path d="M4 9h16M6 9V19M10 9V19M14 9V19M18 9V19M3 20h18M12 4l8 3H4z"/>'),
+  system: icon('<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.7-1L14.5 3h-5l-.4 3.1a8 8 0 0 0-1.7 1l-2.4-1-2 3.4L5 11a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 1.7 1l.4 3.1h5l.4-3.1a8 8 0 0 0 1.7-1l2.4 1 2-3.4L19 13a7 7 0 0 0 0-1z"/>'),
+};
+
+const AREAS = [
   {
-    title: 'Plataforma',
-    items: [
-      ['overview', '◆', 'Visão geral', 'motor, índices e integridade'],
-      ['capabilities', '▦', 'Capacidades & runtime', 'o que existe e o que está ativo'],
-      ['public', '▣', 'Dados públicos', 'Portal da Transparência e PNCP'],
-      ['fontes', '◇', 'Fontes & ingestão', 'origens, silêncio e retenção'],
-      ['atributos', '▤', 'Mapa de dados', 'campos e cardinalidades'],
+    id: 'home', label: 'Início', icon: ICONS.home, defaultRoute: 'overview',
+    description: 'Estado da plataforma e atalhos operacionais.',
+    routes: [['overview', 'Visão geral']],
+  },
+  {
+    id: 'data', label: 'Dados', icon: ICONS.data, defaultRoute: 'public',
+    description: 'Fontes oficiais, ingestão e estrutura dos dados.',
+    routes: [
+      ['public', 'Dados públicos'],
+      ['fontes', 'Fontes & ingestão'],
+      ['atributos', 'Mapa de dados'],
     ],
   },
   {
-    title: 'Tempo & investigação',
-    items: [
-      ['time', '◫', 'Linha do tempo', 'atividade e janelas temporais'],
-      ['diff', '⇄', 'Comparar A/B', 'mudanças entre dois estados'],
-      ['cases', '▥', 'Casos', 'investigações persistidas'],
-      ['graph', '⬡', 'Grafo & relações', 'entidades e vínculos'],
-      ['replay', '▷', 'Reconstituição', 'replay verificável'],
-      ['why', '⌖', 'WHY / causalidade', 'origem e explicação'],
+    id: 'cases', label: 'Casos', icon: ICONS.cases, defaultRoute: 'cases',
+    description: 'Investigações persistidas e seu contexto probatório.',
+    routes: [['cases', 'Casos']],
+  },
+  {
+    id: 'investigate', label: 'Investigar', icon: ICONS.investigate, defaultRoute: 'time',
+    description: 'Tempo, diferenças, relações, replay e explicação.',
+    routes: [
+      ['time', 'Linha do tempo'],
+      ['diff', 'Comparar A/B'],
+      ['graph', 'Grafo & relações'],
+      ['replay', 'Reconstituição'],
+      ['why', 'WHY / causalidade'],
+      ['ia', 'Inteligência assistida'],
     ],
   },
   {
-    title: 'Evidência',
-    items: [
-      ['custody', '◇', 'Cadeia de custódia', 'proveniência ponta a ponta'],
-      ['merkle', '▦', 'Integridade Merkle', 'provas e verificação'],
-      ['comp', '✓', 'Compliance técnico', 'estado técnico comprovável'],
+    id: 'evidence', label: 'Evidência', icon: ICONS.evidence, defaultRoute: 'custody',
+    description: 'Proveniência, integridade e conformidade verificável.',
+    routes: [
+      ['custody', 'Cadeia de custódia'],
+      ['merkle', 'Integridade Merkle'],
+      ['comp', 'Compliance técnico'],
     ],
   },
   {
-    title: 'Módulos',
-    items: [
-      ['agent', '◎', 'Agent Black Box', 'runs, tools, policy e evidência'],
-      ['soc', '◉', 'Sentinel / SOC', 'segurança como módulo'],
-      ['ia', '✦', 'Inteligência assistida', 'explicação sem inventar fatos'],
+    id: 'agent', label: 'Agent Black Box', icon: ICONS.agent, defaultRoute: 'agent',
+    description: 'Runs, ferramentas, policy e evidência de agentes.',
+    routes: [['agent', 'Agent Black Box']],
+  },
+  {
+    id: 'sentinel', label: 'Sentinel', icon: ICONS.sentinel, defaultRoute: 'soc',
+    description: 'Segurança operacional como módulo da plataforma.',
+    routes: [['soc', 'Sentinel / SOC']],
+  },
+  {
+    id: 'governance', label: 'Governança', icon: ICONS.governance, defaultRoute: 'exec',
+    description: 'Visão executiva, LGPD e trilha de auditoria.',
+    routes: [
+      ['exec', 'Painel executivo'],
+      ['titular', 'Titular / LGPD'],
+      ['auditor', 'Auditoria'],
     ],
   },
   {
-    title: 'Governança',
-    items: [
-      ['exec', '▤', 'Painel executivo', 'visão de decisão'],
-      ['titular', '○', 'Titular / LGPD', 'pegada e acessos'],
-      ['auditor', '⚖', 'Auditoria', 'trilha e controles'],
-    ],
+    id: 'system', label: 'Sistema', icon: ICONS.system, defaultRoute: 'capabilities',
+    description: 'Capacidades, runtime e diagnóstico da instância.',
+    routes: [['capabilities', 'Capacidades & runtime']],
   },
 ];
 
-function item([id, icon, label, hint]) {
-  return `<a data-s="${id}" role="button" tabindex="0" title="${label}">
-    <span class="ic" aria-hidden="true">${icon}</span>
-    <span class="nav-item-copy">
-      <span class="nav-label">${label}</span>
-      <small>${hint}</small>
-    </span>
-  </a>`;
+const AREA_BY_ID = new Map(AREAS.map(a => [a.id, a]));
+const ROUTE_INDEX = new Map();
+for (const area of AREAS) {
+  for (const [id, label] of area.routes) ROUTE_INDEX.set(id, { area, label });
+}
+
+const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+}[c]));
+
+const fold = value => String(value || '')
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+function railButton(area) {
+  return `<button class="rail-item" type="button" data-area="${area.id}" data-label="${escapeHtml(area.label)}"
+    aria-label="${escapeHtml(area.label)}" title="${escapeHtml(area.label)}">
+    <span class="rail-icon">${area.icon}</span>
+  </button>`;
+}
+
+function contextLinks(area) {
+  return area.routes.map(([id, label]) =>
+    `<a class="context-link" href="#${id}" data-s="${id}"><span>${escapeHtml(label)}</span></a>`
+  ).join('');
 }
 
 export const Navigation = {
+  activeArea: 'home',
+  activeRoute: 'overview',
+
   render() {
-    return `<div class="nav-shell">
-      <div class="nav-head">
-        <div class="nav-workspace">
-          <span class="nav-workspace-mark" aria-hidden="true">H</span>
-          <span class="nav-workspace-copy">
-            <strong>Platform Console</strong>
-            <small>operações & evidência</small>
-          </span>
-        </div>
-        <button id="nav-toggle" class="nav-toggle" type="button" aria-label="Recolher navegação" aria-expanded="true" title="Recolher navegação">
-          <span aria-hidden="true">‹</span>
+    const primary = AREAS.filter(a => !['governance', 'system'].includes(a.id));
+    const utility = AREAS.filter(a => ['governance', 'system'].includes(a.id));
+    return `<div class="app-nav">
+      <div class="nav-rail" aria-label="Áreas da plataforma">
+        <button class="rail-home" type="button" data-area="home" aria-label="HeraclitusDB — início" title="HeraclitusDB — início">
+          <span>H</span>
+        </button>
+        <div class="rail-stack rail-primary">${primary.map(railButton).join('')}</div>
+        <div class="rail-spacer"></div>
+        <div class="rail-stack rail-utility">${utility.map(railButton).join('')}</div>
+        <button id="nav-collapse" class="rail-control" type="button" aria-label="Recolher navegação contextual" title="Recolher navegação contextual">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 7-5 5 5 5"/></svg>
         </button>
       </div>
-      <div class="nav-scroll">
-        ${GROUPS.map(g => `<div class="nav-group"><div class="grp">${g.title}</div>${g.items.map(item).join('')}</div>`).join('')}
+
+      <div class="nav-context" id="nav-context">
+        <div class="nav-context-head">
+          <span class="nav-kicker">Área</span>
+          <h2 id="nav-context-title">Início</h2>
+          <p id="nav-context-description">Estado da plataforma e atalhos operacionais.</p>
+        </div>
+        <nav class="nav-context-links" id="nav-context-links" aria-label="Páginas da área">
+          ${contextLinks(AREA_BY_ID.get('home'))}
+        </nav>
+        <div class="nav-context-footer">
+          <button id="nav-command-button" class="nav-command-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
+            <span>Ir para qualquer tela</span><kbd>Ctrl K</kbd>
+          </button>
+          <div class="nav-build"><span class="nav-build-dot" aria-hidden="true"></span><span>${RELEASE}</span></div>
+        </div>
       </div>
-      <div class="nav-footer">
-        <span class="nav-release-dot" aria-hidden="true"></span>
-        <span class="nav-release-copy"><strong>HeraclitusDB Dashboard</strong><small>${RELEASE}</small></span>
-      </div>
+    </div>
+
+    <div id="command-palette" class="command-palette" hidden>
+      <button class="command-scrim" type="button" data-command-close aria-label="Fechar busca"></button>
+      <section class="command-dialog" role="dialog" aria-modal="true" aria-labelledby="command-title">
+        <div class="command-search-row">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></svg>
+          <label class="so-leitor" for="command-input" id="command-title">Ir para uma tela</label>
+          <input id="command-input" type="search" autocomplete="off" placeholder="Ir para uma tela…" spellcheck="false">
+          <kbd>Esc</kbd>
+        </div>
+        <div id="command-results" class="command-results" role="listbox" aria-label="Telas disponíveis"></div>
+        <div class="command-help">Digite para filtrar · ↑ ↓ para navegar · Enter para abrir</div>
+      </section>
     </div>`;
   },
 
   init() {
-    const links = [...document.querySelectorAll('#nav a[data-s]')];
-    const toggle = document.getElementById('nav-toggle');
+    const contextTitle = document.getElementById('nav-context-title');
+    const contextDescription = document.getElementById('nav-context-description');
+    const contextLinksEl = document.getElementById('nav-context-links');
+    const collapse = document.getElementById('nav-collapse');
+    const mobileToggle = document.getElementById('mobile-nav-toggle');
+    const backdrop = document.getElementById('nav-backdrop');
+    const palette = document.getElementById('command-palette');
+    const commandInput = document.getElementById('command-input');
+    const commandResults = document.getElementById('command-results');
 
-    const go = (id) => {
-      const target = document.getElementById(id);
-      if (!target) return;
-      links.forEach(x => {
-        const active = x.dataset.s === id;
-        x.classList.toggle('active', active);
-        if (active) x.setAttribute('aria-current', 'page');
-        else x.removeAttribute('aria-current');
+    const renderArea = area => {
+      this.activeArea = area.id;
+      document.querySelectorAll('.rail-item,[data-area].rail-home').forEach(button => {
+        const active = button.dataset.area === area.id;
+        button.classList.toggle('active', active);
+        if (active) button.setAttribute('aria-current', 'page');
+        else button.removeAttribute('aria-current');
       });
-      document.querySelectorAll('#main-content > section').forEach(s => s.classList.toggle('on', s.id === id));
-      history.replaceState(null, '', '#' + id);
-      document.getElementById('main-content')?.focus?.({ preventScroll: true });
-      if (window.matchMedia('(max-width: 900px)').matches) {
-        target.scrollIntoView({ block: 'start', behavior: 'smooth' });
-      }
+      if (contextTitle) contextTitle.textContent = area.label;
+      if (contextDescription) contextDescription.textContent = area.description;
+      if (contextLinksEl) contextLinksEl.innerHTML = contextLinks(area);
     };
 
-    links.forEach(a => {
-      a.onclick = () => go(a.dataset.s);
-      a.onkeydown = e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          go(a.dataset.s);
-        }
-      };
+    const markRoute = id => {
+      document.querySelectorAll('#nav-context-links a[data-s]').forEach(link => {
+        const active = link.dataset.s === id;
+        link.classList.toggle('active', active);
+        if (active) link.setAttribute('aria-current', 'page');
+        else link.removeAttribute('aria-current');
+      });
+    };
+
+    const closeMobile = () => document.documentElement.classList.remove('nav-mobile-open');
+
+    const go = (id, { history = false, replace = false, focus = true } = {}) => {
+      const entry = ROUTE_INDEX.get(id);
+      const target = document.getElementById(id);
+      if (!entry || !target) return;
+      if (entry.area.id !== this.activeArea) renderArea(entry.area);
+      this.activeRoute = id;
+      markRoute(id);
+      document.querySelectorAll('#main-content > section').forEach(section => section.classList.toggle('on', section.id === id));
+      if (history && location.hash !== `#${id}`) {
+        if (replace) window.history.replaceState({ route: id }, '', `#${id}`);
+        else window.history.pushState({ route: id }, '', `#${id}`);
+      }
+      document.title = `${entry.label} · HeraclitusDB`;
+      document.dispatchEvent(new CustomEvent('hera:route-changed', {
+        detail: { route: id, pageLabel: entry.label, areaId: entry.area.id, areaLabel: entry.area.label }
+      }));
+      if (focus) document.getElementById('main-content')?.focus?.({ preventScroll: true });
+      closeMobile();
+    };
+
+    const areaClick = areaId => {
+      const area = AREA_BY_ID.get(areaId);
+      if (!area) return;
+      const current = ROUTE_INDEX.get(this.activeRoute);
+      const route = current?.area.id === areaId ? this.activeRoute : area.defaultRoute;
+      go(route, { history: true });
+    };
+
+    document.querySelectorAll('[data-area].rail-item,[data-area].rail-home').forEach(button => {
+      button.addEventListener('click', () => areaClick(button.dataset.area));
     });
 
-    if (toggle) {
-      toggle.onclick = () => {
-        const collapsed = document.documentElement.classList.toggle('nav-collapsed');
-        toggle.setAttribute('aria-expanded', String(!collapsed));
-        toggle.setAttribute('aria-label', collapsed ? 'Expandir navegação' : 'Recolher navegação');
-        toggle.title = collapsed ? 'Expandir navegação' : 'Recolher navegação';
-        toggle.querySelector('span').textContent = collapsed ? '›' : '‹';
-      };
-    }
+    contextLinksEl?.addEventListener('click', event => {
+      const link = event.target.closest('a[data-s]');
+      if (!link) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button === 1) return;
+      event.preventDefault();
+      go(link.dataset.s, { history: true });
+    });
 
-    document.addEventListener('hera:navigate', e => go(e.detail));
-    const initial = location.hash.slice(1);
-    if (initial && document.getElementById(initial)) go(initial);
-    else go('overview');
+    collapse?.addEventListener('click', () => {
+      const collapsed = document.documentElement.classList.toggle('nav-panel-collapsed');
+      collapse.setAttribute('aria-label', collapsed ? 'Expandir navegação contextual' : 'Recolher navegação contextual');
+      collapse.title = collapsed ? 'Expandir navegação contextual' : 'Recolher navegação contextual';
+      collapse.classList.toggle('active', collapsed);
+    });
+
+    const toggleMobile = () => document.documentElement.classList.toggle('nav-mobile-open');
+    mobileToggle?.addEventListener('click', toggleMobile);
+    backdrop?.addEventListener('click', closeMobile);
+    document.addEventListener('hera:toggle-nav', toggleMobile);
+
+    const allRoutes = () => AREAS.flatMap(area => area.routes.map(([id, label]) => ({ id, label, area })));
+    let commandMatches = [];
+    let commandIndex = 0;
+
+    const renderCommandResults = query => {
+      const q = fold(query);
+      commandMatches = allRoutes().filter(item => !q || fold(`${item.label} ${item.area.label} ${item.area.description}`).includes(q)).slice(0, 12);
+      commandIndex = Math.min(commandIndex, Math.max(0, commandMatches.length - 1));
+      if (!commandResults) return;
+      commandResults.innerHTML = commandMatches.length ? commandMatches.map((item, index) => `
+        <button type="button" class="command-result${index === commandIndex ? ' selected' : ''}" data-route="${item.id}" role="option" aria-selected="${index === commandIndex}">
+          <span class="command-result-icon">${item.area.icon}</span>
+          <span class="command-result-copy"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(item.area.label)}</small></span>
+          <span class="command-enter">↵</span>
+        </button>`).join('') : '<div class="command-empty">Nenhuma tela encontrada.</div>';
+    };
+
+    const openCommand = () => {
+      if (!palette) return;
+      palette.hidden = false;
+      document.documentElement.classList.add('command-open');
+      if (commandInput) commandInput.value = '';
+      commandIndex = 0;
+      renderCommandResults('');
+      requestAnimationFrame(() => commandInput?.focus());
+    };
+    const closeCommand = () => {
+      if (!palette) return;
+      palette.hidden = true;
+      document.documentElement.classList.remove('command-open');
+    };
+
+    document.getElementById('nav-command-button')?.addEventListener('click', openCommand);
+    document.addEventListener('hera:open-command', openCommand);
+    palette?.addEventListener('click', event => {
+      if (event.target.closest('[data-command-close]')) return closeCommand();
+      const result = event.target.closest('[data-route]');
+      if (!result) return;
+      closeCommand();
+      go(result.dataset.route, { history: true });
+    });
+    commandInput?.addEventListener('input', () => {
+      commandIndex = 0;
+      renderCommandResults(commandInput.value);
+    });
+    commandInput?.addEventListener('keydown', event => {
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        commandIndex = Math.min(commandIndex + 1, commandMatches.length - 1);
+        renderCommandResults(commandInput.value);
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        commandIndex = Math.max(0, commandIndex - 1);
+        renderCommandResults(commandInput.value);
+      } else if (event.key === 'Enter' && commandMatches[commandIndex]) {
+        event.preventDefault();
+        const route = commandMatches[commandIndex].id;
+        closeCommand();
+        go(route, { history: true });
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        closeCommand();
+      }
+    });
+
+    document.addEventListener('keydown', event => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        openCommand();
+      } else if (event.key === 'Escape') {
+        closeCommand();
+        closeMobile();
+      }
+    });
+
+    document.addEventListener('hera:navigate', event => go(event.detail, { history: true }));
+    window.addEventListener('popstate', () => go(location.hash.slice(1) || 'overview', { history: false, focus: false }));
+
+    const initial = ROUTE_INDEX.has(location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
+    const entry = ROUTE_INDEX.get(initial);
+    renderArea(entry.area);
+    go(initial, { history: true, replace: true, focus: false });
   },
 };
