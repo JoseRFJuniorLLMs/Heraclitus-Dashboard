@@ -80,15 +80,15 @@ const AREAS = [
   },
 ];
 
-const AREA_BY_ID = new Map(AREAS.map(a => [a.id, a]));
+const AREA_BY_ID = new Map(AREAS.map(area => [area.id, area]));
 const ROUTE_INDEX = new Map();
 for (const area of AREAS) {
   for (const [id, label] of area.routes) ROUTE_INDEX.set(id, { area, label });
 }
 
-const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({
+const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-}[c]));
+}[char]));
 
 const fold = value => String(value || '')
   .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -111,11 +111,11 @@ export const Navigation = {
   activeRoute: 'overview',
 
   render() {
-    const primary = AREAS.filter(a => !['governance', 'system'].includes(a.id));
-    const utility = AREAS.filter(a => ['governance', 'system'].includes(a.id));
+    const primary = AREAS.filter(area => !['home', 'governance', 'system'].includes(area.id));
+    const utility = AREAS.filter(area => ['governance', 'system'].includes(area.id));
     return `<div class="app-nav">
       <div class="nav-rail" aria-label="Áreas da plataforma">
-        <button class="rail-home" type="button" data-area="home" aria-label="HeraclitusDB — início" title="HeraclitusDB — início">
+        <button class="rail-home" type="button" data-area="home" data-label="Início" aria-label="HeraclitusDB — início" title="HeraclitusDB — início">
           <span>H</span>
         </button>
         <div class="rail-stack rail-primary">${primary.map(railButton).join('')}</div>
@@ -273,6 +273,7 @@ export const Navigation = {
       renderCommandResults('');
       requestAnimationFrame(() => commandInput?.focus());
     };
+
     const closeCommand = () => {
       if (!palette) return;
       palette.hidden = true;
