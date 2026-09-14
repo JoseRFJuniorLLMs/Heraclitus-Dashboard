@@ -6,6 +6,7 @@ import { Capabilities } from './components/Capabilities.js';
 import { PublicData } from './components/PublicData.js';
 import { AgentBlackBox } from './components/AgentBlackBox.js';
 import { LabraAguCase } from './components/LabraAguCase.js';
+import { AebStreamCase } from './components/AebStreamCase.js';
 import { SOCPanel } from './components/SOCPanel.js';
 import { ExecPanel } from './components/ExecPanel.js';
 import { Titular } from './components/Titular.js';
@@ -33,8 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
   $('#header-container').innerHTML = Header.render();
   $('#nav').innerHTML = Navigation.render();
 
-  // A command palette é global. Mantê-la dentro do drawer faria o `transform`
-  // mobile arrastar um `position: fixed` para fora da viewport.
   const commandPalette = document.getElementById('command-palette');
   if (commandPalette) document.body.appendChild(commandPalette);
 
@@ -48,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ${Diff.render()}
     ${Cases.render()}
     ${LabraAguCase.render()}
+    ${AebStreamCase.render()}
     ${AttackGraph.render()}
     ${AttackReplay.render()}
     ${CausalInvestigation.render()}
@@ -78,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
   Diff.init();
   Cases.init();
   LabraAguCase.init();
+  AebStreamCase.init();
   AttackGraph.init();
   AttackReplay.init();
   CausalInvestigation.init();
@@ -91,7 +92,5 @@ document.addEventListener('DOMContentLoaded', () => {
   ForensicAI.init();
   Modos.init();
 
-  // Start the single shared heartbeat only after every interested component
-  // has registered its listeners, so the first stats sample is never lost.
   RuntimeMonitor.init();
 });
