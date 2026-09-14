@@ -7,6 +7,7 @@ import { PublicData } from './components/PublicData.js';
 import { AgentBlackBox } from './components/AgentBlackBox.js';
 import { LabraAguCase } from './components/LabraAguCase.js';
 import { AebStreamCase } from './components/AebStreamCase.js';
+import { CgeeCase } from './components/CgeeCase.js';
 import { SOCPanel } from './components/SOCPanel.js';
 import { ExecPanel } from './components/ExecPanel.js';
 import { Titular } from './components/Titular.js';
@@ -48,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ${Cases.render()}
     ${LabraAguCase.render()}
     ${AebStreamCase.render()}
+    ${CgeeCase.render()}
     ${AttackGraph.render()}
     ${AttackReplay.render()}
     ${CausalInvestigation.render()}
@@ -79,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
   Cases.init();
   LabraAguCase.init();
   AebStreamCase.init();
+  CgeeCase.init();
   AttackGraph.init();
   AttackReplay.init();
   CausalInvestigation.init();
