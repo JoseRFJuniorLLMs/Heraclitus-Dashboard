@@ -1,18 +1,24 @@
 # HeraclitusDB Dashboard
 
-Interface operacional da **plataforma HeraclitusDB**. O Dashboard organiza dados, investigação, evidência, módulos, casos de uso e governança sem transformar Sentinel, Agent Black Box ou uma aplicação vertical na identidade inteira do produto.
+Console local da **plataforma HeraclitusDB**. A identidade do produto é temporal: log canônico, LSN, reconstrução histórica, proveniência, integridade e módulos construídos sobre esse fundamento. Sentinel, Agent Black Box e aplicações verticais são superfícies da plataforma, não substitutos da identidade do banco.
 
-## Navegação R8
+## Navegação R9
 
 ```text
 HeraclitusDB
-│
 ├─ Dados
 ├─ Casos
-├─ LABRA-AGU
-├─ AEB-STREAM
-├─ CGEE
+│  ├─ Catálogo de casos
+│  ├─ LABRA-AGU
+│  ├─ AEB-STREAM
+│  └─ CGEE · Integridade Orçamentária
 ├─ Investigar
+│  ├─ Linha do tempo
+│  ├─ Comparar A/B
+│  ├─ Grafo & relações
+│  ├─ Reconstituição
+│  ├─ WHY / causalidade
+│  └─ Inteligência assistida
 ├─ Evidência
 ├─ Agent Black Box
 ├─ Sentinel
@@ -20,132 +26,127 @@ HeraclitusDB
 └─ Sistema
 ```
 
-A shell usa rail primário + navegação contextual. `Ctrl+K` abre a command palette, o header mantém breadcrumb `Área / Tela` e telas pequenas usam drawer.
+`Ctrl+K` abre a command palette. O header mantém breadcrumb `Área / Tela`; em telas pequenas a navegação vira drawer.
 
-## Superfícies da plataforma
+## Casos de uso
 
-- **Visão geral**: head LSN, memtable, texto, vetores, grafo, entidades, ACT-R, integridade e módulos.
-- **Dados**: Portal da Transparência, PNCP, fontes ingeridas e mapa de atributos.
-- **Casos e investigação**: janelas temporais, comparação A/B, grafo, replay e WHY.
-- **LABRA-AGU**: recuperação de ativos e inteligência pericial como caso de uso versionado.
-- **AEB-STREAM**: operação espacial e perícia temporal de dados orbitais.
-- **CGEE**: integridade orçamentária SIOP, linha do tempo viva, heatmap diário estilo GitHub, WHY e verificação do log.
-- **Evidência**: cadeia de custódia, Merkle e estado técnico de compliance.
-- **Agent Black Box**: runs, tool calls, gateway, policy, approvals, ingest counters e integridade.
-- **Sentinel**: superfície SOC opcional. O stream SSE só fica aberto quando a tela está ativa.
-- **Governança**: painel executivo, consulta LGPD e auditoria.
-- **Sistema**: capacidades e runtime da instância.
+`#cases` é o catálogo das aplicações construídas sobre HeraclitusDB. Ele é deliberadamente separado da lista técnica de investigações retornada por `GET /cases` do Core.
 
-## LABRA-AGU
+### LABRA-AGU
 
-Rota: `#labra`  
-Snapshot: `JoseRFJuniorLLMs/LABRA-AGU@9b5d9bcada759e23e12c2d995be17dca6e42a8e1`.
+Fonte: `JoseRFJuniorLLMs/LABRA-AGU@9b5d9bcada759e23e12c2d995be17dca6e42a8e1`.
 
-Runtime opcional:
+A rota `#labra` preserva a estrutura da aplicação fonte:
+
+- **Alertas de Fraude**;
+- **Mapa de Relações**;
+- **Emitir Diretriz**;
+- **Heraclitus Explorer**;
+- acesso ao agente investigativo real de `serve.py`;
+- explorador versionado da árvore do projeto, incluindo motor `agent/`, dashboard React, demos, documentação, avaliação e testes.
+
+O conteúdo demonstrativo existente no frontend React originário continua marcado como **snapshot demonstrativo**. O runtime vivo é separado:
 
 ```bash
+cd ~/LABRA-AGU
 python3 serve.py --no-open
 ```
 
-Por padrão em `127.0.0.1:8770`. O Dashboard expõe somente:
+Padrão: `http://127.0.0.1:8770`.
 
-```text
-/labra-api/health
-/labra-api/devedores
-```
+O host geral continua read-only e só proxyfica `GET /health` e `GET /devedores`. A execução investigativa do projeto permanece na aplicação LABRA originária.
 
-## AEB-STREAM
+### AEB-STREAM
 
-Rota: `#aeb`  
-Snapshot: `JoseRFJuniorLLMs/AEB@b8e9de466e9071a4b1c490a4faabb249dda36e9b`.
+Fonte: `JoseRFJuniorLLMs/AEB@b8e9de466e9071a4b1c490a4faabb249dda36e9b`.
 
-A superfície inclui CelesTrak → SGP4 → H×S×E → HeraclitusDB → grafo/ACT-R/anomalias e deixa explícito que **TLE/órbita são reais no PoC, enquanto a telemetria térmica/elétrica ainda é simulada**.
-
-Runtime opcional:
+A rota `#aeb` incorpora o **dashboard orbital original** servido por `dashboard.py`, preservando globo 3D, satélites, estações terrenas, contactos, sparklines de telemetria e anomalias. Também oferece leitura estruturada de `GET /aeb-api/data`, arquitetura e explorador do snapshot.
 
 ```bash
+cd ~/AEB
 python3 dashboard.py
 ```
 
-Por padrão em `127.0.0.1:7480`, com somente:
+Padrão: `http://127.0.0.1:7480`.
 
-```text
-/aeb-api/data
-```
+Fronteira de verdade: TLE/órbita via CelesTrak/SGP4 podem ser reais; temperatura/tensão do PoC continuam simuladas enquanto `simular_telemetria()` não for substituído por feed operacional.
 
-Documentação: `docs/USE-CASE-AEB-STREAM.md`.
+### CGEE · Integridade Orçamentária
 
-## CGEE · Integridade Orçamentária
+Fonte: `JoseRFJuniorLLMs/CGEE@31951717036bd39d9bc898a80686f3907ffd8699`.
 
-Rota: `#cgee`  
-Snapshot: `JoseRFJuniorLLMs/CGEE@31951717036bd39d9bc898a80686f3907ffd8699`.
+A rota `#cgee` incorpora o `painel.html` original e também mantém uma visão nativa do Dashboard construída somente com eventos reais do runtime:
 
-O caso incorpora o protótipo de integridade orçamentária baseado em alterações SIOP e preserva a parte visual mais distintiva do projeto: **linha do tempo viva + reprodução AS OF + heatmap diário estilo GitHub**.
-
-A superfície inclui:
-
-- arquitetura SIOP → ingestão → HeraclitusDB → AS OF/WHY/Merkle → painel;
-- filtro por exercício derivado dos eventos do runtime;
-- slider e reprodução progressiva por LSN/data;
-- heatmap diário estilo GitHub reconstruído apenas com eventos reais retornados pelo runtime;
-- duas barras de progresso: eventos acumulados e volume absoluto percorrido, com volume líquido exibido;
-- tabela do recorte temporal;
-- busca `WHY` por `action_id`/portaria;
-- `db.verify()` sob demanda;
-- explicação da ingestão SIOP e do schema `AlteracaoOrcamentaria`;
-- explorador versionado de `SPEC.md`, loaders, painel, servidor e imagens.
-
-### Fronteira de verdade
-
-O `painel.html` original possui fallback sintético para demonstração offline. O Dashboard principal **não usa esse fallback como estado operacional**:
-
-```text
-runtime CGEE online  -> dados reais devolvidos pelo processo CGEE
-runtime CGEE offline -> indisponível
-```
-
-Também não transforma o endpoint `WHY` atual em uma cadeia causal fictícia: no snapshot, ele localiza o evento pelo `action_id`. Causalidade mais profunda depende do backend causal real.
-
-O loader de referência é `ingest_amostra.py`, porque corrige o mapeamento de valor para:
-
-```text
-val_acrescimo - val_reducao
-```
-
-Runtime opcional:
+- seletor de exercício;
+- replay / AS OF;
+- heatmap diário estilo GitHub;
+- duas barras temporais;
+- tabela do recorte;
+- WHY por `action_id`/portaria;
+- verificação do log;
+- pipeline SIOP → `AlteracaoOrcamentaria`.
 
 ```bash
+cd ~/CGEE
 python3 painel_server.py
 ```
 
-Por padrão em `127.0.0.1:8000`. O Dashboard expõe apenas:
+Padrão: `http://127.0.0.1:8000`.
+
+O fallback sintético existente no HTML originário serve à demo do projeto, mas **não é promovido a estado operacional pela visão nativa do Heraclitus Dashboard**.
+
+## Identidade temporal restaurada
+
+A rota `#time` é o **Temporal Reconstruction Workbench**. R9 recupera a linguagem visual do dashboard temporal antigo sem recuperar sua dependência de `GOLDEN_DEMO`.
+
+Ela possui:
+
+- LIVE / AS OF LSN / COMPARE / REPLAY;
+- step back / play / step forward;
+- cursor temporal;
+- velocidade de reprodução;
+- duas barras que avançam com o tempo: **Eventos percorridos** e **Intervalo LSN percorrido**;
+- **Temporal Activity Map** de 52 semanas / 364 dias, estilo contribuições do GitHub;
+- tabela dos eventos até o cursor.
+
+A fonte é somente:
 
 ```text
-/cgee-api/stats
-/cgee-api/timeline?limit=1..5000
-/cgee-api/verify
-/cgee-api/why?portaria=<action_id>
+GET /security/events?limit=5000
 ```
 
-Documentação: `docs/USE-CASE-CGEE.md`.
+Sem eventos reais, o gráfico fica vazio. Não são inventados LSNs, portarias, incidentes ou provas.
 
-## Runtime global
+## Autenticação no arranque
 
-`js/runtime.js` mantém um único heartbeat do Core `/stats`. Sentinel não controla a saúde global da plataforma. O stream `/live/events` é aberto apenas enquanto Sentinel está ativo.
+Ao abrir o Dashboard, `LoginModal.bootstrap()` consulta o estado do host e testa o Core.
 
-## Proveniência de fontes públicas
+### Credencial server-side
+
+No `.env`:
+
+```bash
+HERACLITUS_REST_HOST=127.0.0.1
+HERACLITUS_REST_PORT=7475
+HERACLITUS_REST_USERNAME=
+HERACLITUS_REST_PASSWORD=
+```
+
+Quando usuário e senha existem, o proxy Python cria o Basic **server-side** e a UI mostra `Core: autenticado (.env)`. A senha não chega ao JavaScript.
+
+### Credencial no navegador
+
+Se o Core responder `401/403` e não houver credencial server-side válida, o modal de autenticação abre automaticamente. Usuário/senha ficam somente na memória da página.
+
+O Dashboard distingue:
 
 ```text
-fonte oficial externa
-        ↓ observação
-EXTERNAL_UNSEALED + source/query/time/SHA-256
-        ↓ ingestão explícita
-HeraclitusDB canonical log
-        ↓
-LSN + proveniência + integridade verificável
+401/403 -> autenticação necessária
+rede/timeout/502 -> Core indisponível
+200 -> Core conectado
 ```
 
-Uma resposta consultada no Portal da Transparência ou PNCP não recebe automaticamente LSN, Merkle proof ou status `VERIFIED`.
+Agent Black Box possui Bearer/OIDC separado. Credenciais do Core não são reutilizadas no Agent nem encaminhadas a LABRA, AEB, CGEE ou fontes públicas.
 
 ## Arranque local
 
@@ -157,80 +158,67 @@ set +a
 python3 server.py
 ```
 
-Padrão: `http://127.0.0.1:9337/`.
+Dashboard: `http://127.0.0.1:9337`.
 
-Configuração principal:
+Principais variáveis:
 
 ```bash
 HERACLITUS_DASHBOARD_BIND=127.0.0.1
 HERACLITUS_DASHBOARD_PORT=9337
-HERACLITUS_DASHBOARD_ALLOWED_HOSTS=localhost:9337,127.0.0.1:9337,[::1]:9337
-
 HERACLITUS_REST_HOST=127.0.0.1
 HERACLITUS_REST_PORT=7475
 HERACLITUS_REST_USERNAME=
 HERACLITUS_REST_PASSWORD=
-
 HERACLITUS_AGENT_HOST=127.0.0.1
 HERACLITUS_AGENT_PORT=8080
-
 LABRA_HOST=127.0.0.1
 LABRA_PORT=8770
-
 AEB_HOST=127.0.0.1
 AEB_PORT=7480
-
 CGEE_HOST=127.0.0.1
 CGEE_PORT=8000
-```
-
-Quando `HERACLITUS_REST_USERNAME` e `HERACLITUS_REST_PASSWORD` estão definidos, o proxy cria o Basic **server-side** apenas para o Core. A senha não chega ao JavaScript, não vai para `localStorage` e não é reutilizada no Agent, LABRA, AEB, CGEE ou fontes públicas.
-
-Superfícies do host:
-
-```text
-/api/*          -> HeraclitusDB Core REST
-/agent-api/*    -> Agent Evidence API
-/labra-api/*    -> LABRA-AGU local, allowlist read-only
-/aeb-api/data   -> AEB-STREAM local, read-only
-/cgee-api/*     -> CGEE local, quatro endpoints read-only
-/public-api/*   -> fontes governamentais allow-listed
-/dashboard-api/status -> diagnóstico do Dashboard
 ```
 
 Diagnóstico:
 
 ```bash
 curl -s http://127.0.0.1:9337/dashboard-api/status
-curl -s http://127.0.0.1:9337/api/stats
+curl -i http://127.0.0.1:9337/api/stats
 curl -s http://127.0.0.1:9337/labra-api/health
 curl -s http://127.0.0.1:9337/aeb-api/data
 curl -s http://127.0.0.1:9337/cgee-api/stats
-curl -s 'http://127.0.0.1:9337/cgee-api/timeline?limit=100'
 ```
 
-## Modelo de escrita
+## Fronteiras do host
 
-O Dashboard geral é **somente leitura**:
+O host geral é **somente leitura**:
 
-- proxy Python aceita `GET`/`OPTIONS` e recusa mutações;
-- componentes de UI não executam `POST`, `PUT`, `PATCH` ou `DELETE`;
-- LABRA, AEB e CGEE possuem allowlists independentes;
-- futuras mutações administrativas exigem superfície dedicada, autenticação forte, RBAC e trilha de auditoria.
+```text
+/api/*          -> HeraclitusDB Core REST allow-listed
+/agent-api/*    -> Agent Evidence / Black Box read-only
+/labra-api/*    -> LABRA health/devedores
+/aeb-api/data   -> AEB payload operacional
+/cgee-api/*     -> stats/timeline/verify/why
+/public-api/*   -> fontes públicas allow-listed
+```
 
-## Segurança
+`POST`, `PUT`, `PATCH` e `DELETE` não são expostos pelo host geral. Operações próprias de uma aplicação vertical ficam no respectivo runtime e na respectiva fronteira de autenticação.
 
-- bind em loopback por padrão;
-- allowlist de `Host` contra DNS rebinding;
-- fronteiras independentes para Core, Agent, LABRA, AEB, CGEE e dados públicos;
-- Core Basic opcional fica apenas no processo Python;
-- credenciais do navegador não são encaminhadas para casos de uso ou fontes públicas;
-- sem proxy arbitrário/SSRF;
-- CGEE limita timeline a no máximo 5.000 eventos por chamada;
-- limite global de 8 MiB para respostas não-streaming;
-- CSP same-origin;
-- arquivos internos não são servidos;
-- credenciais não são persistidas em `localStorage`/`sessionStorage`.
+Os frames dos casos só podem apontar para os runtimes loopback configurados. A CSP não permite frames arbitrários, e `frame-ancestors 'none'` impede que o próprio Dashboard seja embutido por terceiros.
+
+## Proveniência de fontes públicas
+
+```text
+fonte oficial externa
+        ↓
+EXTERNAL_UNSEALED + origem/query/tempo/SHA-256
+        ↓ ingestão explícita
+HeraclitusDB canonical log
+        ↓
+LSN + proveniência + integridade verificável
+```
+
+Consultar Portal da Transparência ou PNCP não transforma automaticamente a resposta em evidência selada.
 
 ## Testes
 
@@ -242,14 +230,12 @@ python3 -m py_compile server.py
 python3 -m unittest -v tests.test_server
 ```
 
-Os gates verificam snapshots, isolamento CSS, ausência de iframe, read-only, isolamento de credenciais, allowlists dos runtimes, fronteiras real/simulado e os contratos temporais do CGEE.
+Os gates R9 verificam hierarquia de Casos, snapshots fonte, fidelidade LABRA/AEB/CGEE, timeline real sem `GOLDEN_DEMO`, autenticação no arranque, read-only, CSP dos runtimes e isolamento de credenciais.
 
-## Auditorias e casos de uso
+## Auditoria R9
 
-- `docs/AUDITORIA-RECURSIVA-5X-2026-09-14.md`
-- `docs/AUDITORIA-RECURSIVA-5X-ROUND2-2026-09-14.md`
-- `docs/AUDITORIA-UI-SOTA-RECURSIVA-2026-09-14.md`
-- `docs/AUDITORIA-DASHBOARD-SOTA-R4-2026-09-14.md`
-- `docs/USE-CASE-LABRA-AGU.md`
-- `docs/USE-CASE-AEB-STREAM.md`
-- `docs/USE-CASE-CGEE.md`
+A revisão completa está em:
+
+`docs/AUDITORIA-RECURSIVA-20X-R9-2026-09-14.md`
+
+Ela registra as 20 passadas de auditoria e o critério de aceite da release `2026.09.14-r9`.
