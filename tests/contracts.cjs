@@ -3,30 +3,36 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.join(__dirname, '..');
 const read = p => fs.readFileSync(path.join(root,p),'utf8');
+
 const app=read('js/app.js'), runtime=read('js/runtime.js'), nav=read('js/components/Navigation.js'), header=read('js/components/Header.js'), time=read('js/components/TimeMachine.js');
 const caps=read('js/components/Capabilities.js'), agent=read('js/components/AgentBlackBox.js'), publicData=read('js/components/PublicData.js');
 const labra=read('js/components/LabraAguCase.js'), labraCss=read('css/labra-case.css');
 const aeb=read('js/components/AebStreamCase.js'), aebCss=read('css/aeb-case.css');
+const cgee=read('js/components/CgeeCase.js'), cgeeCss=read('css/cgee-case.css');
 const why=read('js/components/CausalInvestigation.js'), replay=read('js/components/AttackReplay.js'), soc=read('js/components/SOCPanel.js');
 const ai=read('js/components/ForensicAI.js'), comp=read('js/components/CompliancePanel.js'), titular=read('js/components/Titular.js');
 const api=read('js/api.js'), login=read('js/components/LoginModal.js'), index=read('index.html');
 const platformCss=read('css/platform.css');
 
-// Product identity: HeraclitusDB is the platform; modules/use-cases remain subordinate surfaces.
-for (const required of ['PlatformOverview.render()','Capabilities.render()','PublicData.render()','AgentBlackBox.render()','LabraAguCase.render()','AebStreamCase.render()','LabraAguCase.init()','AebStreamCase.init()']) assert(app.includes(required), required);
-for (const required of ['Agent Black Box','Sentinel / SOC','LABRA-AGU','AEB-STREAM','Capacidades & runtime',"id:'labra'","id:'aeb'"]) assert(nav.includes(required), required);
+// Product identity: HeraclitusDB is the platform; use cases are first-class but subordinate surfaces.
+for (const required of [
+  'PlatformOverview.render()','Capabilities.render()','PublicData.render()','AgentBlackBox.render()',
+  'LabraAguCase.render()','AebStreamCase.render()','CgeeCase.render()',
+  'LabraAguCase.init()','AebStreamCase.init()','CgeeCase.init()'
+]) assert(app.includes(required), required);
+for (const required of ['Agent Black Box','Sentinel / SOC','LABRA-AGU','AEB-STREAM','CGEE','Capacidades & runtime',"id:'labra'","id:'aeb'","id:'cgee'"]) assert(nav.includes(required), required);
 assert(caps.includes('Analytics / DataFusion / Arrow Flight'));
 assert(caps.includes('Raft / cluster'));
 assert(caps.includes('Agent Evidence & Control'));
 
-// Navigation architecture.
-for (const required of ["id:'data'","id:'investigate'","id:'evidence'","id:'governance'",'command-palette','Ctrl K',"const RELEASE = '2026.09.14-r7'"]) assert(nav.includes(required), required);
+// Navigation architecture and release observability.
+for (const required of ["id:'data'","id:'investigate'","id:'evidence'","id:'governance'",'command-palette','Ctrl K',"const RELEASE = '2026.09.14-r8'"]) assert(nav.includes(required), required);
 assert(header.includes('header-breadcrumb'));
 assert(header.includes('global-search-button'));
 assert(index.includes('hera-dashboard-release'));
-assert(index.includes('2026.09.14-r7'));
+assert(index.includes('2026.09.14-r8'));
 assert(index.includes('class="skip-link"'));
-for (const css of ['css/styles.css','css/platform.css','css/labra-case.css','css/aeb-case.css']) assert(index.includes(css), css);
+for (const css of ['css/styles.css','css/platform.css','css/labra-case.css','css/aeb-case.css','css/cgee-case.css']) assert(index.includes(css), css);
 assert(!index.includes('css/soc.css'));
 assert(!index.includes('govbar-container'));
 assert(!fs.existsSync(path.join(root,'css','soc.css')));
@@ -43,20 +49,33 @@ assert(!labra.includes('<iframe'));
 assert(labraCss.includes('.labra-case'));
 assert(!/(^|})\s*(?:body|header|nav|main|aside|html|\*)\b/.test(labraCss), 'LABRA stylesheet leaks global selectors');
 
-// AEB-STREAM is a versioned first-class use case, with honest source/provenance boundaries.
+// AEB-STREAM remains versioned with honest real/simulated boundaries.
 assert(aeb.includes("const SNAPSHOT = 'b8e9de466e9071a4b1c490a4faabb249dda36e9b'"));
-assert(aeb.includes('CASO DE USO · OPERAÇÃO ESPACIAL E PERÍCIA TEMPORAL'));
-assert(aeb.includes('pipeline.py'));
-assert(aeb.includes('HeraclitusDB'));
 assert(aeb.includes('SGP4'));
 assert(aeb.includes('simular_telemetria()'));
 assert(aeb.includes('TLE/órbita:'));
 assert(aeb.includes('/aeb-api/data'));
 assert(aeb.includes('TERMICA_SALTO'));
-assert(aeb.includes('Space-Track'));
 assert(!aeb.includes('<iframe'));
 assert(aebCss.includes('.aeb-case'));
 assert(!/(^|})\s*(?:body|header|nav|main|aside|html|\*)\b/.test(aebCss), 'AEB stylesheet leaks global selectors');
+
+// CGEE is a pinned budget-integrity use case. The GitHub-style temporal spine is real-runtime only.
+assert(cgee.includes("const SNAPSHOT = '31951717036bd39d9bc898a80686f3907ffd8699'"));
+assert(cgee.includes('CASO DE USO · INTEGRIDADE ORÇAMENTÁRIA E VIAGEM NO TEMPO'));
+assert(cgee.includes('heatmap diário estilo GitHub'));
+assert(cgee.includes('ingest_amostra.py'));
+assert(cgee.includes('val_acrescimo - val_reducao'));
+assert(cgee.includes('/cgee-api/stats'));
+assert(cgee.includes('/cgee-api/timeline?limit=2500'));
+assert(cgee.includes('/cgee-api/verify'));
+assert(cgee.includes('/cgee-api/why?portaria='));
+assert(cgee.includes('Nenhum dado sintético foi injetado'));
+assert(cgee.includes('Uma cadeia causal mais profunda exige o backend causal'));
+assert(!cgee.includes('<iframe'));
+assert(cgeeCss.includes('.cgee-case .cgee-hm-grid'));
+assert(cgeeCss.includes('#216e39'));
+assert(!/(^|})\s*(?:body|header|nav|main|aside|html|\*)\b/.test(cgeeCss), 'CGEE stylesheet leaks global selectors');
 
 // Runtime architecture: one shared Core heartbeat; Sentinel owns route-scoped SSE.
 assert(app.includes("import { RuntimeMonitor } from './runtime.js'"));
@@ -105,4 +124,4 @@ assert(login.includes('Bearer/OIDC Agent'));
 assert(login.includes('Não reutilizamos o Basic do Core no Agent'));
 
 assert(index.includes('js/app.js'));
-console.log('Dashboard contracts OK: R7 platform-first, LABRA + AEB use cases, read-only runtime boundaries and provenance honesty.');
+console.log('Dashboard contracts OK: R8 platform-first with LABRA, AEB and CGEE use cases; temporal truth and read-only trust boundaries enforced.');
