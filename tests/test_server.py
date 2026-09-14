@@ -29,7 +29,7 @@ class ServerTests(unittest.TestCase):
         finally: c.close()
 
     def test_public_assets(self):
-        for path in ['/', '/css/platform.css', '/js/app.js', '/js/components/AgentBlackBox.js']:
+        for path in ['/', '/css/platform.css', '/js/app.js', '/js/components/AgentBlackBox.js', '/js/components/Capabilities.js']:
             self.assertEqual(self.request(path)[0], 200, path)
 
     def test_private_files_never_served(self):
@@ -40,7 +40,7 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(self.request('/', host='evil.example:9337')[0], 403)
 
     def test_core_routes_are_read_only_and_allow_real_dashboard_contract(self):
-        for path in ['/api/stats','/api/diff','/api/replay','/api/verify/12','/api/titular/test','/api/cases']:
+        for path in ['/api/stats','/api/diff','/api/replay','/api/verify/12','/api/titular/test','/api/cases','/api/live/events']:
             self.assertEqual(self.request(path)[0], 401, path)
         self.assertEqual(self.request('/api/hvm/upsert')[0], 403)
         self.assertEqual(self.request('/api/stats', method='POST')[0], 405)
@@ -55,6 +55,9 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(status, 200)
         payload=json.loads(body)
         self.assertIn('portal_transparencia', payload); self.assertIn('pncp', payload); self.assertIn('provenance_rule', payload)
+        self.assertFalse(payload['portal_transparencia']['upstream_checked'])
+        self.assertFalse(payload['pncp']['upstream_checked'])
+        self.assertTrue(payload['pncp']['proxy_enabled'])
         if not dashboard.PORTAL_API_KEY:
             self.assertEqual(self.request('/public-api/portal/contratos?pagina=1')[0], 503)
         self.assertEqual(self.request('/public-api/portal/anything-goes')[0], 403)
