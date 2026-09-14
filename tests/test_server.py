@@ -52,7 +52,7 @@ class ServerTests(unittest.TestCase):
         return server, thread
 
     def test_public_assets(self):
-        for path in ['/', '/css/platform.css', '/css/labra-case.css', '/js/app.js', '/js/components/AgentBlackBox.js', '/js/components/LabraAguCase.js', '/js/components/Capabilities.js']:
+        for path in ['/', '/css/platform.css', '/css/labra-case.css', '/css/aeb-case.css', '/js/app.js', '/js/components/AgentBlackBox.js', '/js/components/LabraAguCase.js', '/js/components/AebStreamCase.js', '/js/components/Capabilities.js']:
             self.assertEqual(self.request(path)[0], 200, path)
 
     def test_private_files_never_served(self):
@@ -72,6 +72,8 @@ class ServerTests(unittest.TestCase):
         self.assertIn(payload['core_auth_mode'], {'server_env', 'browser_memory'})
         self.assertTrue(payload['labra_runtime']['proxy_enabled'])
         self.assertEqual(payload['labra_runtime']['port'], dashboard.LABRA_PORT)
+        self.assertTrue(payload['aeb_runtime']['proxy_enabled'])
+        self.assertEqual(payload['aeb_runtime']['port'], dashboard.AEB_PORT)
         self.assertEqual(headers['X-Heraclitus-Dashboard-Release'], dashboard.RELEASE)
         self.assertEqual(self.request('/')[2]['X-Heraclitus-Dashboard-Release'], dashboard.RELEASE)
 
@@ -119,19 +121,27 @@ class ServerTests(unittest.TestCase):
         stub, thread = self.stub()
         old_host, old_port, old_auth = dashboard.LABRA_HOST, dashboard.LABRA_PORT, dashboard.CORE_AUTH_HEADER
         try:
-            dashboard.LABRA_HOST = '127.0.0.1'
-            dashboard.LABRA_PORT = stub.server_port
-            dashboard.CORE_AUTH_HEADER = 'Basic c2Vuc2l0aXZlOmNvcmU='
-            self.assertEqual(self.request('/labra-api/health')[0], 200)
-            self.assertEqual(CaptureHandler.path_seen, '/health')
-            self.assertIsNone(CaptureHandler.auth)
-            self.assertEqual(self.request('/labra-api/devedores')[0], 200)
-            self.assertEqual(CaptureHandler.path_seen, '/devedores')
-            self.assertIsNone(CaptureHandler.auth)
+            dashboard.LABRA_HOST = '127.0.0.1'; dashboard.LABRA_PORT = stub.server_port; dashboard.CORE_AUTH_HEADER = 'Basic c2Vuc2l0aXZlOmNvcmU='
+            self.assertEqual(self.request('/labra-api/health')[0], 200); self.assertEqual(CaptureHandler.path_seen, '/health'); self.assertIsNone(CaptureHandler.auth)
+            self.assertEqual(self.request('/labra-api/devedores')[0], 200); self.assertEqual(CaptureHandler.path_seen, '/devedores'); self.assertIsNone(CaptureHandler.auth)
             self.assertEqual(self.request('/labra-api/investigar')[0], 403)
             self.assertEqual(self.request('/labra-api/investigar', method='POST')[0], 405)
         finally:
             dashboard.LABRA_HOST, dashboard.LABRA_PORT, dashboard.CORE_AUTH_HEADER = old_host, old_port, old_auth
+            stub.shutdown(); stub.server_close(); thread.join()
+
+    def test_aeb_runtime_proxy_is_narrow_read_only_and_isolated(self):
+        stub, thread = self.stub()
+        old_host, old_port, old_auth = dashboard.AEB_HOST, dashboard.AEB_PORT, dashboard.CORE_AUTH_HEADER
+        try:
+            dashboard.AEB_HOST = '127.0.0.1'; dashboard.AEB_PORT = stub.server_port; dashboard.CORE_AUTH_HEADER = 'Basic c2Vuc2l0aXZlOmNvcmU='
+            self.assertEqual(self.request('/aeb-api/data')[0], 200)
+            self.assertEqual(CaptureHandler.path_seen, '/api/data')
+            self.assertIsNone(CaptureHandler.auth)
+            self.assertEqual(self.request('/aeb-api/assets/globe.gl.min.js')[0], 403)
+            self.assertEqual(self.request('/aeb-api/data', method='POST')[0], 405)
+        finally:
+            dashboard.AEB_HOST, dashboard.AEB_PORT, dashboard.CORE_AUTH_HEADER = old_host, old_port, old_auth
             stub.shutdown(); stub.server_close(); thread.join()
 
     def test_public_data_status_and_portal_key_boundary(self):
