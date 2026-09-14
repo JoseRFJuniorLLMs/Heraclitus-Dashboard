@@ -1,4 +1,3 @@
-import { GovBar } from './components/GovBar.js';
 import { Header } from './components/Header.js';
 import { Navigation } from './components/Navigation.js';
 import { PlatformOverview } from './components/PlatformOverview.js';
@@ -29,7 +28,6 @@ window.fmt = n => Number(n).toLocaleString('pt-BR');
 window.LIVE = false;
 
 document.addEventListener('DOMContentLoaded', () => {
-  $('#govbar-container').innerHTML = GovBar.render();
   $('#header-container').innerHTML = Header.render();
   $('#nav').innerHTML = Navigation.render();
   $('#main-content').innerHTML = `
@@ -55,9 +53,31 @@ document.addEventListener('DOMContentLoaded', () => {
     ${Modos.render()}
   `;
 
-  const modalContainer=document.createElement('div'); modalContainer.innerHTML=LoginModal.render(); document.body.appendChild(modalContainer);
-  Header.init(); LoginModal.init(); Navigation.init(); PlatformOverview.init(); Capabilities.init(); PublicData.init();
-  Fontes.init(); Atributos.init(); TimeMachine.init(); Diff.init(); Cases.init(); AttackGraph.init(); AttackReplay.init();
-  CausalInvestigation.init(); CustodyChain.init(); MerkleViewer.init(); CompliancePanel.init(); AgentBlackBox.init();
-  SOCPanel.init(); ExecPanel.init(); Titular.init(); ForensicAI.init(); Modos.init();
+  const modalContainer = document.createElement('div');
+  modalContainer.innerHTML = LoginModal.render();
+  document.body.appendChild(modalContainer);
+
+  Header.init();
+  LoginModal.init();
+  Navigation.init();
+  PlatformOverview.init();
+  Capabilities.init();
+  PublicData.init();
+  Fontes.init();
+  Atributos.init();
+  TimeMachine.init();
+  Diff.init();
+  Cases.init();
+  AttackGraph.init();
+  AttackReplay.init();
+  CausalInvestigation.init();
+  CustodyChain.init();
+  MerkleViewer.init();
+  CompliancePanel.init();
+  AgentBlackBox.init();
+  SOCPanel.init();
+  ExecPanel.init();
+  Titular.init();
+  ForensicAI.init();
+  Modos.init();
 });
