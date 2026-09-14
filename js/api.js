@@ -1,174 +1,21 @@
-/**
- * Heraclitus Dashboard transport layer.
- *
- * There are three distinct trust/data planes:
- *   - core: HeraclitusDB REST (sealed/derived state)
- *   - agent: optional Agent Evidence & Control module
- *   - public: official external government APIs proxied by server.py
- *
- * Credentials are intentionally memory-only. Reloading the tab forgets them.
- */
-const PADRAO_CORE = (typeof window !== 'undefined' && window.location.port === '9337')
-  ? window.location.origin + '/api'
-  : 'http://127.0.0.1:7475';
-const PADRAO_AGENT = (typeof window !== 'undefined' && window.location.port === '9337')
-  ? window.location.origin + '/agent-api'
-  : 'http://127.0.0.1:8080';
-const PADRAO_PUBLIC = (typeof window !== 'undefined' && window.location.port === '9337')
-  ? window.location.origin + '/public-api'
-  : null;
-
-let authMemory = null;
-let coreOverride = null;
-let agentOverride = null;
-
-export const Falha = Object.freeze({
-  TIMEOUT: 'timeout', CORS: 'cors', REDE: 'rede', AUTH: 'auth',
-  AUSENTE: 'ausente', HTTP: 'http', FORMATO: 'formato', CONFIG: 'config',
-});
-
-const normalizarBase = (v) => String(v || '').trim().replace(/\/+$/, '');
-const validarBase = (v) => {
-  const limpo = normalizarBase(v);
-  let u;
-  try { u = new URL(limpo); } catch {
-    return { erro: 'Endereço inválido. Inclua http:// ou https://.' };
-  }
-  if (!['http:', 'https:'].includes(u.protocol)) return { erro: `Esquema não suportado: ${u.protocol}` };
-  const local = ['localhost', '127.0.0.1', '::1', '[::1]'].includes(u.hostname);
-  if (!local && u.protocol !== 'https:') return { erro: 'Endpoints remotos exigem HTTPS.' };
-  return { ok: true, valor: limpo };
+/** Heraclitus Dashboard transport layer: Core, Agent and public data are separate trust planes. */
+const PADRAO_CORE = (typeof window !== 'undefined' && window.location.port === '9337') ? window.location.origin + '/api' : 'http://127.0.0.1:7475';
+const PADRAO_AGENT = (typeof window !== 'undefined' && window.location.port === '9337') ? window.location.origin + '/agent-api' : 'http://127.0.0.1:8080';
+const PADRAO_PUBLIC = (typeof window !== 'undefined' && window.location.port === '9337') ? window.location.origin + '/public-api' : null;
+let authMemory=null, agentTokenMemory=null, coreOverride=null, agentOverride=null;
+export const Falha=Object.freeze({TIMEOUT:'timeout',CORS:'cors',REDE:'rede',AUTH:'auth',AUSENTE:'ausente',HTTP:'http',FORMATO:'formato',CONFIG:'config'});
+const normalizarBase=v=>String(v||'').trim().replace(/\/+$/,'');
+const validarBase=v=>{const limpo=normalizarBase(v);let u;try{u=new URL(limpo)}catch{return{erro:'Endereço inválido. Inclua http:// ou https://.'}}if(!['http:','https:'].includes(u.protocol))return{erro:`Esquema não suportado: ${u.protocol}`};const local=['localhost','127.0.0.1','::1','[::1]'].includes(u.hostname);if(!local&&u.protocol!=='https:')return{erro:'Endpoints remotos exigem HTTPS.'};return{ok:true,valor:limpo}};
+const authHeaders=()=>{if(!authMemory)return{};try{const bytes=new TextEncoder().encode(authMemory);let bin='';for(const b of bytes)bin+=String.fromCharCode(b);return{Authorization:'Basic '+btoa(bin)}}catch{return{}}};
+const agentAuthHeaders=()=>agentTokenMemory?{Authorization:`Bearer ${agentTokenMemory}`}:{ };
+async function request(base,caminho,{ms=6000,texto=false,auth=true,headers={}}={}){if(!base)return{ok:false,falha:Falha.CONFIG,detalhe:'superfície indisponível neste modo'};const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),ms),t0=performance.now();try{const h={...(auth?authHeaders():{}),...headers};const r=await fetch(base+caminho,{cache:'no-store',signal:ctrl.signal,headers:h});const latencia=performance.now()-t0;if(!r.ok){let corpo=null;try{corpo=await r.json()}catch{}const falha=(r.status===401||r.status===403)?Falha.AUTH:r.status===404?Falha.AUSENTE:Falha.HTTP;return{ok:false,falha,estado:r.status,corpo,latencia}}try{return{ok:true,dados:texto?await r.text():await r.json(),latencia}}catch(e){return{ok:false,falha:e?.name==='AbortError'?Falha.TIMEOUT:Falha.FORMATO,latencia}}}catch(e){const latencia=performance.now()-t0;if(e?.name==='AbortError')return{ok:false,falha:Falha.TIMEOUT,latencia};return{ok:false,falha:Falha.REDE,latencia}}finally{clearTimeout(timer)}}
+export const API={
+ base:()=>coreOverride||PADRAO_CORE,agentBase:()=>agentOverride||PADRAO_AGENT,publicBase:()=>PADRAO_PUBLIC,
+ definirBase(v){const r=validarBase(v);if(!r.ok)return r;if(typeof window!=='undefined'&&window.location.port==='9337'){const u=new URL(r.valor);if(u.origin!==window.location.origin||u.pathname.replace(/\/$/,'')!=='/api')return{erro:'Neste modo o navegador deve usar o proxy local /api; configure o upstream no processo server.py.'}}coreOverride=r.valor;document.dispatchEvent(new CustomEvent('hera:endpoint-mudou'));return{ok:true}},
+ definirAgentBase(v){const r=validarBase(v);if(!r.ok)return r;if(typeof window!=='undefined'&&window.location.port==='9337'){const u=new URL(r.valor);if(u.origin!==window.location.origin||u.pathname.replace(/\/$/,'')!=='/agent-api')return{erro:'Neste modo o navegador deve usar o proxy local /agent-api; configure o upstream Agent no processo server.py.'}}agentOverride=r.valor;return{ok:true}},
+ credenciais:()=>authMemory,definirCredenciais(v){authMemory=v||null},definirAgentToken(v){agentTokenMemory=String(v||'').trim()||null},agentTokenConfigurado:()=>!!agentTokenMemory,cabecalhos:authHeaders,agentCabecalhos:agentAuthHeaders,
+ get(caminho,opts){return request(this.base(),caminho,opts)},agentGet(caminho,opts){return request(this.agentBase(),caminho,{...(opts||{}),auth:false,headers:{...agentAuthHeaders(),...(opts?.headers||{})}})},publicGet(caminho,opts){return request(this.publicBase(),caminho,{...(opts||{}),auth:false})},stats(){return this.get('/stats')},state(){return this.get('/state')},healthz(){return this.get('/healthz',{texto:true})},verify(){return this.get('/verify',{ms:120000})}
 };
-
-const authHeaders = () => {
-  if (!authMemory) return {};
-  try {
-    const bytes = new TextEncoder().encode(authMemory);
-    let bin = '';
-    for (const b of bytes) bin += String.fromCharCode(b);
-    return { Authorization: 'Basic ' + btoa(bin) };
-  } catch { return {}; }
-};
-
-async function request(base, caminho, { ms = 6000, texto = false, auth = true } = {}) {
-  if (!base) return { ok: false, falha: Falha.CONFIG, detalhe: 'superfície indisponível neste modo' };
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), ms);
-  const t0 = performance.now();
-  try {
-    const headers = auth ? authHeaders() : {};
-    const r = await fetch(base + caminho, { cache: 'no-store', signal: ctrl.signal, headers });
-    const latencia = performance.now() - t0;
-    if (!r.ok) {
-      let corpo = null;
-      try { corpo = await r.json(); } catch { /* no-op */ }
-      const falha = (r.status === 401 || r.status === 403) ? Falha.AUTH
-        : r.status === 404 ? Falha.AUSENTE : Falha.HTTP;
-      return { ok: false, falha, estado: r.status, corpo, latencia };
-    }
-    try {
-      return { ok: true, dados: texto ? await r.text() : await r.json(), latencia };
-    } catch (e) {
-      return { ok: false, falha: e?.name === 'AbortError' ? Falha.TIMEOUT : Falha.FORMATO, latencia };
-    }
-  } catch (e) {
-    const latencia = performance.now() - t0;
-    if (e?.name === 'AbortError') return { ok: false, falha: Falha.TIMEOUT, latencia };
-    return { ok: false, falha: Falha.REDE, latencia };
-  } finally { clearTimeout(timer); }
-}
-
-export const API = {
-  base: () => coreOverride || PADRAO_CORE,
-  agentBase: () => agentOverride || PADRAO_AGENT,
-  publicBase: () => PADRAO_PUBLIC,
-  definirBase(v) {
-    const r = validarBase(v); if (!r.ok) return r;
-    if (typeof window !== 'undefined' && window.location.port === '9337') {
-      const u = new URL(r.valor);
-      if (u.origin !== window.location.origin || u.pathname.replace(/\/$/, '') !== '/api') {
-        return { erro: 'Neste modo o navegador deve usar o proxy local /api; configure o upstream no processo server.py.' };
-      }
-    }
-    coreOverride = r.valor;
-    document.dispatchEvent(new CustomEvent('hera:endpoint-mudou'));
-    return { ok: true };
-  },
-  definirAgentBase(v) {
-    const r = validarBase(v); if (!r.ok) return r; agentOverride = r.valor; return { ok: true };
-  },
-  credenciais: () => authMemory,
-  definirCredenciais(v) { authMemory = v || null; },
-  cabecalhos: authHeaders,
-  get(caminho, opts) { return request(this.base(), caminho, opts); },
-  agentGet(caminho, opts) { return request(this.agentBase(), caminho, { ...(opts || {}), auth: false }); },
-  publicGet(caminho, opts) { return request(this.publicBase(), caminho, { ...(opts || {}), auth: false }); },
-  stats() { return this.get('/stats'); },
-  state() { return this.get('/state'); },
-  healthz() { return this.get('/healthz', { texto: true }); },
-  verify() { return this.get('/verify', { ms: 120000 }); },
-};
-
-export function explicarFalha(f, estado) {
-  switch (f) {
-    case Falha.AUTH: return { curto: 'sem autorização', longo: 'A superfície exige credenciais válidas.' };
-    case Falha.AUSENTE: return { curto: 'endpoint inexistente', longo: 'Esta versão do servidor não expõe o recurso.' };
-    case Falha.TIMEOUT: return { curto: 'sem resposta', longo: 'O servidor excedeu o tempo limite.' };
-    case Falha.REDE: return { curto: 'sem ligação', longo: 'Não foi possível contactar o serviço.' };
-    case Falha.CORS: return { curto: 'bloqueado por CORS', longo: 'A origem não foi autorizada pelo servidor.' };
-    case Falha.FORMATO: return { curto: 'resposta inválida', longo: 'A resposta não pôde ser interpretada.' };
-    case Falha.CONFIG: return { curto: 'não configurado', longo: 'A superfície não está configurada neste modo.' };
-    default: return { curto: estado ? `HTTP ${estado}` : 'indisponível', longo: 'A origem de dados está indisponível.' };
-  }
-}
-
-export class Ritmo {
-  constructor({ janelaMs = 5000, maxAmostras = 90 } = {}) { this.janelaMs = janelaMs; this.maxAmostras = maxAmostras; this.amostras = []; this.serie = []; }
-  registar(head, agora = performance.now()) {
-    if (!Number.isFinite(head)) return this.taxa();
-    const ultima = this.amostras.at(-1);
-    if (ultima && head < ultima.head) { this.amostras = []; this.serie = []; }
-    this.amostras.push({ t: agora, head }); if (this.amostras.length > this.maxAmostras) this.amostras.shift();
-    if (ultima) { const dt = (agora - ultima.t) / 1000; if (dt > 0 && head >= ultima.head) { this.serie.push({ t: agora, v: (head - ultima.head) / dt }); if (this.serie.length > this.maxAmostras) this.serie.shift(); } }
-    return this.taxa();
-  }
-  taxa() {
-    if (this.amostras.length < 2) return null;
-    const fim = this.amostras.at(-1); let inicio = this.amostras[0];
-    for (const a of this.amostras) { if (fim.t - a.t <= this.janelaMs) { inicio = a; break; } }
-    const dt = (fim.t - inicio.t) / 1000; if (dt <= 0) return null;
-    const r = (fim.head - inicio.head) / dt; return Number.isFinite(r) ? Math.max(0, r) : null;
-  }
-  limpar() { this.amostras = []; this.serie = []; }
-}
-
-/** Authenticated SSE from the core service. */
-export function ligarFluxo({ aoEvento, aoEstado }) {
-  let ctrl = null, parado = false, tentativa = 0, alarme = null;
-  const fechar = () => { parado = true; if (alarme) clearTimeout(alarme); if (ctrl) ctrl.abort(); alarme = null; ctrl = null; };
-  const desistir = (falha, estado) => { const e = explicarFalha(falha, estado); aoEstado({ estado: 'indisponivel', falha, motivo: e.longo, curto: e.curto }); };
-  const agendar = () => { if (parado) return; tentativa = Math.min(tentativa + 1, 6); alarme = setTimeout(correr, Math.min(1000 * 2 ** (tentativa - 1), 30000)); };
-  const correr = async () => {
-    if (parado) return; ctrl = new AbortController();
-    let resp;
-    try { resp = await fetch(API.base() + '/live/events', { headers: { Accept: 'text/event-stream', ...API.cabecalhos() }, cache: 'no-store', signal: ctrl.signal }); }
-    catch (e) { if (parado || e?.name === 'AbortError') return; return desistir(Falha.REDE); }
-    if (!resp.ok || !resp.body) return desistir(resp.status === 401 || resp.status === 403 ? Falha.AUTH : resp.status === 404 ? Falha.AUSENTE : Falha.HTTP, resp.status);
-    tentativa = 0; aoEstado({ estado: 'ligado' });
-    const reader = resp.body.getReader(), dec = new TextDecoder(); let buf = '';
-    try {
-      for (;;) {
-        const { done, value } = await reader.read(); if (done) break;
-        buf += dec.decode(value, { stream: true }); buf = buf.replace(/\r\n/g, '\n');
-        let i; while ((i = buf.indexOf('\n\n')) >= 0) {
-          const bloco = buf.slice(0, i); buf = buf.slice(i + 2);
-          const dados = bloco.split('\n').filter(l => l.startsWith('data:')).map(l => l.slice(5).replace(/^ /, '')).join('\n');
-          if (!dados) continue; try { aoEvento(JSON.parse(dados)); } catch { /* ignore malformed event */ }
-        }
-      }
-    } catch (e) { if (parado || e?.name === 'AbortError') return; }
-    if (!parado) { aoEstado({ estado: 'reconectando' }); agendar(); }
-  };
-  correr();
-  return { fechar, reabrir() { fechar(); parado = false; tentativa = 0; correr(); } };
-}
+export function explicarFalha(f,estado){switch(f){case Falha.AUTH:return{curto:'sem autorização',longo:'A superfície exige credenciais válidas.'};case Falha.AUSENTE:return{curto:'endpoint inexistente',longo:'Esta versão do servidor não expõe o recurso.'};case Falha.TIMEOUT:return{curto:'sem resposta',longo:'O servidor excedeu o tempo limite.'};case Falha.REDE:return{curto:'sem ligação',longo:'Não foi possível contactar o serviço.'};case Falha.CORS:return{curto:'bloqueado por CORS',longo:'A origem não foi autorizada pelo servidor.'};case Falha.FORMATO:return{curto:'resposta inválida',longo:'A resposta não pôde ser interpretada.'};case Falha.CONFIG:return{curto:'não configurado',longo:'A superfície não está configurada neste modo.'};default:return{curto:estado?`HTTP ${estado}`:'indisponível',longo:'A origem de dados está indisponível.'}}}
+export class Ritmo{constructor({janelaMs=5000,maxAmostras=90}={}){this.janelaMs=janelaMs;this.maxAmostras=maxAmostras;this.amostras=[];this.serie=[]}registar(head,agora=performance.now()){if(!Number.isFinite(head))return this.taxa();const ultima=this.amostras.at(-1);if(ultima&&head<ultima.head){this.amostras=[];this.serie=[]}this.amostras.push({t:agora,head});if(this.amostras.length>this.maxAmostras)this.amostras.shift();if(ultima){const dt=(agora-ultima.t)/1000;if(dt>0&&head>=ultima.head){this.serie.push({t:agora,v:(head-ultima.head)/dt});if(this.serie.length>this.maxAmostras)this.serie.shift()}}return this.taxa()}taxa(){if(this.amostras.length<2)return null;const fim=this.amostras.at(-1);let inicio=this.amostras[0];for(const a of this.amostras){if(fim.t-a.t<=this.janelaMs){inicio=a;break}}const dt=(fim.t-inicio.t)/1000;if(dt<=0)return null;const r=(fim.head-inicio.head)/dt;return Number.isFinite(r)?Math.max(0,r):null}limpar(){this.amostras=[];this.serie=[]}}
+export function ligarFluxo({aoEvento,aoEstado}){let ctrl=null,parado=false,tentativa=0,alarme=null;const fechar=()=>{parado=true;if(alarme)clearTimeout(alarme);if(ctrl)ctrl.abort();alarme=null;ctrl=null};const desistir=(falha,estado)=>{const e=explicarFalha(falha,estado);aoEstado({estado:'indisponivel',falha,motivo:e.longo,curto:e.curto})};const agendar=()=>{if(parado)return;tentativa=Math.min(tentativa+1,6);alarme=setTimeout(correr,Math.min(1000*2**(tentativa-1),30000))};const correr=async()=>{if(parado)return;ctrl=new AbortController();let resp;try{resp=await fetch(API.base()+'/live/events',{headers:{Accept:'text/event-stream',...API.cabecalhos()},cache:'no-store',signal:ctrl.signal})}catch(e){if(parado||e?.name==='AbortError')return;return desistir(Falha.REDE)}if(!resp.ok||!resp.body)return desistir(resp.status===401||resp.status===403?Falha.AUTH:resp.status===404?Falha.AUSENTE:Falha.HTTP,resp.status);tentativa=0;aoEstado({estado:'ligado'});const reader=resp.body.getReader(),dec=new TextDecoder();let buf='';try{for(;;){const{done,value}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});buf=buf.replace(/\r\n/g,'\n');let i;while((i=buf.indexOf('\n\n'))>=0){const bloco=buf.slice(0,i);buf=buf.slice(i+2);const dados=bloco.split('\n').filter(l=>l.startsWith('data:')).map(l=>l.slice(5).replace(/^ /,'')).join('\n');if(!dados)continue;try{aoEvento(JSON.parse(dados))}catch{}}}}catch(e){if(parado||e?.name==='AbortError')return}if(!parado){aoEstado({estado:'reconectando'});agendar()}};correr();return{fechar,reabrir(){fechar();parado=false;tentativa=0;correr()}}}
