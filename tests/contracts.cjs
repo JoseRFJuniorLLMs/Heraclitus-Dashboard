@@ -3,10 +3,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.join(__dirname, '..');
 const read = p => fs.readFileSync(path.join(root,p),'utf8');
-const app=read('js/app.js'), nav=read('js/components/Navigation.js'), time=read('js/components/TimeMachine.js');
+const app=read('js/app.js'), runtime=read('js/runtime.js'), nav=read('js/components/Navigation.js'), header=read('js/components/Header.js'), time=read('js/components/TimeMachine.js');
 const caps=read('js/components/Capabilities.js'), agent=read('js/components/AgentBlackBox.js'), publicData=read('js/components/PublicData.js');
-const why=read('js/components/CausalInvestigation.js'), replay=read('js/components/AttackReplay.js');
-const ai=read('js/components/ForensicAI.js'), comp=read('js/components/CompliancePanel.js');
+const why=read('js/components/CausalInvestigation.js'), replay=read('js/components/AttackReplay.js'), soc=read('js/components/SOCPanel.js');
+const ai=read('js/components/ForensicAI.js'), comp=read('js/components/CompliancePanel.js'), titular=read('js/components/Titular.js');
 const api=read('js/api.js'), login=read('js/components/LoginModal.js'), index=read('index.html');
 const platformCss=read('css/platform.css');
 
@@ -15,26 +15,57 @@ assert(app.includes('PlatformOverview.render()'));
 assert(app.includes('Capabilities.render()'));
 assert(app.includes('PublicData.render()'));
 assert(app.includes('AgentBlackBox.render()'));
-assert(nav.indexOf('Visão geral') < nav.indexOf('Sentinel / SOC'));
-assert(nav.includes('Capacidades & runtime'));
 assert(nav.includes('Agent Black Box'));
+assert(nav.includes('Sentinel / SOC'));
+assert(nav.includes('Capacidades & runtime'));
 assert(caps.includes('Analytics / DataFusion / Arrow Flight'));
 assert(caps.includes('Raft / cluster'));
 assert(caps.includes('Agent Evidence & Control'));
 
-// Shell/UI contract: one global navigation system, collapsible, release-identifiable.
-assert(nav.includes('nav-shell'));
-assert(nav.includes('nav-toggle'));
-assert(nav.includes("const RELEASE = '2026.09.14-r3'"));
+// Navigation architecture: task-oriented rail + contextual children + command palette.
+assert(nav.includes("id: 'data'"));
+assert(nav.includes("id: 'investigate'"));
+assert(nav.includes("id: 'evidence'"));
+assert(nav.includes("id: 'governance'"));
+assert(nav.includes('command-palette'));
+assert(nav.includes('Ctrl K'));
+assert(nav.includes("const RELEASE = '2026.09.14-r4'"));
+assert(header.includes('header-breadcrumb'));
+assert(header.includes('global-search-button'));
 assert(index.includes('hera-dashboard-release'));
-assert(index.includes('2026.09.14-r3'));
+assert(index.includes('2026.09.14-r4'));
+assert(index.includes('class="skip-link"'));
 assert(index.includes('css/styles.css'));
 assert(index.includes('css/platform.css'));
 assert(!index.includes('css/soc.css'));
+assert(!index.includes('govbar-container'));
 assert(!fs.existsSync(path.join(root,'css','soc.css')));
-assert(platformCss.includes('html.nav-collapsed .wrap'));
+assert(!fs.existsSync(path.join(root,'js','components','GovBar.js')));
+assert(platformCss.includes('html.nav-panel-collapsed .wrap'));
+assert(platformCss.includes('html.nav-mobile-open #nav'));
 assert(platformCss.includes('#soc .soc'));
 assert(platformCss.includes('@media (max-width: 900px)'));
+
+// Runtime architecture: one shared Core heartbeat; Sentinel owns only its route-scoped SSE.
+assert(app.includes("import { RuntimeMonitor } from './runtime.js'"));
+assert(app.includes('RuntimeMonitor.init()'));
+assert(runtime.includes('API.stats()'));
+assert(runtime.includes("new CustomEvent('hera:stats'"));
+assert(runtime.includes('POLL_HIDDEN_MS'));
+assert(!soc.includes('API.stats()'));
+assert(!soc.includes('setInterval('));
+assert(soc.includes("event.detail?.route === 'soc'"));
+assert(soc.includes('this.fecharFluxo()'));
+assert(!soc.includes('drawMap('));
+assert(!soc.includes('Topologia'));
+
+// General dashboard is genuinely read-only. No component may sneak in a write.
+for (const component of fs.readdirSync(path.join(root,'js','components')).filter(f => f.endsWith('.js'))) {
+  const source = read(path.join('js','components',component));
+  assert(!/method\s*:\s*['"](?:POST|PUT|PATCH|DELETE)['"]/i.test(source), `${component} exposes a mutating HTTP method`);
+}
+assert(!titular.includes('/eliminar'));
+assert(titular.includes('Console read-only'));
 
 // No synthetic forensic claims.
 assert(!time.includes('gerarEventosSinteticos'));
@@ -64,4 +95,4 @@ assert(login.includes('Bearer/OIDC Agent'));
 assert(login.includes('Não reutilizamos o Basic do Core no Agent'));
 
 assert(index.includes('js/app.js'));
-console.log('Dashboard contracts OK: platform-first, single shell, responsive nav, no synthetic claims, public provenance and separate Agent auth.');
+console.log('Dashboard contracts OK: platform-first, R4 navigation, shared runtime, route-aware Sentinel, read-only UI, public provenance and separate Agent auth.');

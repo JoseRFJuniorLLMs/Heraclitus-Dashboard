@@ -3,31 +3,48 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..');
-const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const nav = fs.readFileSync(path.join(root, 'js/components/Navigation.js'), 'utf8');
-const platform = fs.readFileSync(path.join(root, 'css/platform.css'), 'utf8');
+const read = p => fs.readFileSync(path.join(root, p), 'utf8');
+const index = read('index.html');
+const nav = read('js/components/Navigation.js');
+const header = read('js/components/Header.js');
+const platform = read('css/platform.css');
+const app = read('js/app.js');
 
 const cssLinks = [...index.matchAll(/<link\s+rel="stylesheet"\s+href="([^"]+)"/g)].map(m => m[1]);
-assert.deepEqual(cssLinks, ['css/styles.css', 'css/platform.css'], 'runtime must load only the base and platform shell stylesheets');
+assert.deepEqual(cssLinks, ['css/styles.css', 'css/platform.css'], 'runtime must load only base components and one platform shell stylesheet');
 assert.equal(fs.existsSync(path.join(root, 'css', 'soc.css')), false, 'legacy global SOC stylesheet must stay deleted');
 
+// Information architecture: global rail + contextual pane, not a flat 20-item sidebar.
 for (const required of [
-  '.nav-shell', '.nav-head', '.nav-scroll', '.nav-footer', '#nav a.active',
-  'html.nav-collapsed .wrap', '@media (max-width: 900px)', '#soc .soc'
+  'const AREAS', 'nav-rail', 'nav-context', 'nav-context-links', 'command-palette',
+  'Agent Black Box', 'Sentinel / SOC', 'Capacidades & runtime', "const RELEASE = '2026.09.14-r4'"
+]) {
+  assert(nav.includes(required), `navigation architecture is missing ${required}`);
+}
+assert(nav.includes('href="#${id}"'), 'contextual destinations must render real href anchors');
+assert(!nav.includes('nav-item-copy'), 'legacy flat sidebar item-with-hint pattern must not return');
+assert(!nav.includes('nav-scroll'), 'legacy all-items scroll container must not return');
+
+// Global chrome is singular: no extra top identity strip.
+assert(!index.includes('govbar-container'));
+assert(!app.includes('GovBar'));
+assert(index.includes('class="skip-link"'));
+assert(index.includes('<aside id="nav"'));
+assert(index.includes('id="nav-backdrop"'));
+assert(header.includes('header-breadcrumb'));
+assert(header.includes('global-search-button'));
+assert(header.includes('mobile-nav-toggle'));
+
+for (const required of [
+  '.nav-rail', '.nav-context', '.nav-context-links', '.command-palette',
+  'html.nav-panel-collapsed .wrap', 'html.nav-mobile-open #nav', '.nav-backdrop',
+  '@media (max-width: 900px)', '#soc .soc'
 ]) {
   assert(platform.includes(required), `platform shell CSS is missing ${required}`);
 }
 
-for (const required of [
-  'nav-shell', 'nav-toggle', 'aria-current', 'Platform Console', '2026.09.14-r3'
-]) {
-  assert(nav.includes(required), `navigation shell is missing ${required}`);
-}
+// Mobile navigation is a drawer. The old 20-link horizontal carousel must not return.
+assert(platform.includes('transform:translateX(-102%)'));
+assert(platform.includes('html.nav-mobile-open #nav { transform:translateX(0); }'));
 
-// Guard against the exact regression that produced the broken screenshot:
-// a module stylesheet loaded after the platform base with global element rules.
-const cssDir = path.join(root, 'css');
-const cssFiles = fs.readdirSync(cssDir).filter(f => f.endsWith('.css'));
-assert.deepEqual(cssFiles.sort(), ['platform.css', 'styles.css']);
-
-console.log('UI shell contracts OK: single global shell, isolated SOC, collapsible responsive navigation.');
+console.log('UI shell contracts OK: primary rail, contextual navigation, command palette, breadcrumb, skip-link and mobile drawer.');

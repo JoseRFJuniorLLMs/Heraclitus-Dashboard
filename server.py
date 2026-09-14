@@ -20,7 +20,7 @@ import re
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parent
-RELEASE = "2026.09.14-r3"
+RELEASE = "2026.09.14-r4"
 MAX_RESPONSE = 8 * 1024 * 1024
 MAX_PATH = 4096
 CORE_HOST = os.getenv("HERACLITUS_REST_HOST", "127.0.0.1")
@@ -61,7 +61,7 @@ def _json_bytes(value)->bytes:return json.dumps(value,ensure_ascii=False,separat
 def _valid_query(query:str)->bool:return len(query)<=MAX_PATH and (not query or bool(SAFE_QUERY.fullmatch(query)))
 
 class Handler(BaseHTTPRequestHandler):
-    server_version="HeraclitusDashboard/3"
+    server_version="HeraclitusDashboard/4"
     def log_message(self,*_): pass
     def _security_headers(self):
         self.send_header("Cache-Control","no-store")
@@ -84,7 +84,7 @@ class Handler(BaseHTTPRequestHandler):
     def _auth_headers(self,require_auth=False):
         auth=self.headers.get("Authorization","")
         if require_auth and (not auth.startswith(("Basic ","Bearer ")) or len(auth)>8192):return None
-        headers={"Accept":"application/json","User-Agent":"Heraclitus-Dashboard/3"}
+        headers={"Accept":"application/json","User-Agent":"Heraclitus-Dashboard/4"}
         if auth and len(auth)<=8192:headers["Authorization"]=auth
         return headers
     def _proxy(self,host:str,port:int,target:str,*,https=False,require_auth=False,extra_headers=None,timeout=15):

@@ -1,4 +1,4 @@
-import { GovBar } from './components/GovBar.js';
+import { RuntimeMonitor } from './runtime.js';
 import { Header } from './components/Header.js';
 import { Navigation } from './components/Navigation.js';
 import { PlatformOverview } from './components/PlatformOverview.js';
@@ -23,15 +23,20 @@ import { CompliancePanel } from './components/CompliancePanel.js';
 import { ForensicAI } from './components/ForensicAI.js';
 import { LoginModal } from './components/LoginModal.js';
 
-window.$ = s => document.querySelector(s);
-window.$$ = s => document.querySelectorAll(s);
-window.fmt = n => Number(n).toLocaleString('pt-BR');
+window.$ = selector => document.querySelector(selector);
+window.$$ = selector => document.querySelectorAll(selector);
+window.fmt = number => Number(number).toLocaleString('pt-BR');
 window.LIVE = false;
 
 document.addEventListener('DOMContentLoaded', () => {
-  $('#govbar-container').innerHTML = GovBar.render();
   $('#header-container').innerHTML = Header.render();
   $('#nav').innerHTML = Navigation.render();
+
+  // A command palette é global. Mantê-la dentro do drawer faria o `transform`
+  // mobile arrastar um `position: fixed` para fora da viewport.
+  const commandPalette = document.getElementById('command-palette');
+  if (commandPalette) document.body.appendChild(commandPalette);
+
   $('#main-content').innerHTML = `
     ${PlatformOverview.render()}
     ${Capabilities.render()}
@@ -55,9 +60,35 @@ document.addEventListener('DOMContentLoaded', () => {
     ${Modos.render()}
   `;
 
-  const modalContainer=document.createElement('div'); modalContainer.innerHTML=LoginModal.render(); document.body.appendChild(modalContainer);
-  Header.init(); LoginModal.init(); Navigation.init(); PlatformOverview.init(); Capabilities.init(); PublicData.init();
-  Fontes.init(); Atributos.init(); TimeMachine.init(); Diff.init(); Cases.init(); AttackGraph.init(); AttackReplay.init();
-  CausalInvestigation.init(); CustodyChain.init(); MerkleViewer.init(); CompliancePanel.init(); AgentBlackBox.init();
-  SOCPanel.init(); ExecPanel.init(); Titular.init(); ForensicAI.init(); Modos.init();
+  const modalContainer = document.createElement('div');
+  modalContainer.innerHTML = LoginModal.render();
+  document.body.appendChild(modalContainer);
+
+  Header.init();
+  LoginModal.init();
+  Navigation.init();
+  PlatformOverview.init();
+  Capabilities.init();
+  PublicData.init();
+  Fontes.init();
+  Atributos.init();
+  TimeMachine.init();
+  Diff.init();
+  Cases.init();
+  AttackGraph.init();
+  AttackReplay.init();
+  CausalInvestigation.init();
+  CustodyChain.init();
+  MerkleViewer.init();
+  CompliancePanel.init();
+  AgentBlackBox.init();
+  SOCPanel.init();
+  ExecPanel.init();
+  Titular.init();
+  ForensicAI.init();
+  Modos.init();
+
+  // Start the single shared heartbeat only after every interested component
+  // has registered its listeners, so the first stats sample is never lost.
+  RuntimeMonitor.init();
 });
