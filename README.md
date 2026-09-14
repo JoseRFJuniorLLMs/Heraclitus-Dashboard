@@ -23,28 +23,6 @@ HeraclitusDB
    └─ mostra somente as telas da área ativa
 ```
 
-Exemplos:
-
-```text
-Dados
-├─ Dados públicos
-├─ Fontes & ingestão
-└─ Mapa de dados
-
-Investigar
-├─ Linha do tempo
-├─ Comparar A/B
-├─ Grafo & relações
-├─ Reconstituição
-├─ WHY / causalidade
-└─ Inteligência assistida
-
-Evidência
-├─ Cadeia de custódia
-├─ Integridade Merkle
-└─ Compliance técnico
-```
-
 `Ctrl+K` abre a command palette para saltar diretamente a qualquer superfície. O header mantém breadcrumb `Área / Tela`. Em telas pequenas a navegação vira drawer; não existe carrossel horizontal com vinte destinos.
 
 ## Superfícies da plataforma
@@ -60,19 +38,7 @@ Evidência
 
 ## Runtime
 
-O estado global do Core não depende mais do Sentinel. `js/runtime.js` mantém um único heartbeat de `/stats` e distribui eventos para Overview, Executive e Sentinel:
-
-```text
-HeraclitusDB Core /stats
-        │
-        ▼
- RuntimeMonitor
-   │    │    │
-   ▼    ▼    ▼
-Overview Exec Sentinel
-```
-
-O polling desacelera quando a página está oculta. O stream `/live/events` pertence ao Sentinel e é fechado ao sair da rota.
+O estado global do Core não depende mais do Sentinel. `js/runtime.js` mantém um único heartbeat de `/stats` e distribui eventos para Overview, Executive e Sentinel. O polling desacelera quando a página está oculta. O stream `/live/events` pertence ao Sentinel e é fechado ao sair da rota.
 
 ## Regra de proveniência
 
@@ -102,13 +68,22 @@ python3 server.py
 
 Por padrão: `http://127.0.0.1:9337/`.
 
-Configuração:
+Configuração do Dashboard e do Core:
 
 ```bash
-export HERACLITUS_DASHBOARD_BIND=127.0.0.1
-export HERACLITUS_DASHBOARD_PORT=9337
-export HERACLITUS_DASHBOARD_ALLOWED_HOSTS='localhost:9337,127.0.0.1:9337,[::1]:9337'
+HERACLITUS_DASHBOARD_BIND=127.0.0.1
+HERACLITUS_DASHBOARD_PORT=9337
+HERACLITUS_DASHBOARD_ALLOWED_HOSTS=localhost:9337,127.0.0.1:9337,[::1]:9337
+
+HERACLITUS_REST_HOST=127.0.0.1
+HERACLITUS_REST_PORT=7475
+HERACLITUS_REST_USERNAME=
+HERACLITUS_REST_PASSWORD=
 ```
+
+Quando `HERACLITUS_REST_USERNAME` e `HERACLITUS_REST_PASSWORD` estão definidos, o proxy Python cria o header Basic **server-side** e o Dashboard já inicia autenticado no Core. A senha não chega ao JavaScript, não vai para `localStorage` e não aparece em `/dashboard-api/status`. O arquivo `.env` é ignorado pelo Git.
+
+Se essas variáveis não forem definidas, continua disponível o login manual em memória pelo navegador. Credenciais explícitas fornecidas pelo navegador têm precedência sobre o fallback server-side.
 
 Superfícies do host local:
 
@@ -119,14 +94,15 @@ Superfícies do host local:
 /dashboard-api/status -> diagnóstico do próprio Dashboard
 ```
 
-A release R4 pode ser conferida por:
+Diagnóstico:
 
 ```bash
 curl -s http://127.0.0.1:9337/dashboard-api/status
 curl -I http://127.0.0.1:9337/
+curl -s http://127.0.0.1:9337/api/stats
 ```
 
-O servidor devolve `X-Heraclitus-Dashboard-Release` para denunciar processos/checkouts antigos.
+`/dashboard-api/status` expõe apenas o modo de autenticação (`server_env` ou `browser_memory`), nunca usuário, senha ou token.
 
 ## Modelo de escrita
 
@@ -138,14 +114,15 @@ O Dashboard geral é **somente leitura**:
 - aprovações de agentes e ativação de policy não são expostas nesta UI;
 - futuras mutações administrativas devem possuir superfície dedicada, autenticação forte, RBAC e trilha de auditoria.
 
-## Autenticação
+## Autenticação e fronteiras de confiança
 
 Core e Agent são planos de identidade separados:
 
-- **Core:** Basic/Bearer conforme o servidor, somente na memória da página.
+- **Core local:** pode usar Basic server-side via `.env` para auto-login no WSL.
+- **Core manual:** Basic/Bearer fornecido pelo navegador permanece somente na memória da página.
 - **Agent:** token Bearer/OIDC separado, também somente em memória.
-- o Basic do Core nunca é reaproveitado automaticamente no Agent.
-- recarregar a página apaga as credenciais do navegador.
+- o Basic do Core **nunca** é reaproveitado automaticamente no Agent.
+- o fallback de `.env` é aplicado somente a chamadas `/api/*` do Core.
 
 ## Portal da Transparência
 
@@ -163,6 +140,7 @@ A chave é enviada pelo proxy e não chega ao JavaScript. O dashboard mantém Po
 - bind em loopback por padrão;
 - allowlist de `Host` contra DNS rebinding;
 - allowlists independentes para Core, Agent e dados públicos;
+- credencial Core opcional mantida apenas no processo Python;
 - sem proxy arbitrário/SSRF;
 - limite de 8 MiB para respostas não-streaming;
 - CSP same-origin;
@@ -178,6 +156,12 @@ node tests/ui-shell.cjs
 python3 -m py_compile server.py
 python3 -m unittest -v tests.test_server
 ```
+
+Os testes do host incluem explicitamente:
+
+- Core server-side recebe o Basic configurado mesmo sem login do navegador;
+- a mesma credencial **não vaza** para `/agent-api/*`;
+- sem credencial server-side o comportamento manual anterior continua válido.
 
 O GitHub Actions executa os mesmos gates.
 

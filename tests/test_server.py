@@ -1,6 +1,7 @@
 import importlib.util
 import http.client
 import json
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import threading
 import unittest
@@ -8,6 +9,18 @@ import unittest
 spec = importlib.util.spec_from_file_location('dashboard', Path(__file__).resolve().parents[1] / 'server.py')
 dashboard = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(dashboard)
+
+class CaptureHandler(BaseHTTPRequestHandler):
+    auth = None
+    def log_message(self, *_): pass
+    def do_GET(self):
+        type(self).auth = self.headers.get('Authorization')
+        body = b'{}'
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
 class ServerTests(unittest.TestCase):
     @classmethod
@@ -28,6 +41,13 @@ class ServerTests(unittest.TestCase):
             r=c.getresponse(); body=r.read(); return r.status, body, dict(r.getheaders())
         finally: c.close()
 
+    def stub(self):
+        CaptureHandler.auth = None
+        server = ThreadingHTTPServer(('127.0.0.1', 0), CaptureHandler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        return server, thread
+
     def test_public_assets(self):
         for path in ['/', '/css/platform.css', '/js/app.js', '/js/components/AgentBlackBox.js', '/js/components/Capabilities.js']:
             self.assertEqual(self.request(path)[0], 200, path)
@@ -46,14 +66,44 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(payload['product'], 'HeraclitusDB Platform Console')
         self.assertEqual(payload['release'], dashboard.RELEASE)
         self.assertTrue(payload['read_only'])
+        self.assertIn(payload['core_auth_mode'], {'server_env', 'browser_memory'})
         self.assertEqual(headers['X-Heraclitus-Dashboard-Release'], dashboard.RELEASE)
         self.assertEqual(self.request('/')[2]['X-Heraclitus-Dashboard-Release'], dashboard.RELEASE)
 
     def test_core_routes_are_read_only_and_allow_real_dashboard_contract(self):
-        for path in ['/api/stats','/api/diff','/api/replay','/api/verify/12','/api/titular/test','/api/cases','/api/live/events']:
-            self.assertEqual(self.request(path)[0], 401, path)
+        if dashboard.CORE_AUTH_HEADER is None:
+            for path in ['/api/stats','/api/diff','/api/replay','/api/verify/12','/api/titular/test','/api/cases','/api/live/events']:
+                self.assertEqual(self.request(path)[0], 401, path)
         self.assertEqual(self.request('/api/hvm/upsert')[0], 403)
         self.assertEqual(self.request('/api/stats', method='POST')[0], 405)
+
+    def test_server_side_core_auth_is_used_without_browser_login(self):
+        stub, thread = self.stub()
+        old_host, old_port, old_auth = dashboard.CORE_HOST, dashboard.CORE_PORT, dashboard.CORE_AUTH_HEADER
+        try:
+            dashboard.CORE_HOST = '127.0.0.1'
+            dashboard.CORE_PORT = stub.server_port
+            dashboard.CORE_AUTH_HEADER = 'Basic dGVzdDp0ZXN0'
+            status, _, _ = self.request('/api/stats')
+            self.assertEqual(status, 200)
+            self.assertEqual(CaptureHandler.auth, 'Basic dGVzdDp0ZXN0')
+        finally:
+            dashboard.CORE_HOST, dashboard.CORE_PORT, dashboard.CORE_AUTH_HEADER = old_host, old_port, old_auth
+            stub.shutdown(); stub.server_close(); thread.join()
+
+    def test_core_server_credential_never_leaks_to_agent(self):
+        stub, thread = self.stub()
+        old_host, old_port, old_auth = dashboard.AGENT_HOST, dashboard.AGENT_PORT, dashboard.CORE_AUTH_HEADER
+        try:
+            dashboard.AGENT_HOST = '127.0.0.1'
+            dashboard.AGENT_PORT = stub.server_port
+            dashboard.CORE_AUTH_HEADER = 'Basic c2Vuc2l0aXZlOmNvcmU='
+            status, _, _ = self.request('/agent-api/api/v1/agent/status')
+            self.assertEqual(status, 200)
+            self.assertIsNone(CaptureHandler.auth)
+        finally:
+            dashboard.AGENT_HOST, dashboard.AGENT_PORT, dashboard.CORE_AUTH_HEADER = old_host, old_port, old_auth
+            stub.shutdown(); stub.server_close(); thread.join()
 
     def test_agent_read_routes_are_allowed_but_writes_denied(self):
         self.assertIn(self.request('/agent-api/api/v1/agent/status')[0], {404, 502})
