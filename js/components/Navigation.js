@@ -2,6 +2,7 @@ export const Navigation = {
   render(){return `
     <div class="grp">Plataforma</div>
     <a data-s="overview" class="active"><span class="ic">⌂</span> Visão geral</a>
+    <a data-s="capabilities"><span class="ic">▦</span> Capacidades & runtime</a>
     <a data-s="public"><span class="ic">▣</span> Dados públicos</a>
     <a data-s="fontes"><span class="ic">◇</span> Fontes & ingestão</a>
     <a data-s="atributos"><span class="ic">▩</span> Mapa de dados</a>

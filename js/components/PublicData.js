@@ -1,53 +1,28 @@
 import { API, explicarFalha } from '../api.js';
-const esc = (s) => String(s ?? '—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-export const PublicData = {
-  last: null,
-  render() {
-    return `
-      <section id="public">
-        <div class="secttl"><h2>Dados Públicos do Governo</h2><span class="tag">fonte oficial externa</span></div>
-        <p class="sub">Consulte Portal da Transparência e PNCP sem confundir resposta externa com evidência já ingerida no HeraclitusDB.</p>
-        <div class="provenance-banner"><strong>Regra:</strong> <span>EXTERNO → observado na fonte oficial. HERACLITUS → somente depois da ingestão canônica e atribuição de LSN.</span></div>
-        <div class="grid k3">
-          <div class="kpi"><div class="lb">Portal da Transparência</div><div class="v small-v" id="pd-portal">a verificar…</div></div>
-          <div class="kpi"><div class="lb">PNCP</div><div class="v small-v" id="pd-pncp">a verificar…</div></div>
-          <div class="kpi"><div class="lb">Resultado carregado</div><div class="v small-v" id="pd-count">—</div></div>
-        </div>
-        <div class="card">
-          <h3>Consulta oficial</h3>
-          <div class="query-grid">
-            <label>Fonte<select id="pd-source"><option value="portal">Portal da Transparência</option><option value="pncp">PNCP</option></select></label>
-            <label>Conjunto<select id="pd-dataset"></select></label>
-            <label class="span2">Parâmetros da API<input id="pd-query" placeholder="ex.: pagina=1&dataInicial=01/09/2026&dataFinal=14/09/2026"></label>
-          </div>
-          <div class="acao"><button class="btn" id="pd-run">Consultar fonte oficial</button><button class="btn ghost" id="pd-clear">Limpar</button></div>
-          <p class="nota">A chave do Portal, quando necessária, fica no processo Python do dashboard. Ela não é enviada ao navegador.</p>
-          <div id="pd-notice" class="aviso" hidden></div>
-        </div>
-        <div class="card"><h3>Resposta <span class="pill b">EXTERNA · NÃO SELADA</span></h3><div id="pd-result" class="vazio-block">Nenhuma consulta executada.</div></div>
-      </section>`;
-  },
-  async init() {
-    this.datasets={portal:['orgaos-siafi','contratos','licitacoes','ceis','cnep','cepim','emendas','servidores','viagens','despesas-documentos','notas-fiscais','pessoa-juridica','acordos-leniencia','ceaf','cartoes'],pncp:['contratacoes-publicacao','tipos-contratos']};
-    const src=document.getElementById('pd-source'); src.onchange=()=>this.fill(); this.fill();
-    document.getElementById('pd-run').onclick=()=>this.run();
-    document.getElementById('pd-clear').onclick=()=>{this.last=null;document.getElementById('pd-result').textContent='Nenhuma consulta executada.';document.getElementById('pd-count').textContent='—';};
-    const status=await API.publicGet('/status',{ms:5000});
-    if(status.ok){
-      document.getElementById('pd-portal').textContent=status.dados.portal_transparencia?.configured?'configurado':'falta chave API';
-      document.getElementById('pd-pncp').textContent='disponível';
-    } else { document.getElementById('pd-portal').textContent='indisponível';document.getElementById('pd-pncp').textContent='indisponível'; }
-  },
-  fill(){const s=document.getElementById('pd-source').value, d=document.getElementById('pd-dataset');d.innerHTML=this.datasets[s].map(x=>`<option>${esc(x)}</option>`).join('');},
-  async run(){
-    const source=document.getElementById('pd-source').value,dataset=document.getElementById('pd-dataset').value,q=document.getElementById('pd-query').value.trim();
-    const n=document.getElementById('pd-notice'), out=document.getElementById('pd-result'); n.hidden=true;out.textContent='Consultando…';
-    const path=`/${source}/${encodeURIComponent(dataset)}${q?'?'+q:''}`; const r=await API.publicGet(path,{ms:30000});
-    if(!r.ok){const e=explicarFalha(r.falha,r.estado);n.hidden=false;n.textContent=r.corpo?.message||e.longo;out.textContent='Sem resposta carregada.';return;}
-    this.last={source,dataset,query:q,data:r.dados,observedAt:new Date().toISOString()};
-    const rows=Array.isArray(r.dados)?r.dados:(r.dados?.data||r.dados?.resultado||r.dados?.items||[]);
-    document.getElementById('pd-count').textContent=Array.isArray(rows)?`${rows.length} na resposta`:'objeto';
-    const pre=document.createElement('pre');pre.className='json-view';pre.textContent=JSON.stringify(r.dados,null,2);out.replaceChildren(pre);
-  }
+const esc=s=>String(s??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const scalar=v=>v==null?'—':typeof v==='object'?JSON.stringify(v):String(v);
+const hex=buf=>[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+async function digest(text){if(globalThis.crypto?.subtle)return hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text)));return null;}
+function rowsOf(d){return Array.isArray(d)?d:(d?.data||d?.resultado||d?.items||[]);}
+export const PublicData={
+ last:null,observation:null,
+ datasets:{portal:['orgaos-siafi','contratos','licitacoes','ceis','cnep','cepim','emendas','servidores','viagens','despesas-documentos','notas-fiscais','pessoa-juridica','acordos-leniencia','ceaf','cartoes'],pncp:['contratacoes-publicacao','tipos-contratos']},
+ hints:{'portal:contratos':'pagina=1','portal:licitacoes':'pagina=1','portal:ceis':'pagina=1','portal:cnep':'pagina=1','pncp:contratacoes-publicacao':'dataInicial=20260901&dataFinal=20260914&codigoModalidadeContratacao=8&pagina=1','pncp:tipos-contratos':''},
+ render(){return `<section id="public">
+  <div class="secttl"><h2>Dados Públicos do Governo</h2><span class="tag">fonte oficial externa</span></div>
+  <p class="sub">Portal da Transparência e PNCP como fontes observáveis, sem confundir consulta externa com evidência já ingerida no HeraclitusDB.</p>
+  <div class="provenance-banner"><strong>Fronteira:</strong> <span>EXTERNO → observação oficial com origem, filtros, horário e hash. HERACLITUS → somente após ingestão canônica, LSN e prova correspondente.</span></div>
+  <div class="grid k3"><div class="kpi"><div class="lb">Portal da Transparência</div><div class="v small-v" id="pd-portal">a verificar…</div></div><div class="kpi"><div class="lb">PNCP</div><div class="v small-v" id="pd-pncp">a verificar…</div></div><div class="kpi"><div class="lb">Resultado</div><div class="v small-v" id="pd-count">—</div></div></div>
+  <div class="card"><h3>Consulta oficial</h3><div class="query-grid"><label>Fonte<select id="pd-source"><option value="portal">Portal da Transparência</option><option value="pncp">PNCP</option></select></label><label>Conjunto<select id="pd-dataset"></select></label><label class="span2">Parâmetros da API<input id="pd-query" placeholder="pagina=1"></label></div><div class="acao"><button class="btn" id="pd-run">Consultar fonte oficial</button><button class="btn ghost" id="pd-example">Usar exemplo</button><button class="btn ghost" id="pd-clear">Limpar</button></div><p class="nota">Periodicidade varia por conjunto. O dashboard não chama dados públicos de “tempo real”. A chave do Portal permanece somente no processo Python.</p><div id="pd-notice" class="aviso" hidden></div></div>
+  <div class="card"><h3>Recibo da observação <span class="pill b">EXTERNAL_UNSEALED</span></h3><div id="pd-receipt" class="observation-receipt vazio-block">Nenhuma observação.</div><div class="acao"><button class="btn ghost" id="pd-download" disabled>Baixar observação JSON</button></div><p class="nota">Este arquivo NÃO é Evidence Bundle Heraclitus: não possui LSN nem prova Merkle. Serve para preservar exatamente o que foi observado antes da ingestão.</p></div>
+  <div class="card"><h3>Prévia estruturada</h3><div id="pd-preview" class="vazio-block">Nenhuma consulta executada.</div></div>
+  <div class="card"><h3>Resposta bruta</h3><details><summary>JSON oficial retornado</summary><div id="pd-result" class="vazio-block">Nenhuma consulta executada.</div></details></div>
+ </section>`},
+ async init(){const src=document.getElementById('pd-source');src.onchange=()=>this.fill();document.getElementById('pd-dataset').onchange=()=>this.updateHint();this.fill();document.getElementById('pd-run').onclick=()=>this.run();document.getElementById('pd-example').onclick=()=>{const k=`${src.value}:${document.getElementById('pd-dataset').value}`;document.getElementById('pd-query').value=this.hints[k]??'pagina=1';};document.getElementById('pd-clear').onclick=()=>this.clear();document.getElementById('pd-download').onclick=()=>this.download();const st=await API.publicGet('/status',{ms:5000});if(st.ok){const p=st.dados.portal_transparencia||{},n=st.dados.pncp||{};document.getElementById('pd-portal').textContent=p.credential_configured||p.configured?'chave configurada · upstream não testado':'falta chave API';document.getElementById('pd-pncp').textContent=n.proxy_enabled===false?'desligado':'proxy habilitado · upstream não testado';}else{document.getElementById('pd-portal').textContent='proxy indisponível';document.getElementById('pd-pncp').textContent='proxy indisponível';}},
+ fill(){const s=document.getElementById('pd-source').value,d=document.getElementById('pd-dataset');d.innerHTML=this.datasets[s].map(x=>`<option>${esc(x)}</option>`).join('');this.updateHint();},
+ updateHint(){const s=document.getElementById('pd-source').value,d=document.getElementById('pd-dataset').value,i=document.getElementById('pd-query');i.placeholder=this.hints[`${s}:${d}`]??'pagina=1';},
+ clear(){this.last=null;this.observation=null;document.getElementById('pd-result').textContent='Nenhuma consulta executada.';document.getElementById('pd-preview').textContent='Nenhuma consulta executada.';document.getElementById('pd-receipt').textContent='Nenhuma observação.';document.getElementById('pd-count').textContent='—';document.getElementById('pd-download').disabled=true;},
+ async run(){const source=document.getElementById('pd-source').value,dataset=document.getElementById('pd-dataset').value,q=document.getElementById('pd-query').value.trim(),btn=document.getElementById('pd-run'),n=document.getElementById('pd-notice'),out=document.getElementById('pd-result');n.hidden=true;btn.disabled=true;btn.textContent='Consultando…';out.textContent='Consultando…';const path=`/${source}/${encodeURIComponent(dataset)}${q?'?'+q:''}`;const r=await API.publicGet(path,{ms:30000});btn.disabled=false;btn.textContent='Consultar fonte oficial';if(!r.ok){const e=explicarFalha(r.falha,r.estado);n.hidden=false;n.textContent=r.corpo?.message||e.longo;out.textContent='Sem resposta carregada.';return;}const observedAt=new Date().toISOString(),canonical=JSON.stringify(r.dados),sha=await digest(canonical),rows=rowsOf(r.dados);this.last={source,dataset,query:q,data:r.dados,observedAt};this.observation={schema:'heraclitus.external-observation/v1',provenance_state:'EXTERNAL_UNSEALED',source:{system:source==='portal'?'Portal da Transparência/CGU':'PNCP',dataset,query:q},observed_at:observedAt,response_sha256:sha,record_count:Array.isArray(rows)?rows.length:null,payload:r.dados};document.getElementById('pd-count').textContent=Array.isArray(rows)?`${rows.length} na resposta`:'objeto';document.getElementById('pd-receipt').innerHTML=`<div class="op-list"><div class="op-line"><span>Fonte</span><strong>${esc(this.observation.source.system)}</strong></div><div class="op-line"><span>Dataset</span><strong>${esc(dataset)}</strong></div><div class="op-line"><span>Observado em</span><strong class="mono">${esc(observedAt)}</strong></div><div class="op-line"><span>SHA-256 resposta</span><strong class="mono hash-wrap">${esc(sha||'WebCrypto indisponível')}</strong></div><div class="op-line"><span>Estado</span><strong>EXTERNAL_UNSEALED</strong></div><div class="op-line"><span>LSN</span><strong>não atribuído</strong></div></div>`;this.preview(rows);const pre=document.createElement('pre');pre.className='json-view';pre.textContent=JSON.stringify(r.dados,null,2);out.replaceChildren(pre);document.getElementById('pd-download').disabled=false;},
+ preview(rows){const out=document.getElementById('pd-preview');if(!Array.isArray(rows)||!rows.length){out.textContent='A resposta não contém uma lista tabular reconhecida.';return;}const keys=[...new Set(rows.slice(0,20).flatMap(r=>r&&typeof r==='object'&&!Array.isArray(r)?Object.keys(r):[]))].slice(0,8);if(!keys.length){out.textContent='Lista sem objetos tabulares.';return;}const table=document.createElement('table'),thead=document.createElement('thead'),tr=document.createElement('tr');for(const k of keys){const th=document.createElement('th');th.textContent=k;tr.append(th);}thead.append(tr);const tb=document.createElement('tbody');for(const row of rows.slice(0,50)){const rr=document.createElement('tr');for(const k of keys){const td=document.createElement('td'),v=scalar(row?.[k]);td.textContent=v.length>180?v.slice(0,177)+'…':v;rr.append(td);}tb.append(rr);}table.append(thead,tb);const wrap=document.createElement('div');wrap.className='table-wrap preview-table';wrap.append(table);out.replaceChildren(wrap);},
+ download(){if(!this.observation)return;const blob=new Blob([JSON.stringify(this.observation,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`observation-${this.last.source}-${this.last.dataset}-${Date.now()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
 };
