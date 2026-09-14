@@ -10,10 +10,14 @@ spec = importlib.util.spec_from_file_location('dashboard', Path(__file__).resolv
 dashboard = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(dashboard)
 
+
 class CaptureHandler(BaseHTTPRequestHandler):
     auth = None
     path_seen = None
-    def log_message(self, *_): pass
+
+    def log_message(self, *_):
+        pass
+
     def do_GET(self):
         type(self).auth = self.headers.get('Authorization')
         type(self).path_seen = self.path
@@ -24,6 +28,7 @@ class CaptureHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+
 class ServerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -33,15 +38,21 @@ class ServerTests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.server.shutdown(); cls.server.server_close(); cls.thread.join()
+        cls.server.shutdown()
+        cls.server.server_close()
+        cls.thread.join()
 
     def request(self, path, host='127.0.0.1:9337', method='GET', headers=None):
         c = http.client.HTTPConnection('127.0.0.1', self.server.server_port, timeout=3)
         try:
-            h={'Host':host}; h.update(headers or {})
+            h = {'Host': host}
+            h.update(headers or {})
             c.request(method, path, headers=h)
-            r=c.getresponse(); body=r.read(); return r.status, body, dict(r.getheaders())
-        finally: c.close()
+            r = c.getresponse()
+            body = r.read()
+            return r.status, body, dict(r.getheaders())
+        finally:
+            c.close()
 
     def stub(self):
         CaptureHandler.auth = None
@@ -52,11 +63,15 @@ class ServerTests(unittest.TestCase):
         return server, thread
 
     def test_public_assets(self):
-        for path in ['/', '/css/platform.css', '/css/labra-case.css', '/css/aeb-case.css', '/js/app.js', '/js/components/AgentBlackBox.js', '/js/components/LabraAguCase.js', '/js/components/AebStreamCase.js', '/js/components/Capabilities.js']:
+        for path in [
+            '/', '/css/platform.css', '/css/labra-case.css', '/css/aeb-case.css', '/css/cgee-case.css',
+            '/js/app.js', '/js/components/AgentBlackBox.js', '/js/components/LabraAguCase.js',
+            '/js/components/AebStreamCase.js', '/js/components/CgeeCase.js', '/js/components/Capabilities.js',
+        ]:
             self.assertEqual(self.request(path)[0], 200, path)
 
     def test_private_files_never_served(self):
-        for path in ['/.git/config','/server.py','/README.md','/.env','/tests/test_server.py','/js/../server.py']:
+        for path in ['/.git/config', '/server.py', '/README.md', '/.env', '/tests/test_server.py', '/js/../server.py']:
             self.assertEqual(self.request(path)[0], 404, path)
 
     def test_host_restricted(self):
@@ -70,16 +85,19 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(payload['release'], dashboard.RELEASE)
         self.assertTrue(payload['read_only'])
         self.assertIn(payload['core_auth_mode'], {'server_env', 'browser_memory'})
-        self.assertTrue(payload['labra_runtime']['proxy_enabled'])
-        self.assertEqual(payload['labra_runtime']['port'], dashboard.LABRA_PORT)
-        self.assertTrue(payload['aeb_runtime']['proxy_enabled'])
-        self.assertEqual(payload['aeb_runtime']['port'], dashboard.AEB_PORT)
+        for key, port in [
+            ('labra_runtime', dashboard.LABRA_PORT),
+            ('aeb_runtime', dashboard.AEB_PORT),
+            ('cgee_runtime', dashboard.CGEE_PORT),
+        ]:
+            self.assertTrue(payload[key]['proxy_enabled'])
+            self.assertEqual(payload[key]['port'], port)
         self.assertEqual(headers['X-Heraclitus-Dashboard-Release'], dashboard.RELEASE)
         self.assertEqual(self.request('/')[2]['X-Heraclitus-Dashboard-Release'], dashboard.RELEASE)
 
     def test_core_routes_are_read_only_and_allow_real_dashboard_contract(self):
         if dashboard.CORE_AUTH_HEADER is None:
-            for path in ['/api/stats','/api/diff','/api/replay','/api/verify/12','/api/titular/test','/api/cases','/api/live/events']:
+            for path in ['/api/stats', '/api/diff', '/api/replay', '/api/verify/12', '/api/titular/test', '/api/cases', '/api/live/events']:
                 self.assertEqual(self.request(path)[0], 401, path)
         self.assertEqual(self.request('/api/hvm/upsert')[0], 403)
         self.assertEqual(self.request('/api/stats', method='POST')[0], 405)
@@ -121,9 +139,15 @@ class ServerTests(unittest.TestCase):
         stub, thread = self.stub()
         old_host, old_port, old_auth = dashboard.LABRA_HOST, dashboard.LABRA_PORT, dashboard.CORE_AUTH_HEADER
         try:
-            dashboard.LABRA_HOST = '127.0.0.1'; dashboard.LABRA_PORT = stub.server_port; dashboard.CORE_AUTH_HEADER = 'Basic c2Vuc2l0aXZlOmNvcmU='
-            self.assertEqual(self.request('/labra-api/health')[0], 200); self.assertEqual(CaptureHandler.path_seen, '/health'); self.assertIsNone(CaptureHandler.auth)
-            self.assertEqual(self.request('/labra-api/devedores')[0], 200); self.assertEqual(CaptureHandler.path_seen, '/devedores'); self.assertIsNone(CaptureHandler.auth)
+            dashboard.LABRA_HOST = '127.0.0.1'
+            dashboard.LABRA_PORT = stub.server_port
+            dashboard.CORE_AUTH_HEADER = 'Basic c2Vuc2l0aXZlOmNvcmU='
+            self.assertEqual(self.request('/labra-api/health')[0], 200)
+            self.assertEqual(CaptureHandler.path_seen, '/health')
+            self.assertIsNone(CaptureHandler.auth)
+            self.assertEqual(self.request('/labra-api/devedores')[0], 200)
+            self.assertEqual(CaptureHandler.path_seen, '/devedores')
+            self.assertIsNone(CaptureHandler.auth)
             self.assertEqual(self.request('/labra-api/investigar')[0], 403)
             self.assertEqual(self.request('/labra-api/investigar', method='POST')[0], 405)
         finally:
@@ -134,7 +158,9 @@ class ServerTests(unittest.TestCase):
         stub, thread = self.stub()
         old_host, old_port, old_auth = dashboard.AEB_HOST, dashboard.AEB_PORT, dashboard.CORE_AUTH_HEADER
         try:
-            dashboard.AEB_HOST = '127.0.0.1'; dashboard.AEB_PORT = stub.server_port; dashboard.CORE_AUTH_HEADER = 'Basic c2Vuc2l0aXZlOmNvcmU='
+            dashboard.AEB_HOST = '127.0.0.1'
+            dashboard.AEB_PORT = stub.server_port
+            dashboard.CORE_AUTH_HEADER = 'Basic c2Vuc2l0aXZlOmNvcmU='
             self.assertEqual(self.request('/aeb-api/data')[0], 200)
             self.assertEqual(CaptureHandler.path_seen, '/api/data')
             self.assertIsNone(CaptureHandler.auth)
@@ -144,11 +170,47 @@ class ServerTests(unittest.TestCase):
             dashboard.AEB_HOST, dashboard.AEB_PORT, dashboard.CORE_AUTH_HEADER = old_host, old_port, old_auth
             stub.shutdown(); stub.server_close(); thread.join()
 
+    def test_cgee_runtime_proxy_is_allowlisted_bounded_and_isolated(self):
+        stub, thread = self.stub()
+        old_host, old_port, old_auth = dashboard.CGEE_HOST, dashboard.CGEE_PORT, dashboard.CORE_AUTH_HEADER
+        try:
+            dashboard.CGEE_HOST = '127.0.0.1'
+            dashboard.CGEE_PORT = stub.server_port
+            dashboard.CORE_AUTH_HEADER = 'Basic c2Vuc2l0aXZlOmNvcmU='
+
+            self.assertEqual(self.request('/cgee-api/stats')[0], 200)
+            self.assertEqual(CaptureHandler.path_seen, '/api/stats')
+            self.assertIsNone(CaptureHandler.auth)
+
+            self.assertEqual(self.request('/cgee-api/timeline?limit=2500')[0], 200)
+            self.assertEqual(CaptureHandler.path_seen, '/api/timeline?limit=2500')
+            self.assertIsNone(CaptureHandler.auth)
+
+            self.assertEqual(self.request('/cgee-api/verify')[0], 200)
+            self.assertEqual(CaptureHandler.path_seen, '/api/verify')
+            self.assertIsNone(CaptureHandler.auth)
+
+            self.assertEqual(self.request('/cgee-api/why?portaria=PORTARIA-1-2026')[0], 200)
+            self.assertEqual(CaptureHandler.path_seen, '/api/why?portaria=PORTARIA-1-2026')
+            self.assertIsNone(CaptureHandler.auth)
+
+            self.assertEqual(self.request('/cgee-api/painel.html')[0], 403)
+            self.assertEqual(self.request('/cgee-api/timeline?limit=5001')[0], 400)
+            self.assertEqual(self.request('/cgee-api/timeline?limit=10&x=1')[0], 400)
+            self.assertEqual(self.request('/cgee-api/why')[0], 400)
+            self.assertEqual(self.request('/cgee-api/stats?x=1')[0], 400)
+            self.assertEqual(self.request('/cgee-api/stats', method='POST')[0], 405)
+        finally:
+            dashboard.CGEE_HOST, dashboard.CGEE_PORT, dashboard.CORE_AUTH_HEADER = old_host, old_port, old_auth
+            stub.shutdown(); stub.server_close(); thread.join()
+
     def test_public_data_status_and_portal_key_boundary(self):
         status, body, _ = self.request('/public-api/status')
         self.assertEqual(status, 200)
-        payload=json.loads(body)
-        self.assertIn('portal_transparencia', payload); self.assertIn('pncp', payload); self.assertIn('provenance_rule', payload)
+        payload = json.loads(body)
+        self.assertIn('portal_transparencia', payload)
+        self.assertIn('pncp', payload)
+        self.assertIn('provenance_rule', payload)
         self.assertFalse(payload['portal_transparencia']['upstream_checked'])
         self.assertFalse(payload['pncp']['upstream_checked'])
         self.assertTrue(payload['pncp']['proxy_enabled'])
@@ -157,11 +219,13 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(self.request('/public-api/portal/anything-goes')[0], 403)
 
     def test_security_headers(self):
-        headers=self.request('/')[2]
-        self.assertEqual(headers['X-Frame-Options'],'DENY')
-        self.assertEqual(headers['X-Content-Type-Options'],'nosniff')
+        headers = self.request('/')[2]
+        self.assertEqual(headers['X-Frame-Options'], 'DENY')
+        self.assertEqual(headers['X-Content-Type-Options'], 'nosniff')
         self.assertEqual(headers['X-Heraclitus-Dashboard-Release'], dashboard.RELEASE)
         self.assertNotIn("script-src 'self' 'unsafe-inline'", headers['Content-Security-Policy'])
         self.assertIn("connect-src 'self'", headers['Content-Security-Policy'])
 
-if __name__ == '__main__': unittest.main()
+
+if __name__ == '__main__':
+    unittest.main()
