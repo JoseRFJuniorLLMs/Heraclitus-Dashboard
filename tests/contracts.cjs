@@ -6,10 +6,10 @@ const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 
 const app=read('js/app.js'),runtime=read('js/runtime.js'),nav=read('js/components/Navigation.js'),time=read('js/components/TimeMachine.js');
 const cases=read('js/components/Cases.js'),useCases=read('js/useCases.js'),labra=read('js/components/LabraAguCase.js'),aeb=read('js/components/AebStreamCase.js'),cgee=read('js/components/CgeeCase.js');
-const login=read('js/components/LoginModal.js'),agent=read('js/components/AgentBlackBox.js'),api=read('js/api.js'),server=read('server.py'),index=read('index.html');
+const login=read('js/components/LoginModal.js'),agent=read('js/components/AgentBlackBox.js'),redteam=read('js/components/RedTeamSecurity.js'),api=read('js/api.js'),server=read('server.py'),index=read('index.html');
 
-// R9 product architecture: use cases live under Cases, not as unrelated rail areas.
-assert(nav.includes("const RELEASE = '2026.09.14-r9'"));
+// R10 product architecture: use cases live under Cases, not as unrelated rail areas.
+assert(nav.includes("const RELEASE = '2026.09.15-r10'"));
 assert(nav.includes("id:'cases'"));
 for(const route of ["['cases','Catálogo de casos']","['labra','LABRA-AGU']","['aeb','AEB-STREAM']","['cgee','CGEE · Integridade Orçamentária']"]) assert(nav.includes(route),route);
 assert(!nav.includes("{id:'labra',label:'LABRA-AGU'"));
@@ -62,7 +62,7 @@ for(const component of fs.readdirSync(path.join(root,'js','components')).filter(
 assert(!api.includes('localStorage.setItem'));
 assert(!api.includes('sessionStorage'));
 assert(api.includes('agentTokenMemory'));
-assert(server.includes('RELEASE = "2026.09.14-r9"'));
+assert(server.includes('RELEASE = "2026.09.15-r10"'));
 assert(server.includes('frame-src '));
 for(const port of ['8770','7480','8000']) assert(server.includes(port),port);
 assert(server.includes('forward_browser_auth=False'));
@@ -72,7 +72,12 @@ assert(server.includes('def do_POST(self): self.error(405'));
 assert(agent.includes('/api/v1/agent/status'));
 assert(agent.includes('/api/v1/agent/runs'));
 assert(agent.includes('bypass_protection'));
+assert(redteam.includes('/api/v1/agent/red-team/events'));
+assert(redteam.includes('Contrato de verdade'));
+assert(app.includes('RedTeamSecurity'));
+assert(nav.includes("['redteam','Red Team / Agent Security']"));
+assert(server.includes('red-team/events'));
 
-assert(index.includes('2026.09.14-r9'));
+assert(index.includes('2026.09.15-r10'));
 assert(index.includes('css/r9.css'));
-console.log('Dashboard contracts OK: R9 Cases hub, source-faithful LABRA/AEB/CGEE, temporal identity and startup authentication.');
+console.log('Dashboard contracts OK: R10 Cases, temporal identity, startup auth and red-team evidence.');

@@ -2,7 +2,7 @@
 
 Console local da **plataforma HeraclitusDB**. A identidade do produto é temporal: log canônico, LSN, reconstrução histórica, proveniência, integridade e módulos construídos sobre esse fundamento. Sentinel, Agent Black Box e aplicações verticais são superfícies da plataforma, não substitutos da identidade do banco.
 
-## Navegação R9
+## Navegação R10
 
 ```text
 HeraclitusDB
@@ -239,3 +239,10 @@ A revisão completa está em:
 `docs/AUDITORIA-RECURSIVA-20X-R9-2026-09-14.md`
 
 Ela registra as 20 passadas de auditoria e o critério de aceite da release `2026.09.14-r9`.
+
+
+## Red Team / Agent Security
+
+A tela `#redteam` lê `/api/v1/agent/red-team/events` pela superfície Agent somente-leitura. Ela mostra apenas eventos reais persistidos pelo Agent Evidence log. O Dashboard não injeta ataques, não escreve approvals e não ativa policies.
+
+A UI distingue explicitamente telemetria do runner (`redteam_lab`) de decisões nativas do Gateway. Um registro do laboratório prova a persistência daquele relato no HRKL; o bloqueio real é corroborado por `PolicyEvaluated`, `ToolDenied`, approvals, `ExternalEffectObserved` e pelo delta do upstream.

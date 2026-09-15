@@ -18,7 +18,7 @@ import re
 from urllib.parse import parse_qs, urlencode, urlsplit
 
 ROOT = Path(__file__).resolve().parent
-RELEASE = "2026.09.14-r9"
+RELEASE = "2026.09.15-r10"
 MAX_RESPONSE = 8 * 1024 * 1024
 MAX_PATH = 4096
 
@@ -62,7 +62,7 @@ CORE_READ_ROUTES = re.compile(
 )
 AGENT_READ_ROUTES = re.compile(
     r"^/(?:metrics|api/v1/agent/(?:status|runs(?:/[A-Za-z0-9_.:-]+(?:/timeline)?)?|tool-calls|"
-    r"evidence/[A-Za-z0-9_.:-]+(?:/proof)?|policies(?:/[A-Za-z0-9_.:-]+)?|approvals(?:/[A-Za-z0-9_.:-]+)?))$"
+    r"evidence/[A-Za-z0-9_.:-]+(?:/proof)?|red-team/events|policies(?:/[A-Za-z0-9_.:-]+)?|approvals(?:/[A-Za-z0-9_.:-]+)?))$"
 )
 LABRA_READ_ROUTES = re.compile(r"^/(?:health|devedores)$")
 AEB_READ_ROUTES = re.compile(r"^/api/data$")
@@ -102,7 +102,7 @@ def _cgee_target(route:str,query:str)->str|None:
     return None
 
 class Handler(BaseHTTPRequestHandler):
-    server_version="HeraclitusDashboard/9"
+    server_version="HeraclitusDashboard/10"
     def log_message(self,*_): pass
     def _security_headers(self):
         self.send_header("Cache-Control","no-store")
@@ -140,11 +140,11 @@ class Handler(BaseHTTPRequestHandler):
         auth=self.headers.get("Authorization","")
         if not auth and core_fallback and CORE_AUTH_HEADER: auth=CORE_AUTH_HEADER
         if require_auth and (not auth.startswith(("Basic ","Bearer ")) or len(auth)>8192): return None
-        headers={"Accept":"application/json","User-Agent":"Heraclitus-Dashboard/9"}
+        headers={"Accept":"application/json","User-Agent":"Heraclitus-Dashboard/10"}
         if auth and len(auth)<=8192: headers["Authorization"]=auth
         return headers
     def _proxy(self,host:str,port:int,target:str,*,https=False,require_auth=False,core_fallback=False,extra_headers=None,timeout=15,forward_browser_auth=True):
-        headers=self._auth_headers(require_auth,core_fallback=core_fallback) if forward_browser_auth else {"Accept":"application/json","User-Agent":"Heraclitus-Dashboard/9"}
+        headers=self._auth_headers(require_auth,core_fallback=core_fallback) if forward_browser_auth else {"Accept":"application/json","User-Agent":"Heraclitus-Dashboard/10"}
         if headers is None: return self.error(401,"Autenticação HeraclitusDB necessária",code="AUTH_REQUIRED")
         if extra_headers: headers.update(extra_headers)
         connection=(http.client.HTTPSConnection if https else http.client.HTTPConnection)(host,port,timeout=timeout)
