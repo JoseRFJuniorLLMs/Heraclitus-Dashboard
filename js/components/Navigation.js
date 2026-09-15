@@ -1,4 +1,4 @@
-const RELEASE = '2026.09.14-r9';
+const RELEASE = '2026.09.15-r10';
 
 const icon = body => `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${body}</svg>`;
 const ICONS = {
@@ -19,7 +19,7 @@ const AREAS = [
   {id:'cases',label:'Casos',icon:ICONS.cases,defaultRoute:'cases',description:'Aplicações completas construídas sobre HeraclitusDB e casos persistidos no Core.',routes:[['cases','Catálogo de casos'],['labra','LABRA-AGU'],['aeb','AEB-STREAM'],['cgee','CGEE · Integridade Orçamentária']]},
   {id:'investigate',label:'Investigar',icon:ICONS.investigate,defaultRoute:'time',description:'Tempo, diferenças, relações, replay e explicação.',routes:[['time','Linha do tempo'],['diff','Comparar A/B'],['graph','Grafo & relações'],['replay','Reconstituição'],['why','WHY / causalidade'],['ia','Inteligência assistida']]},
   {id:'evidence',label:'Evidência',icon:ICONS.evidence,defaultRoute:'custody',description:'Proveniência, integridade e conformidade verificável.',routes:[['custody','Cadeia de custódia'],['merkle','Integridade Merkle'],['comp','Compliance técnico']]},
-  {id:'agent',label:'Agent Black Box',icon:ICONS.agent,defaultRoute:'agent',description:'Runs, ferramentas, policy e evidência de agentes.',routes:[['agent','Agent Black Box']]},
+  {id:'agent',label:'Agent Black Box',icon:ICONS.agent,defaultRoute:'agent',description:'Runs, ferramentas, policy, evidência e qualificação adversarial de agentes.',routes:[['agent','Agent Black Box'],['redteam','Red Team / Agent Security']]},
   {id:'sentinel',label:'Sentinel',icon:ICONS.sentinel,defaultRoute:'soc',description:'Segurança operacional como módulo da plataforma.',routes:[['soc','Sentinel / SOC']]},
   {id:'governance',label:'Governança',icon:ICONS.governance,defaultRoute:'exec',description:'Visão executiva, LGPD e trilha de auditoria.',routes:[['exec','Painel executivo'],['titular','Titular / LGPD'],['auditor','Auditoria']]},
   {id:'system',label:'Sistema',icon:ICONS.system,defaultRoute:'capabilities',description:'Capacidades, runtime e diagnóstico da instância.',routes:[['capabilities','Capacidades & runtime']]},

@@ -37,7 +37,7 @@ class ServerTests(unittest.TestCase):
         for p in ['/.git/config','/server.py','/README.md','/.env','/tests/test_server.py','/js/../server.py']: self.assertEqual(self.request(p)[0],404,p)
     def test_host_restricted(self): self.assertEqual(self.request('/',host='evil.example:9337')[0],403)
     def test_dashboard_release_and_case_runtimes(self):
-        status,body,headers=self.request('/dashboard-api/status');self.assertEqual(status,200);d=json.loads(body);self.assertEqual(d['release'],'2026.09.14-r9');self.assertTrue(d['read_only']);self.assertIn(d['core_auth_mode'],{'server_env','browser_memory'});self.assertEqual(d['labra_runtime']['port'],dashboard.LABRA_PORT);self.assertEqual(d['aeb_runtime']['port'],dashboard.AEB_PORT);self.assertEqual(d['cgee_runtime']['port'],dashboard.CGEE_PORT);self.assertEqual(headers['X-Heraclitus-Dashboard-Release'],dashboard.RELEASE)
+        status,body,headers=self.request('/dashboard-api/status');self.assertEqual(status,200);d=json.loads(body);self.assertEqual(d['release'],'2026.09.15-r10');self.assertTrue(d['read_only']);self.assertIn(d['core_auth_mode'],{'server_env','browser_memory'});self.assertEqual(d['labra_runtime']['port'],dashboard.LABRA_PORT);self.assertEqual(d['aeb_runtime']['port'],dashboard.AEB_PORT);self.assertEqual(d['cgee_runtime']['port'],dashboard.CGEE_PORT);self.assertEqual(headers['X-Heraclitus-Dashboard-Release'],dashboard.RELEASE)
     def test_core_server_auth(self):
         stub,thread=self.stub();old=(dashboard.CORE_HOST,dashboard.CORE_PORT,dashboard.CORE_AUTH_HEADER)
         try:
