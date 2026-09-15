@@ -34,8 +34,7 @@ p.write_text(t)
 # Browser shell carries the same release identity.
 p=Path('index.html'); t=p.read_text().replace('2026.09.14-r9','2026.09.15-r10'); p.write_text(t)
 
-# Contract tests. Current file groups declarations on a single line, so patch
-# that exact shape instead of assuming one declaration per line.
+# Contract tests. Current file groups declarations on a single line.
 p=Path('tests/contracts.cjs'); t=p.read_text()
 t=t.replace("const login=read('js/components/LoginModal.js'),agent=read('js/components/AgentBlackBox.js'),api=read('js/api.js'),server=read('server.py'),index=read('index.html');",
             "const login=read('js/components/LoginModal.js'),agent=read('js/components/AgentBlackBox.js'),redteam=read('js/components/RedTeamSecurity.js'),api=read('js/api.js'),server=read('server.py'),index=read('index.html');")
@@ -50,6 +49,9 @@ if "redteam.includes('/api/v1/agent/red-team/events')" not in t:
 t=t.replace("console.log('Dashboard contracts OK: R9 Cases hub, source-faithful LABRA/AEB/CGEE, temporal identity and startup authentication.');",
             "console.log('Dashboard contracts OK: R10 Cases, temporal identity, startup auth and red-team evidence.');")
 p.write_text(t)
+
+# Python server contract must advance with the release too.
+p=Path('tests/test_server.py'); t=p.read_text().replace("'2026.09.14-r9'", "'2026.09.15-r10'"); p.write_text(t)
 
 # README product surface.
 p=Path('README.md'); t=p.read_text()
