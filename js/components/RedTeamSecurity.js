@@ -26,7 +26,23 @@ export const RedTeamSecurity={
     </div>
     <div class="card"><h3>Contrato de verdade</h3><p class="nota"><strong>redteam_lab</strong> prova que o relatório do laboratório foi anexado ao HRKL naquele LSN. <strong>PolicyEvaluated, ToolDenied, approvals e ExternalEffectObserved</strong> são a evidência independente do HeraclitusDB. Uma demonstração séria mostra os dois lados, porque computadores também sabem mentir quando a interface facilita.</p></div>
   </section>`},
-  init(){document.getElementById('rt-refresh')?.addEventListener('click',()=>this.load());document.addEventListener('hera:endpoint-mudou',()=>this.load());this.load();},
+  timer: null,
+  init(){
+    document.getElementById('rt-refresh')?.addEventListener('click',()=>this.load());
+    document.addEventListener('hera:endpoint-mudou',()=>this.load());
+    document.addEventListener('hera:route-changed', e=>{
+      if (e.detail?.route === 'redteam') this.load();
+    });
+    if (!this.timer) {
+      this.timer = setInterval(()=>{
+        const sec = document.getElementById('redteam');
+        if (sec && (sec.classList.contains('on') || window.location.hash === '#redteam')) {
+          this.load();
+        }
+      }, 2000);
+    }
+    this.load();
+  },
   async load(){
     const [ev,st]=await Promise.all([
       API.agentGet('/api/v1/agent/red-team/events?limit=500',{ms:15000}),
