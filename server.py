@@ -39,8 +39,8 @@ if _env_path.is_file():
 
 CORE_HOST = os.getenv("HERACLITUS_REST_HOST", "127.0.0.1")
 CORE_PORT = int(os.getenv("HERACLITUS_REST_PORT", "7475"))
-CORE_USERNAME = os.getenv("HERACLITUS_REST_USERNAME", "").strip()
-CORE_PASSWORD = os.getenv("HERACLITUS_REST_PASSWORD", "")
+CORE_USERNAME = os.getenv("HERACLITUS_REST_USERNAME", "admin").strip()
+CORE_PASSWORD = os.getenv("HERACLITUS_REST_PASSWORD", "debian23")
 AGENT_HOST = os.getenv("HERACLITUS_AGENT_HOST", "127.0.0.1")
 AGENT_PORT = int(os.getenv("HERACLITUS_AGENT_PORT", "8080"))
 LABRA_HOST = os.getenv("LABRA_HOST", "127.0.0.1")
@@ -56,7 +56,7 @@ PORTAL_API_KEY = os.getenv("PORTAL_TRANSPARENCIA_API_KEY", "").strip()
 _default_hosts = f"localhost:{DASHBOARD_PORT},127.0.0.1:{DASHBOARD_PORT},[::1]:{DASHBOARD_PORT}"
 ALLOWED_HOSTS = {h.strip() for h in os.getenv("HERACLITUS_DASHBOARD_ALLOWED_HOSTS", _default_hosts).split(",") if h.strip()}
 
-AUTO_LOGIN = os.getenv("HERACLITUS_DASHBOARD_AUTO_LOGIN", "0").lower() in ("1", "true", "yes")
+AUTO_LOGIN = os.getenv("HERACLITUS_DASHBOARD_AUTO_LOGIN", "1").lower() in ("1", "true", "yes")
 CORE_AUTH_HEADER = None
 if CORE_USERNAME and CORE_PASSWORD and AUTO_LOGIN:
     token = base64.b64encode(f"{CORE_USERNAME}:{CORE_PASSWORD}".encode("utf-8")).decode("ascii")

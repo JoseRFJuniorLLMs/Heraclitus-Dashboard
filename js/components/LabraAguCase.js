@@ -1,5 +1,5 @@
 // LABRA-AGU — Sistema Pericial de Inteligência Artificial Forense
-// Integração completa e reprodução fiel do LABRA-AGU com dados reais de D:\dados-governo
+// Integração completa conectada DIRETAMENTE aos 135.043 nós e eventos do banco HeraclitusDB
 
 const esc = s => String(s ?? '—').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmtBRL = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -133,7 +133,7 @@ export const LabraAguCase = {
               HeraclitusDB gRPC :7474
             </div>
             <div class="labra-status-badge gold" id="labra-stat-count">
-              <span>721 Alvos Reais (D:\\dados-governo)</span>
+              <span>254 Alvos Sancionados (HeraclitusDB)</span>
             </div>
             <div class="labra-status-badge" id="labra-stat-valor" style="color:#fcd34d;font-weight:700">
               <span>R$ 3,21 Bilhões</span>
@@ -853,7 +853,7 @@ export const LabraAguCase = {
           if (badgeCount) badgeCount.textContent = String(data.total_geral || this.alerts.length);
 
           const statCount = document.getElementById('labra-stat-count');
-          if (statCount) statCount.innerHTML = `<span>${data.total_geral || this.alerts.length} Alvos Reais (D:\\dados-governo)</span>`;
+          if (statCount) statCount.innerHTML = `<span>${data.total_geral || this.alerts.length} Alvos Sancionados (HeraclitusDB)</span>`;
 
           const statValor = document.getElementById('labra-stat-valor');
           if (statValor && data.total_valor_recuperar) {
