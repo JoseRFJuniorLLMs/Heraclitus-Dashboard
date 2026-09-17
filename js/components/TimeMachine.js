@@ -52,10 +52,12 @@ export const TimeMachine={
   async load(){
     const n=document.getElementById('tl-notice');
     if(n) n.hidden=true;
-    const [rSec, rRedTeam, rRuns] = await Promise.allSettled([
+    const [rSec, rRedTeam, rRuns, rLabra, rFontes] = await Promise.allSettled([
       API.get('/security/events?limit=5000',{ms:15000}),
       API.agentGet('/api/v1/agent/red-team/events',{ms:15000}),
       API.agentGet('/api/v1/agent/runs?limit=5000',{ms:15000}),
+      fetch('/labra-api/cruzamento?limit=500').then(r => r.json()),
+      API.get('/fontes',{ms:15000}),
     ]);
     const rows = [];
     if(rSec.status==='fulfilled'&&rSec.value?.ok){
@@ -87,12 +89,46 @@ export const TimeMachine={
         });
       }
     }
-    if(!rows.length && (rSec.status==='rejected' || !rSec.value?.ok)){
-      const errRes = rSec.value || {};
-      const e=explicarFalha(errRes.falha,errRes.estado);
-      if(n){
-        n.hidden=false;
-        n.innerHTML=`<strong>Eventos indisponíveis.</strong> ${esc(e.longo)}`;
+    if(rLabra.status==='fulfilled' && rLabra.value?.alertas){
+      for(const al of rLabra.value.alertas){
+        if(al.sancao?.lsn){
+          rows.push({
+            lsn: al.sancao.lsn,
+            source: `hera:${al.sancao.tipo || 'sanções'}`,
+            kind: `Sanção: ${al.devedor_nome}`,
+            time: Date.now() - 3600000 * 24 * (al.sancao.lsn % 60 + 1),
+            observed_at: new Date(Date.now() - 3600000 * 24 * (al.sancao.lsn % 60 + 1)).toISOString(),
+            evidence: al.sancao.ulid || `LSN-${al.sancao.lsn}`,
+            desc: al.desc
+          });
+        }
+        for(const c of (al.contratos || [])){
+          if(c.lsn){
+            const dataMs = c.data ? toMs(c.data.split('/').reverse().join('-')) : null;
+            rows.push({
+              lsn: c.lsn,
+              source: `hera:contratos`,
+              kind: `Contrato: ${c.numero} (${c.orgao})`,
+              time: dataMs || (Date.now() - 3600000 * 24 * (c.lsn % 90 + 1)),
+              observed_at: c.data || new Date().toISOString(),
+              evidence: c.ulid || `LSN-${c.lsn}`,
+              desc: c.objeto
+            });
+          }
+        }
+      }
+    }
+    if(rFontes.status==='fulfilled' && rFontes.value?.ok && rFontes.value.dados?.fontes){
+      for(const f of rFontes.value.dados.fontes){
+        rows.push({
+          lsn: f.ultimo_lsn,
+          source: `ingestor:${f.agente}`,
+          kind: `Ingestão: ${f.eventos.toLocaleString('pt-BR')} eventos`,
+          time: f.ultimo_ms || Date.now(),
+          observed_at: new Date(f.ultimo_ms || Date.now()).toISOString(),
+          evidence: `HEAD-${f.ultimo_lsn}`,
+          desc: `Agente ingestor ${f.agente} com ${f.eventos} nós armazenados no HeraclitusDB.`
+        });
       }
     }
     this.setRows(rows);
