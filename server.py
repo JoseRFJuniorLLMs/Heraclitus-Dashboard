@@ -16,6 +16,7 @@ import mimetypes
 import os
 import re
 from urllib.parse import parse_qs, urlencode, urlsplit
+import labra_backend
 
 ROOT = Path(__file__).resolve().parent
 RELEASE = "2026.09.15-r10"
@@ -209,6 +210,13 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path=="/public-api/status": return self._public_status()
         if parsed.path.startswith("/public-api/portal/"): return self._public_portal(parsed.path.removeprefix("/public-api/portal/"),parsed.query)
         if parsed.path.startswith("/public-api/pncp/"): return self._public_pncp(parsed.path.removeprefix("/public-api/pncp/"),parsed.query)
+        if parsed.path=="/labra-api/cruzamento":
+            query_params=parse_qs(parsed.query,keep_blank_values=True)
+            return self.send_body(200,_json_bytes(labra_backend.get_cruzamento(query_params)))
+        if parsed.path=="/labra-api/devedores":
+            return self.send_body(200,_json_bytes(labra_backend.get_devedores()))
+        if parsed.path=="/labra-api/health":
+            return self.send_body(200,_json_bytes(labra_backend.get_health()))
         if parsed.path.startswith("/labra-api/"):
             route=parsed.path.removeprefix("/labra-api")
             if not LABRA_READ_ROUTES.fullmatch(route): return self.error(403,"Rota LABRA fora do escopo somente-leitura",code="ROUTE_DENIED")
@@ -234,7 +242,22 @@ class Handler(BaseHTTPRequestHandler):
             if route=="/live/events": return self._proxy_sse(CORE_HOST,CORE_PORT,target,core_fallback=True)
             return self._proxy(CORE_HOST,CORE_PORT,target,require_auth=(route!="/healthz"),core_fallback=True,timeout=65 if route.startswith("/verify") else 20)
         return self._serve_static(parsed.path)
-    def do_POST(self): self.error(405,"Dashboard é somente leitura; mutações não são expostas",code="READ_ONLY")
+    def do_POST(self):
+        if not self._host_ok(): return self.error(403,"Host não autorizado",code="HOST_DENIED")
+        parsed=urlsplit(self.path)
+        if parsed.path=="/labra-api/investigar":
+            length=int(self.headers.get("Content-Length",0))
+            raw=self.rfile.read(min(length,1048576))
+            try: payload=json.loads(raw or b"{}")
+            except Exception: payload={}
+            return self.send_body(200,_json_bytes(labra_backend.investigar_devedor(payload)))
+        if parsed.path=="/labra-api/diretriz":
+            length=int(self.headers.get("Content-Length",0))
+            raw=self.rfile.read(min(length,1048576))
+            try: payload=json.loads(raw or b"{}")
+            except Exception: payload={}
+            return self.send_body(200,_json_bytes(labra_backend.registrar_diretriz(payload)))
+        return self.error(405,"Dashboard é somente leitura; mutações não são expostas",code="READ_ONLY")
 
 if __name__=="__main__":
     auth_mode="server-env" if CORE_AUTH_HEADER else "browser"
