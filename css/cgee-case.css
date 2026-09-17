@@ -44,8 +44,10 @@
 
   /* ===== Layout ===== */
   .cgee-case main{max-width:1320px;margin:0 auto;padding:22px 20px 60px}
+  .cgee-case section{display:block}
+  .cgee-case section.grid{display:grid}
   .cgee-case .grid{display:grid;gap:16px}
-  .cgee-case .card{background:var(--cinza-0);border:1px solid var(--cinza-5);border-radius:var(--radius);box-shadow:var(--sombra);transition: .2s;}
+  .cgee-case .card{background:var(--cinza-0);border:1px solid var(--cinza-5);border-radius:var(--radius);box-shadow:var(--sombra);transition: .2s;display:block}
   .cgee-case .card .hd{padding:14px 18px;border-bottom:1px solid var(--cinza-5);display:flex;align-items:center;gap:10px}
   .cgee-case .card .hd h2{font-size:16px}
   .cgee-case .card .hd .tag{margin-left:auto;font-size:11px;font-weight:700;color:var(--azul);background:#eaf1fd;padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.06em}

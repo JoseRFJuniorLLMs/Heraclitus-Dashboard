@@ -50,8 +50,8 @@ main { padding: 20px 26px; overflow: auto; }
 .secttl .tag { font-size: 11px; background: var(--azul-bg); color: var(--azul); padding: 2px 9px; border-radius: 99px; font-weight: 600; }
 .sub { color: var(--muted); margin: 0 0 18px; font-size: 13px; }
 
-section { display: none; }
-section.on { display: block; animation: fade .2s; }
+#main-content > section { display: none; }
+#main-content > section.on { display: block; animation: fade .2s; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
 
 .grid { display: grid; gap: 14px; }
