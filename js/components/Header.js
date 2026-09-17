@@ -28,6 +28,9 @@ export const Header = {
         <button class="conn demo" id="conn" type="button" title="Configurar conexão com HeraclitusDB">
           <span class="led" aria-hidden="true"></span><span id="connlbl">core a ligar…</span>
         </button>
+        <button class="conn agent-conn" id="agent-conn" type="button" title="Agent Black Box & Security" style="margin-left:6px">
+          <span class="led" id="agent-led" aria-hidden="true"></span><span id="agent-connlbl">agentes…</span>
+        </button>
         <button id="userProfileBadge" class="user-badge" type="button">Conectar</button>
       </div>
     </header>`;
@@ -36,17 +39,34 @@ export const Header = {
   init() {
     const openLogin = () => document.dispatchEvent(new CustomEvent('hera:open-login'));
     const connection = document.getElementById('conn');
+    const agentConn = document.getElementById('agent-conn');
     const profile = document.getElementById('userProfileBadge');
     const search = document.getElementById('global-search-button');
     const home = document.querySelector('.header-brand');
 
     if (connection) connection.addEventListener('click', openLogin);
+    if (agentConn) agentConn.addEventListener('click', () => document.dispatchEvent(new CustomEvent('hera:navigate', { detail: 'agent' })));
     if (profile) profile.addEventListener('click', openLogin);
     if (search) search.addEventListener('click', () => document.dispatchEvent(new CustomEvent('hera:open-command')));
     if (home) home.addEventListener('click', event => {
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       event.preventDefault();
       document.dispatchEvent(new CustomEvent('hera:navigate', { detail: 'overview' }));
+    });
+
+    document.addEventListener('hera:agent-status', event => {
+      const lbl = document.getElementById('agent-connlbl');
+      const btn = document.getElementById('agent-conn');
+      if (!lbl || !btn) return;
+      const d = event.detail;
+      if (!d || d.offline) {
+        btn.className = 'conn demo';
+        lbl.textContent = 'agentes: offline';
+      } else {
+        btn.className = 'conn live';
+        const runs = d.runs ?? d.summary?.runs ?? 0;
+        lbl.textContent = `agentes: ${runs} runs`;
+      }
     });
 
     document.addEventListener('hera:route-changed', event => {

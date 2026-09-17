@@ -22,6 +22,20 @@ RELEASE = "2026.09.15-r10"
 MAX_RESPONSE = 8 * 1024 * 1024
 MAX_PATH = 4096
 
+_env_path = ROOT / ".env"
+if _env_path.is_file():
+    try:
+        for _raw_line in _env_path.read_text(encoding="utf-8").splitlines():
+            _line = _raw_line.strip()
+            if not _line or _line.startswith("#") or "=" not in _line:
+                continue
+            _k, _v = _line.split("=", 1)
+            _k, _v = _k.strip(), _v.strip().strip("'\"")
+            if _k and _k not in os.environ:
+                os.environ[_k] = _v
+    except Exception:
+        pass
+
 CORE_HOST = os.getenv("HERACLITUS_REST_HOST", "127.0.0.1")
 CORE_PORT = int(os.getenv("HERACLITUS_REST_PORT", "7475"))
 CORE_USERNAME = os.getenv("HERACLITUS_REST_USERNAME", "").strip()

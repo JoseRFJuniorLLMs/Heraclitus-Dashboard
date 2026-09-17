@@ -2,25 +2,41 @@ import { API, explicarFalha, Falha } from '../api.js';
 const fmt=v=>Number.isFinite(Number(v))?Number(v).toLocaleString('pt-BR'):v??'—';
 const esc=s=>String(s??'—').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const line=(k,v)=>`<div class="op-line"><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`;
-export const AgentBlackBox={
- runs:[],
- render(){return `<section id="agent">
-  <div class="secttl"><h2>Agent Evidence & Control</h2><span class="tag">Agent Black Box · módulo</span></div>
-  <p class="sub">Auditoria verificável de chamadas de ferramentas de agentes, política e aprovações. Este módulo não redefine a identidade do HeraclitusDB.</p>
-  <div id="ag-notice" class="aviso" hidden></div>
-  <div class="grid k4">
-   <div class="kpi"><div class="lb">Runs</div><div class="v" id="ag-runs">—</div></div><div class="kpi"><div class="lb">Tool calls</div><div class="v" id="ag-tools">—</div></div><div class="kpi"><div class="lb">Negadas</div><div class="v" id="ag-denied">—</div></div><div class="kpi"><div class="lb">Aprovações pendentes</div><div class="v" id="ag-pending">—</div></div>
-   <div class="kpi"><div class="lb">MCP gateway</div><div class="v small-v" id="ag-gateway">—</div></div><div class="kpi"><div class="lb">Bypass protection</div><div class="v small-v" id="ag-bypass">—</div></div><div class="kpi"><div class="lb">Capture mode</div><div class="v small-v" id="ag-capture">—</div></div><div class="kpi"><div class="lb">Integridade</div><div class="v small-v" id="ag-integrity">—</div></div>
-  </div>
-  <div class="grid k2">
-   <div class="card"><h3>Policy ativa</h3><div id="ag-policy" class="op-list"><div class="muted">A carregar…</div></div></div>
-   <div class="card"><h3>Ingestão & gateway</h3><div id="ag-ops" class="op-list"><div class="muted">A carregar…</div></div></div>
-  </div>
-  <div class="card"><h3>Execuções reais <button class="btn" id="ag-refresh" style="float:right">Atualizar</button></h3><div class="table-wrap"><table><thead><tr><th>Run</th><th>Agente</th><th>Status</th><th>Tools</th><th>Denied</th><th>Integridade</th><th></th></tr></thead><tbody id="ag-body"><tr><td colspan="7" class="vazio">A carregar…</td></tr></tbody></table></div></div>
-  <div class="grid k2"><div class="card"><h3>Detalhe do run</h3><div id="ag-detail" class="vazio-block">Selecione uma execução.</div></div><div class="card"><h3>Timeline da execução</h3><div id="ag-timeline" class="vazio-block">Selecione uma execução.</div></div></div>
-  <div class="card"><h3>Escopo real</h3><p class="nota">OTLP e chamadas MCP que passam pelo gateway podem ser registradas/controladas. Ferramentas internas de Claude Code/Codex não passam automaticamente por aqui sem hooks/adaptadores próprios. Esta UI geral permanece somente leitura: aprovar ações ou ativar policy exige a superfície autorizada do Agent.</p></div>
- </section>`},
- init(){document.getElementById('ag-refresh').onclick=()=>this.load();document.addEventListener('hera:endpoint-mudou',()=>this.load());this.load();},
+ export const AgentBlackBox={
+  runs:[],
+  timer: null,
+  render(){return `<section id="agent">
+   <div class="secttl"><h2>Agent Evidence & Control</h2><span class="tag">Agent Black Box · módulo</span></div>
+   <p class="sub">Auditoria verificável de chamadas de ferramentas de agentes, política e aprovações. Este módulo não redefine a identidade do HeraclitusDB.</p>
+   <div id="ag-notice" class="aviso" hidden></div>
+   <div class="grid k4">
+    <div class="kpi"><div class="lb">Runs</div><div class="v" id="ag-runs">—</div></div><div class="kpi"><div class="lb">Tool calls</div><div class="v" id="ag-tools">—</div></div><div class="kpi"><div class="lb">Negadas</div><div class="v" id="ag-denied">—</div></div><div class="kpi"><div class="lb">Aprovações pendentes</div><div class="v" id="ag-pending">—</div></div>
+    <div class="kpi"><div class="lb">MCP gateway</div><div class="v small-v" id="ag-gateway">—</div></div><div class="kpi"><div class="lb">Bypass protection</div><div class="v small-v" id="ag-bypass">—</div></div><div class="kpi"><div class="lb">Capture mode</div><div class="v small-v" id="ag-capture">—</div></div><div class="kpi"><div class="lb">Integridade</div><div class="v small-v" id="ag-integrity">—</div></div>
+   </div>
+   <div class="grid k2">
+    <div class="card"><h3>Policy ativa</h3><div id="ag-policy" class="op-list"><div class="muted">A carregar…</div></div></div>
+    <div class="card"><h3>Ingestão & gateway</h3><div id="ag-ops" class="op-list"><div class="muted">A carregar…</div></div></div>
+   </div>
+   <div class="card"><h3>Execuções reais <button class="btn" id="ag-refresh" style="float:right">Atualizar</button></h3><div class="table-wrap"><table><thead><tr><th>Run</th><th>Agente</th><th>Status</th><th>Tools</th><th>Denied</th><th>Integridade</th><th></th></tr></thead><tbody id="ag-body"><tr><td colspan="7" class="vazio">A carregar…</td></tr></tbody></table></div></div>
+   <div class="grid k2"><div class="card"><h3>Detalhe do run</h3><div id="ag-detail" class="vazio-block">Selecione uma execução.</div></div><div class="card"><h3>Timeline da execução</h3><div id="ag-timeline" class="vazio-block">Selecione uma execução.</div></div></div>
+   <div class="card"><h3>Escopo real</h3><p class="nota">OTLP e chamadas MCP que passam pelo gateway podem ser registradas/controladas. Ferramentas internas de Claude Code/Codex não passam automaticamente por aqui sem hooks/adaptadores próprios. Esta UI geral permanece somente leitura: aprovar ações ou ativar policy exige a superfície autorizada do Agent.</p></div>
+  </section>`},
+  init(){
+    document.getElementById('ag-refresh')?.addEventListener('click',()=>this.load());
+    document.addEventListener('hera:endpoint-mudou',()=>this.load());
+    document.addEventListener('hera:route-changed',e=>{
+      if (e.detail?.route === 'agent') this.load();
+    });
+    if (!this.timer) {
+      this.timer = setInterval(()=>{
+        const s = document.getElementById('agent');
+        if (s && (s.classList.contains('on') || window.location.hash === '#agent')) {
+          this.load();
+        }
+      }, 2500);
+    }
+    this.load();
+  },
  async load(){
   const [st,rr]=await Promise.all([API.agentGet('/api/v1/agent/status',{ms:6000}),API.agentGet('/api/v1/agent/runs?limit=50',{ms:10000})]);
   if(!st.ok){const n=document.getElementById('ag-notice'),e=explicarFalha(st.falha,st.estado);n.hidden=false;n.innerHTML=`<strong>Módulo Agent não conectado.</strong> ${esc(e.longo)} ${st.falha===Falha.AUTH?'Configure o Bearer/OIDC Agent em “Conectar ao banco”.':'Configure a superfície Agent do HeraclitusDB em :8080.'}`;this.clear();return;}
