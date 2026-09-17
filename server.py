@@ -17,6 +17,7 @@ import os
 import re
 from urllib.parse import parse_qs, urlencode, urlsplit
 import labra_backend
+import cgee_backend
 
 ROOT = Path(__file__).resolve().parent
 RELEASE = "2026.09.15-r10"
@@ -226,11 +227,21 @@ class Handler(BaseHTTPRequestHandler):
             if not AEB_READ_ROUTES.fullmatch(route): return self.error(403,"Rota AEB fora do escopo somente-leitura",code="ROUTE_DENIED")
             return self._proxy(AEB_HOST,AEB_PORT,route+(f"?{parsed.query}" if parsed.query else ""),timeout=20,forward_browser_auth=False)
         if parsed.path.startswith("/cgee-api/"):
-            route="/api/"+parsed.path.removeprefix("/cgee-api/")
-            if not CGEE_READ_ROUTES.fullmatch(route): return self.error(403,"Rota CGEE fora do escopo somente-leitura",code="ROUTE_DENIED")
-            target=_cgee_target(route,parsed.query)
-            if target is None: return self.error(400,"Parâmetros CGEE inválidos ou fora dos limites",code="BAD_QUERY")
-            return self._proxy(CGEE_HOST,CGEE_PORT,target,timeout=45 if route=="/api/verify" else 25,forward_browser_auth=False)
+            q = parse_qs(parsed.query, keep_blank_values=True)
+            if parsed.path == "/cgee-api/timeline":
+                limit = int(q.get("limit", ["24000"])[0]) if q.get("limit") else 24000
+                return self.send_body(200, _json_bytes(cgee_backend.get_timeline(limit)))
+            if parsed.path == "/cgee-api/stats":
+                return self.send_body(200, _json_bytes(cgee_backend.get_stats()))
+            if parsed.path == "/cgee-api/verify":
+                return self.send_body(200, _json_bytes(cgee_backend.get_verify()))
+            if parsed.path == "/cgee-api/why":
+                portaria = q.get("portaria", [""])[0]
+                return self.send_body(200, _json_bytes(cgee_backend.get_why(portaria)))
+            route = "/api/" + parsed.path.removeprefix("/cgee-api/")
+            target = _cgee_target(route, parsed.query)
+            if target is None: return self.error(400, "Parâmetros CGEE inválidos", code="BAD_QUERY")
+            return self._proxy(CGEE_HOST, CGEE_PORT, target, timeout=25, forward_browser_auth=False)
         if parsed.path.startswith("/agent-api/"):
             route=parsed.path.removeprefix("/agent-api")
             if not AGENT_READ_ROUTES.fullmatch(route): return self.error(403,"Rota Agent fora do escopo somente-leitura",code="ROUTE_DENIED")
