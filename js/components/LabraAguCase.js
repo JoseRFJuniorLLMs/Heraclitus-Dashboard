@@ -111,32 +111,41 @@ export const LabraAguCase = {
   render() {
     return `
       <section id="labra" class="labra-case">
-        <!-- Header LABRA-AGU -->
-        <header class="labra-header">
-          <div class="labra-header-brand">
-            <div class="labra-header-icon">⚖️</div>
-            <div class="labra-header-titles">
-              <h1>
-                LABRA — AGU
-                <span class="labra-badge-version">v3.0.1</span>
-              </h1>
-              <p>Laboratório de Recuperação de Ativos · Sistema Pericial de IA & Barramento HeraclitusDB</p>
-            </div>
+        <!-- Barra gov.br -->
+        <div class="govbar">
+          <div class="in">
+            <span class="logo">gov<span class="br">.br</span></span>
+            <span class="ent">Advocacia-Geral da União · LABRA</span>
+            <span class="sp"></span>
+            <span style="font-size:11px;color:var(--txt-mut);font-weight:700">SISTEMA PERICIAL FORENSE</span>
           </div>
-          <div class="labra-header-status">
-            <div class="labra-status-badge highlight">
-              <span class="labra-status-dot"></span>
-              Motor ACT-R Online
+          <div class="acc"></div>
+        </div>
+
+        <!-- Cabeçalho azul (Hero CGEE Style) -->
+        <header class="hero">
+          <svg class="wave" viewBox="0 0 1440 120" preserveAspectRatio="none">
+            <path fill="currentColor" d="M0,32L60,42.7C120,53,240,75,360,69.3C480,64,600,32,720,26.7C840,21,960,43,1080,48C1200,53,1320,43,1380,37.3L1440,32L1440,120L1380,120C1320,120,1200,120,1080,120C960,120,840,120,720,120C600,120,480,120,360,120C240,120,120,120,60,120L0,120Z"></path>
+          </svg>
+          <div class="in">
+            <div class="brand">
+              <div class="eyebrow">LABRA · Advocacia-Geral da União</div>
+              <h1>Laboratório de Recuperação de Ativos</h1>
+              <div class="sub">Sistema Pericial de IA Forense &amp; Barramento Causal HeraclitusDB</div>
+              <div class="panta">Motor ACT-R · Detecção Autônoma de Burla à Inidoneidade Licitatória</div>
             </div>
-            <div class="labra-status-badge">
-              <span style="color:var(--l-cyan)">⚡</span>
-              HeraclitusDB gRPC :7474
-            </div>
-            <div class="labra-status-badge gold" id="labra-stat-count">
-              <span>254 Alvos Sancionados (HeraclitusDB)</span>
-            </div>
-            <div class="labra-status-badge" id="labra-stat-valor" style="color:#fcd34d;font-weight:700">
-              <span>R$ 3,21 Bilhões</span>
+            <div class="status">
+              <div class="pill">
+                <span class="dot"></span>
+                <span>Motor ACT-R Online</span>
+              </div>
+              <div class="pill demo" id="labra-stat-count">
+                <span class="dot"></span>
+                <span>254 Alvos Sancionados (HeraclitusDB)</span>
+              </div>
+              <div class="meta" id="labra-stat-valor" style="font-size:14px;font-weight:700;color:var(--amarelo)">
+                R$ 3,21 Bilhões sob Perícia
+              </div>
             </div>
           </div>
         </header>
@@ -171,11 +180,11 @@ export const LabraAguCase = {
                   <input type="search" id="labra-search-input" class="labra-input-search" placeholder="Buscar por CNPJ, Razão Social ou ID...">
                 </div>
                 <div style="display:flex;gap:6px;align-items:center;font-size:0.75rem">
-                  <span style="color:var(--l-muted)">Filtros:</span>
+                  <span style="color:var(--txt-mut);font-weight:600">Filtros:</span>
                   <button class="labra-btn-secondary" style="padding:3px 8px;font-size:0.7rem" data-filter-sev="">Todos</button>
-                  <button class="labra-btn-secondary" style="padding:3px 8px;font-size:0.7rem;color:#f87171" data-filter-sev="critica">Crítica</button>
-                  <button class="labra-btn-secondary" style="padding:3px 8px;font-size:0.7rem;color:#fbbf24" data-filter-sev="alta">Alta</button>
-                  <span style="margin-left:auto;color:var(--l-cyan);font-weight:700" id="labra-showing-count">721 casos</span>
+                  <button class="labra-btn-secondary" style="padding:3px 8px;font-size:0.7rem;color:var(--vermelho)" data-filter-sev="critica">Crítica</button>
+                  <button class="labra-btn-secondary" style="padding:3px 8px;font-size:0.7rem;color:#b48300" data-filter-sev="alta">Alta</button>
+                  <span style="margin-left:auto;color:var(--azul);font-weight:700" id="labra-showing-count">721 casos</span>
                 </div>
               </div>
               <div class="labra-alerts-list" id="labra-alerts-cards-box">
@@ -194,11 +203,11 @@ export const LabraAguCase = {
         <div class="labra-view" id="labra-view-mapa">
           <div class="labra-glass" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
             <div>
-              <h3 style="margin:0;font-size:1rem;color:#fff;font-weight:700">Topologia de Vínculos e Triangulação Societária / Contratual</h3>
-              <p style="margin:4px 0 0;font-size:0.8rem;color:var(--l-muted)">Visualização em grafo causal das entidades sancionadas, órgãos contratantes e rotas de recursos.</p>
+              <h3 style="margin:0;font-size:1rem;color:var(--azul-esc);font-weight:700">Topologia de Vínculos e Triangulação Societária / Contratual</h3>
+              <p style="margin:4px 0 0;font-size:0.8rem;color:var(--txt-mut)">Visualização em grafo causal das entidades sancionadas, órgãos contratantes e rotas de recursos.</p>
             </div>
             <div style="display:flex;gap:10px;align-items:center">
-              <label style="font-size:0.8rem;color:var(--l-muted)">Alvo em Foco:</label>
+              <label style="font-size:0.8rem;color:var(--txt-mut);font-weight:600">Alvo em Foco:</label>
               <select id="labra-graph-target-select" class="labra-select-custom" style="min-width:320px"></select>
             </div>
           </div>
@@ -207,21 +216,14 @@ export const LabraAguCase = {
             <svg class="labra-graph-svg" id="labra-graph-svg" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet">
               <defs>
                 <marker id="labra-arrow-cyan" markerWidth="10" markerHeight="10" refX="22" refY="4" orient="auto">
-                  <path d="M0,0 L0,8 L9,4 Z" fill="#06b6d4" />
+                  <path d="M0,0 L0,8 L9,4 Z" fill="#1351B4" />
                 </marker>
                 <marker id="labra-arrow-danger" markerWidth="10" markerHeight="10" refX="22" refY="4" orient="auto">
-                  <path d="M0,0 L0,8 L9,4 Z" fill="#ef4444" />
+                  <path d="M0,0 L0,8 L9,4 Z" fill="#E52207" />
                 </marker>
                 <marker id="labra-arrow-gold" markerWidth="10" markerHeight="10" refX="22" refY="4" orient="auto">
-                  <path d="M0,0 L0,8 L9,4 Z" fill="#f59e0b" />
+                  <path d="M0,0 L0,8 L9,4 Z" fill="#b48300" />
                 </marker>
-                <filter id="labra-glow">
-                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                  <feMerge>
-                    <feMergeNode in="coloredBlur"/>
-                    <feMergeNode in="SourceGraphic"/>
-                  </feMerge>
-                </filter>
               </defs>
               <g id="labra-graph-edges"></g>
               <g id="labra-graph-nodes"></g>
@@ -233,13 +235,13 @@ export const LabraAguCase = {
         <div class="labra-view" id="labra-view-investigar">
           <div class="labra-glass labra-investigador-box">
             <div>
-              <h2 style="margin:0;font-size:1.15rem;color:#fff;font-weight:800">Motor de Investigação Pericial — Agente ReAct & ACT-R</h2>
-              <p style="margin:4px 0 0;font-size:0.84rem;color:var(--l-muted)">Executa cadeia autônoma de raciocínio investigativo sobre os dados reais do HeraclitusDB e minutas jurídicas para a AGU.</p>
+              <h2 style="margin:0;font-size:1.15rem;color:var(--azul-esc);font-weight:800">Motor de Investigação Pericial — Agente ReAct &amp; ACT-R</h2>
+              <p style="margin:4px 0 0;font-size:0.84rem;color:var(--txt-mut)">Executa cadeia autônoma de raciocínio investigativo sobre os dados reais do HeraclitusDB e minutas jurídicas para a AGU.</p>
             </div>
 
             <!-- Seletor de Caso Real -->
             <div class="labra-selector-row">
-              <span style="font-size:0.85rem;color:var(--l-cyan);font-weight:700">Selecione o Devedor do Log:</span>
+              <span style="font-size:0.85rem;color:var(--azul-esc);font-weight:700">Selecione o Devedor do Log:</span>
               <select id="labra-investigar-select" class="labra-select-custom"></select>
               <button id="labra-btn-run-investigacao" class="labra-btn-primary">
                 ▶ Executar Investigação do Alvo
@@ -247,7 +249,7 @@ export const LabraAguCase = {
             </div>
 
             <details style="margin-top:4px">
-              <summary style="cursor:pointer;color:var(--l-cyan);font-size:0.82rem;font-weight:600">
+              <summary style="cursor:pointer;color:var(--azul);font-size:0.82rem;font-weight:600">
                 + Modo Texto Livre (Colar denúncia, relatório COAF ou processo administrativo)
               </summary>
               <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
@@ -260,17 +262,17 @@ export const LabraAguCase = {
             </details>
 
             <!-- Status do Motor -->
-            <div id="labra-inv-status" style="font-size:0.82rem;color:var(--l-muted);display:flex;align-items:center;gap:8px"></div>
+            <div id="labra-inv-status" style="font-size:0.82rem;color:var(--txt-mut);display:flex;align-items:center;gap:8px"></div>
 
             <!-- Passos do Agente (Cadeia de Raciocínio) -->
             <div id="labra-inv-result-box" style="display:none">
-              <h3 style="margin:20px 0 10px;font-size:0.95rem;color:var(--l-cyan);font-weight:700;display:flex;align-items:center;gap:8px">
+              <h3 style="margin:20px 0 10px;font-size:0.95rem;color:var(--azul-esc);font-weight:700;display:flex;align-items:center;gap:8px">
                 <span>🧠</span> Passos do Agente (Cadeia de Raciocínio Auditável)
               </h3>
               <div class="labra-steps-feed" id="labra-steps-container"></div>
 
               <!-- Dossiê KPIs -->
-              <h3 style="margin:24px 0 10px;font-size:0.95rem;color:#fff;font-weight:700;display:flex;align-items:center;gap:8px">
+              <h3 style="margin:24px 0 10px;font-size:0.95rem;color:var(--azul-esc);font-weight:700;display:flex;align-items:center;gap:8px">
                 <span>📊</span> Dossiê Pericial Sintetizado
               </h3>
               <div class="labra-kpi-grid">
@@ -294,7 +296,7 @@ export const LabraAguCase = {
 
               <!-- Peça Jurídica Rascunhada -->
               <div style="display:flex;justify-content:space-between;align-items:center;margin:24px 0 10px">
-                <h3 style="margin:0;font-size:0.95rem;color:#fff;font-weight:700;display:flex;align-items:center;gap:8px">
+                <h3 style="margin:0;font-size:0.95rem;color:var(--azul-esc);font-weight:700;display:flex;align-items:center;gap:8px">
                   <span>📜</span> Minuta de Petição Cautelar de Arresto de Bens (AGU)
                 </h3>
                 <button id="labra-btn-copy-peca" class="labra-btn-secondary" style="padding:6px 14px;font-size:0.78rem">
@@ -309,8 +311,8 @@ export const LabraAguCase = {
         <!-- ABA 4: EMITIR DIRETRIZ -->
         <div class="labra-view" id="labra-view-diretriz">
           <div class="labra-glass">
-            <h2 style="margin:0 0 6px;font-size:1.15rem;color:#fff;font-weight:800">Emissão de Diretriz Investigativa ao Motor ACT-R</h2>
-            <p style="margin:0 0 20px;font-size:0.84rem;color:var(--l-muted)">Oriente o agente autônomo a priorizar alvos específicos, elevar a sensibilidade de padrões de fraude e selar a diretriz na cadeia de custódia do HeraclitusDB.</p>
+            <h2 style="margin:0 0 6px;font-size:1.15rem;color:var(--azul-esc);font-weight:800">Emissão de Diretriz Investigativa ao Motor ACT-R</h2>
+            <p style="margin:0 0 20px;font-size:0.84rem;color:var(--txt-mut)">Oriente o agente autônomo a priorizar alvos específicos, elevar a sensibilidade de padrões de fraude e selar a diretriz na cadeia de custódia do HeraclitusDB.</p>
 
             <div class="labra-directive-grid">
               <div>
@@ -367,57 +369,57 @@ export const LabraAguCase = {
         <div class="labra-view" id="labra-view-explorer">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px">
             <div class="labra-glass">
-              <h3 style="margin:0 0 10px;font-size:0.95rem;color:var(--l-cyan);font-weight:700">Geometria Causal (Manifold Hiperbólico)</h3>
-              <p style="font-size:0.8rem;color:var(--l-muted);margin:0 0 14px">Distância geodésica entre infração sancionatória e desvio patrimonial.</p>
-              <div style="height:220px;background:#080c16;border:1px solid var(--l-border);border-radius:10px;display:flex;align-items:center;justify-content:space-around;padding:20px">
+              <h3 style="margin:0 0 10px;font-size:0.95rem;color:var(--azul-esc);font-weight:700">Geometria Causal (Manifold Hiperbólico)</h3>
+              <p style="font-size:0.8rem;color:var(--txt-mut);margin:0 0 14px">Distância geodésica entre infração sancionatória e desvio patrimonial.</p>
+              <div style="height:220px;background:var(--cinza-2);border:1px solid var(--cinza-5);border-radius:10px;display:flex;align-items:center;justify-content:space-around;padding:20px">
                 <div style="text-align:center">
-                  <div style="width:50px;height:50px;border-radius:50%;background:rgba(239,68,68,0.2);border:2px solid var(--l-danger);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-weight:800;color:#fca5a5">SAN</div>
-                  <div style="font-size:0.75rem;color:#cbd5e1">Sanção Ativa (CEIS)</div>
+                  <div style="width:50px;height:50px;border-radius:50%;background:#fde2dd;border:2px solid var(--vermelho);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-weight:800;color:#9a2310">SAN</div>
+                  <div style="font-size:0.75rem;color:var(--txt)">Sanção Ativa (CEIS)</div>
                 </div>
-                <div style="flex:1;height:2px;background:linear-gradient(90deg, var(--l-danger), var(--l-cyan));position:relative;margin:0 10px">
-                  <span style="position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:0.72rem;color:var(--l-cyan);font-family:monospace">d_H = 0.014</span>
+                <div style="flex:1;height:2px;background:linear-gradient(90deg, var(--vermelho), var(--azul));position:relative;margin:0 10px">
+                  <span style="position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:0.72rem;color:var(--azul);font-family:monospace;font-weight:700">d_H = 0.014</span>
                 </div>
                 <div style="text-align:center">
-                  <div style="width:50px;height:50px;border-radius:50%;background:rgba(6,182,212,0.2);border:2px solid var(--l-cyan);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-weight:800;color:#a5f3fc">CON</div>
-                  <div style="font-size:0.75rem;color:#cbd5e1">Contrato Federal</div>
+                  <div style="width:50px;height:50px;border-radius:50%;background:#eaf1fd;border:2px solid var(--azul);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-weight:800;color:var(--azul)">CON</div>
+                  <div style="font-size:0.75rem;color:var(--txt)">Contrato Federal</div>
                 </div>
               </div>
             </div>
 
             <div class="labra-glass">
-              <h3 style="margin:0 0 10px;font-size:0.95rem;color:#fcd34d;font-weight:700">Cadeia de Custódia Auditável (Merkle Root)</h3>
-              <p style="font-size:0.8rem;color:var(--l-muted);margin:0 0 14px">Cada constatação é selada no log imutável do HeraclitusDB com prova de integridade.</p>
-              <div style="background:#080c16;border:1px solid var(--l-border);border-radius:10px;padding:16px;font-family:monospace;font-size:0.78rem;color:#cbd5e1;display:flex;flex-direction:column;gap:8px">
-                <div><span style="color:var(--l-muted)">Head LSN:</span> <b style="color:var(--l-cyan)">88.406</b></div>
-                <div><span style="color:var(--l-muted)">Merkle Root:</span> <span style="color:#a5f3fc">urn:sha256:7b9f8a...c32d</span></div>
-                <div><span style="color:var(--l-muted)">Fontes Ingeridas:</span> <b>20260908_CEIS · 20260908_CNEP · Compras · CPGF</b></div>
-                <div><span style="color:var(--l-muted)">Status de Integridade:</span> <b style="color:var(--l-green)">SEALED &amp; VERIFIED</b></div>
+              <h3 style="margin:0 0 10px;font-size:0.95rem;color:var(--azul-esc);font-weight:700">Cadeia de Custódia Auditável (Merkle Root)</h3>
+              <p style="font-size:0.8rem;color:var(--txt-mut);margin:0 0 14px">Cada constatação é selada no log imutável do HeraclitusDB com prova de integridade.</p>
+              <div style="background:var(--cinza-2);border:1px solid var(--cinza-5);border-radius:10px;padding:16px;font-family:monospace;font-size:0.78rem;color:var(--txt);display:flex;flex-direction:column;gap:8px">
+                <div><span style="color:var(--txt-mut)">Head LSN:</span> <b style="color:var(--azul)">88.406</b></div>
+                <div><span style="color:var(--txt-mut)">Merkle Root:</span> <span style="color:var(--azul-esc);font-weight:700">urn:sha256:7b9f8a...c32d</span></div>
+                <div><span style="color:var(--txt-mut)">Fontes Ingeridas:</span> <b>20260908_CEIS · 20260908_CNEP · Compras · CPGF</b></div>
+                <div><span style="color:var(--txt-mut)">Status de Integridade:</span> <b style="color:var(--verde)">SEALED &amp; VERIFIED</b></div>
               </div>
             </div>
           </div>
 
           <div class="labra-glass">
-            <h3 style="margin:0 0 10px;font-size:0.95rem;color:#fff;font-weight:700">Rio de Eventos (Linha do Tempo Causal das Infrações)</h3>
+            <h3 style="margin:0 0 10px;font-size:0.95rem;color:var(--azul-esc);font-weight:700">Rio de Eventos (Linha do Tempo Causal das Infrações)</h3>
             <div style="display:flex;gap:16px;overflow-x:auto;padding:14px 0" id="labra-timeline-track">
-              <div style="min-width:200px;background:rgba(255,255,255,0.03);border:1px solid var(--l-border);border-radius:8px;padding:12px">
-                <div style="font-size:0.72rem;color:var(--l-cyan);font-weight:700">2023 / 2024</div>
-                <div style="font-size:0.82rem;font-weight:700;color:#fff;margin:4px 0">Aplicação da Sanção</div>
-                <div style="font-size:0.74rem;color:var(--l-muted)">Inscrição do alvo no cadastro CEIS/CNEP com efeito suspensivo.</div>
+              <div style="min-width:200px;background:#fff;border:1px solid var(--cinza-5);box-shadow:0 1px 3px rgba(7,29,65,.08);border-radius:8px;padding:12px">
+                <div style="font-size:0.72rem;color:var(--azul);font-weight:700">2023 / 2024</div>
+                <div style="font-size:0.82rem;font-weight:700;color:var(--azul-esc);margin:4px 0">Aplicação da Sanção</div>
+                <div style="font-size:0.74rem;color:var(--txt-mut)">Inscrição do alvo no cadastro CEIS/CNEP com efeito suspensivo.</div>
               </div>
-              <div style="min-width:200px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:12px">
-                <div style="font-size:0.72rem;color:var(--l-danger);font-weight:700">Concomitância</div>
-                <div style="font-size:0.82rem;font-weight:700;color:#fca5a5;margin:4px 0">Execução Contratual</div>
-                <div style="font-size:0.74rem;color:var(--l-muted)">Assinatura e liquidação de despesas com a União durante o impedimento.</div>
+              <div style="min-width:200px;background:#fde2dd;border:1px solid #f8b4a8;box-shadow:0 1px 3px rgba(7,29,65,.08);border-radius:8px;padding:12px">
+                <div style="font-size:0.72rem;color:var(--vermelho);font-weight:700">Concomitância</div>
+                <div style="font-size:0.82rem;font-weight:700;color:#9a2310;margin:4px 0">Execução Contratual</div>
+                <div style="font-size:0.74rem;color:var(--txt-mut)">Assinatura e liquidação de despesas com a União durante o impedimento.</div>
               </div>
-              <div style="min-width:200px;background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.3);border-radius:8px;padding:12px">
-                <div style="font-size:0.72rem;color:var(--l-cyan);font-weight:700">Setembro 2026</div>
-                <div style="font-size:0.82rem;font-weight:700;color:#a5f3fc;margin:4px 0">Detecção pelo LABRA-AGU</div>
-                <div style="font-size:0.74rem;color:var(--l-muted)">Cruzamento de 19.174 alvos identificou 721 infrações ativas.</div>
+              <div style="min-width:200px;background:#eaf1fd;border:1px solid #c7dcfa;box-shadow:0 1px 3px rgba(7,29,65,.08);border-radius:8px;padding:12px">
+                <div style="font-size:0.72rem;color:var(--azul);font-weight:700">Setembro 2026</div>
+                <div style="font-size:0.82rem;font-weight:700;color:var(--azul-esc);margin:4px 0">Detecção pelo LABRA-AGU</div>
+                <div style="font-size:0.74rem;color:var(--txt-mut)">Cruzamento de 19.174 alvos identificou 721 infrações ativas.</div>
               </div>
-              <div style="min-width:200px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:12px">
-                <div style="font-size:0.72rem;color:var(--l-green);font-weight:700">Fase Atual</div>
-                <div style="font-size:0.82rem;font-weight:700;color:#86efac;margin:4px 0">Medidas Cautelares de Arresto</div>
-                <div style="font-size:0.74rem;color:var(--l-muted)">Ajuizamento de ações cautelares para recuperação de R$ 3,21 Bi.</div>
+              <div style="min-width:200px;background:#e7f3e9;border:1px solid #b7dfb9;box-shadow:0 1px 3px rgba(7,29,65,.08);border-radius:8px;padding:12px">
+                <div style="font-size:0.72rem;color:var(--verde);font-weight:700">Fase Atual</div>
+                <div style="font-size:0.82rem;font-weight:700;color:#0d5217;margin:4px 0">Medidas Cautelares de Arresto</div>
+                <div style="font-size:0.74rem;color:var(--txt-mut)">Ajuizamento de ações cautelares para recuperação de R$ 3,21 Bi.</div>
               </div>
             </div>
           </div>
@@ -528,27 +530,27 @@ export const LabraAguCase = {
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
           <div>
             <span class="labra-badge-sev ${esc(alert.severity)}" style="margin-bottom:8px;display:inline-block">${esc(alert.severity)}</span>
-            <h2 style="margin:0;font-size:1.15rem;color:#fff;font-weight:800;line-height:1.3">${esc(alert.title)}</h2>
+            <h2 style="margin:0;font-size:1.15rem;color:var(--azul-esc);font-weight:800;line-height:1.3">${esc(alert.title)}</h2>
           </div>
           <div style="text-align:right">
-            <div style="font-size:0.75rem;color:var(--l-muted)">Valor Envolvido</div>
-            <div style="font-size:1.25rem;font-weight:800;color:#fcd34d">${esc(alert.valor_formatado || fmtBRL(alert.valor))}</div>
+            <div style="font-size:0.75rem;color:var(--txt-mut);font-weight:600;text-transform:uppercase">Valor Envolvido</div>
+            <div style="font-size:1.35rem;font-weight:800;color:var(--azul-esc)">${esc(alert.valor_formatado || fmtBRL(alert.valor))}</div>
           </div>
         </div>
-        <p style="margin:12px 0 0;font-size:0.85rem;color:var(--l-text);line-height:1.55">${esc(alert.desc)}</p>
+        <p style="margin:12px 0 0;font-size:0.85rem;color:var(--txt);line-height:1.55">${esc(alert.desc)}</p>
       </div>
 
       <div class="labra-detail-section">
         <h3><span>📋</span> Dados Cadastrais &amp; Evidências</h3>
         <div class="labra-kv-row"><span class="labra-kv-key">Alvo</span><span class="labra-kv-val">${esc(alert.devedor_nome)}</span></div>
-        <div class="labra-kv-row"><span class="labra-kv-key">CNPJ / CPF</span><span class="labra-kv-val" style="font-family:monospace;color:var(--l-cyan)">${esc(alert.devedor_doc || alert.devedor_id)}</span></div>
+        <div class="labra-kv-row"><span class="labra-kv-key">CNPJ / CPF</span><span class="labra-kv-val" style="font-family:monospace;color:var(--azul);font-weight:700">${esc(alert.devedor_doc || alert.devedor_id)}</span></div>
         <div class="labra-kv-row"><span class="labra-kv-key">Padrão Detectado</span><span class="labra-kv-val">${esc(alert.pattern)}</span></div>
-        <div class="labra-kv-row"><span class="labra-kv-key">Score de Confiança ACT-R</span><span class="labra-kv-val" style="color:var(--l-cyan);font-weight:700">${(alert.score || 0.95).toFixed(4)}</span></div>
+        <div class="labra-kv-row"><span class="labra-kv-key">Score de Confiança ACT-R</span><span class="labra-kv-val" style="color:var(--azul);font-weight:700">${(alert.score || 0.95).toFixed(4)}</span></div>
       </div>
 
       <div class="labra-detail-section">
         <h3><span>⛔</span> Sanção Ativa no Governo Federal (CEIS / CNEP)</h3>
-        <div class="labra-kv-row"><span class="labra-kv-key">Cadastro Sancionatório</span><span class="labra-kv-val" style="color:#f87171;font-weight:700">${esc(sancao.tipo || 'CEIS')}</span></div>
+        <div class="labra-kv-row"><span class="labra-kv-key">Cadastro Sancionatório</span><span class="labra-kv-val" style="color:var(--vermelho);font-weight:700">${esc(sancao.tipo || 'CEIS')}</span></div>
         <div class="labra-kv-row"><span class="labra-kv-key">Órgão Sancionador</span><span class="labra-kv-val">${esc(sancao.orgao || 'CGU / TCU')}</span></div>
         <div class="labra-kv-row"><span class="labra-kv-key">Motivo Legal</span><span class="labra-kv-val">${esc(sancao.motivo || 'Fraude Licitatória / Inidoneidade')}</span></div>
         <div class="labra-kv-row"><span class="labra-kv-key">Período de Sanção</span><span class="labra-kv-val">${esc(sancao.periodo || 'Vigente')}</span></div>
@@ -559,13 +561,13 @@ export const LabraAguCase = {
         <div class="labra-detail-section">
           <h3><span>📝</span> Contratos Federais em Execução (Compras.gov)</h3>
           ${contratos.map(c => `
-            <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:10px 14px;margin-bottom:8px">
+            <div style="background:var(--cinza-2);border:1px solid var(--cinza-5);border-radius:8px;padding:12px 14px;margin-bottom:8px">
               <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-                <b style="color:var(--l-cyan)">Contrato: ${esc(c.numero || 'S/N')}</b>
-                <span style="color:#fcd34d;font-weight:700">${fmtBRL(c.valor)}</span>
+                <b style="color:var(--azul)">Contrato: ${esc(c.numero || 'S/N')}</b>
+                <span style="color:var(--azul-esc);font-weight:700">${fmtBRL(c.valor)}</span>
               </div>
-              <div style="font-size:0.78rem;color:#cbd5e1">${esc(c.orgao)}</div>
-              <div style="font-size:0.75rem;color:var(--l-muted);margin-top:4px">${esc(c.objeto)}</div>
+              <div style="font-size:0.78rem;color:var(--txt);font-weight:600">${esc(c.orgao)}</div>
+              <div style="font-size:0.75rem;color:var(--txt-mut);margin-top:4px">${esc(c.objeto)}</div>
             </div>
           `).join('')}
         </div>
@@ -578,7 +580,7 @@ export const LabraAguCase = {
             <div class="labra-nexo-step">
               <div>
                 <div class="labra-nexo-title">${esc(n.etapa)}</div>
-                <div style="color:var(--l-muted)">${esc(n.detalhe)}</div>
+                <div style="color:var(--txt-mut)">${esc(n.detalhe)}</div>
               </div>
             </div>
           `).join('')}
@@ -631,19 +633,19 @@ export const LabraAguCase = {
     const valorFmt = alert.valor_formatado || fmtBRL(alert.valor);
 
     const nodes = [
-      { id: 'alvo', x: 500, y: 300, r: 42, label: alert.devedor_nome.slice(0, 22), sub: alert.devedor_doc || alert.devedor_id, color: '#06b6d4', glow: true },
-      { id: 'sancao', x: 220, y: 160, r: 34, label: `Sanção ${alert.sancao?.tipo || 'CEIS'}`, sub: orgaoSancao.slice(0, 20), color: '#ef4444' },
-      { id: 'contrato', x: 780, y: 160, r: 34, label: numContrato.slice(0, 18), sub: orgaoContrato.slice(0, 20), color: '#f59e0b' },
-      { id: 'recursos', x: 780, y: 440, r: 36, label: valorFmt, sub: 'Faturamento Público', color: '#10b981' },
-      { id: 'heraclitus', x: 220, y: 440, r: 34, label: 'HeraclitusDB', sub: 'Merkle Custody LSN', color: '#8b5cf6' }
+      { id: 'alvo', x: 500, y: 300, r: 42, label: alert.devedor_nome.slice(0, 22), sub: alert.devedor_doc || alert.devedor_id, color: '#1351B4' },
+      { id: 'sancao', x: 220, y: 160, r: 34, label: `Sanção ${alert.sancao?.tipo || 'CEIS'}`, sub: orgaoSancao.slice(0, 20), color: '#E52207' },
+      { id: 'contrato', x: 780, y: 160, r: 34, label: numContrato.slice(0, 18), sub: orgaoContrato.slice(0, 20), color: '#b48300' },
+      { id: 'recursos', x: 780, y: 440, r: 36, label: valorFmt, sub: 'Faturamento Público', color: '#168821' },
+      { id: 'heraclitus', x: 220, y: 440, r: 34, label: 'HeraclitusDB', sub: 'Merkle Custody LSN', color: '#0c326f' }
     ];
 
     const edges = [
-      { from: 'sancao', to: 'alvo', label: 'Impedimento Ativo', color: '#ef4444' },
-      { from: 'alvo', to: 'contrato', label: 'Execução / Fornecimento', color: '#f59e0b' },
-      { from: 'contrato', to: 'recursos', label: 'Liquidação Orçamentária', color: '#10b981' },
-      { from: 'alvo', to: 'recursos', label: 'Retirada de Ativos', color: '#06b6d4' },
-      { from: 'alvo', to: 'heraclitus', label: 'Prova Imutável', color: '#8b5cf6' }
+      { from: 'sancao', to: 'alvo', label: 'Impedimento Ativo', color: '#E52207' },
+      { from: 'alvo', to: 'contrato', label: 'Execução / Fornecimento', color: '#b48300' },
+      { from: 'contrato', to: 'recursos', label: 'Liquidação Orçamentária', color: '#168821' },
+      { from: 'alvo', to: 'recursos', label: 'Retirada de Ativos', color: '#1351B4' },
+      { from: 'alvo', to: 'heraclitus', label: 'Prova Imutável', color: '#0c326f' }
     ];
 
     const edgesG = document.getElementById('labra-graph-edges');
@@ -657,16 +659,16 @@ export const LabraAguCase = {
       const my = (f.y + t.y) / 2;
       return `
         <line class="labra-graph-edge" x1="${f.x}" y1="${f.y}" x2="${t.x}" y2="${t.y}" stroke="${e.color}" stroke-width="2.5" />
-        <rect x="${mx - 65}" y="${my - 11}" width="130" height="20" rx="4" fill="rgba(7,11,20,0.85)" stroke="rgba(255,255,255,0.1)"></rect>
-        <text x="${mx}" y="${my + 3}" text-anchor="middle" fill="#cbd5e1" font-size="10" font-family="sans-serif">${esc(e.label)}</text>
+        <rect x="${mx - 65}" y="${my - 11}" width="130" height="20" rx="4" fill="#FFFFFF" stroke="#EDEDED"></rect>
+        <text x="${mx}" y="${my + 3}" text-anchor="middle" fill="#1c1c1c" font-size="10" font-family="'Raleway', sans-serif" font-weight="600">${esc(e.label)}</text>
       `;
     }).join('');
 
     nodesG.innerHTML = nodes.map(n => `
       <g style="cursor:pointer">
-        <circle cx="${n.x}" cy="${n.y}" r="${n.r}" fill="rgba(13,18,30,0.9)" stroke="${n.color}" stroke-width="3" ${n.glow ? 'filter="url(#labra-glow)"' : ''} />
-        <text x="${n.x}" y="${n.y - 4}" text-anchor="middle" fill="#fff" font-size="11" font-weight="700">${esc(n.label)}</text>
-        <text x="${n.x}" y="${n.y + 12}" text-anchor="middle" fill="var(--l-muted)" font-size="9" font-family="monospace">${esc(n.sub)}</text>
+        <circle cx="${n.x}" cy="${n.y}" r="${n.r}" fill="#FFFFFF" stroke="${n.color}" stroke-width="3" />
+        <text x="${n.x}" y="${n.y - 4}" text-anchor="middle" fill="#1c1c1c" font-size="11" font-weight="700" font-family="'Raleway', sans-serif">${esc(n.label)}</text>
+        <text x="${n.x}" y="${n.y + 12}" text-anchor="middle" fill="#5b6471" font-size="9" font-family="monospace">${esc(n.sub)}</text>
       </g>
     `).join('');
   },
@@ -724,12 +726,12 @@ export const LabraAguCase = {
       const data = await res.json();
 
       if (data.erro) {
-        if (statusEl) statusEl.innerHTML = `<span style="color:var(--l-danger)">Erro na investigação: ${esc(data.erro)}</span>`;
+        if (statusEl) statusEl.innerHTML = `<span style="color:var(--vermelho);font-weight:700">Erro na investigação: ${esc(data.erro)}</span>`;
         return;
       }
 
       if (resultBox) resultBox.style.display = 'block';
-      if (statusEl) statusEl.innerHTML = `<b style="color:var(--l-green)">✓ Investigação Concluída</b> · Motor: <b>${esc(data.motor || 'ACT-R Forense')}</b> · Timestamp: ${esc(data.timestamp)}`;
+      if (statusEl) statusEl.innerHTML = `<b style="color:var(--verde)">✓ Investigação Concluída</b> · Motor: <b>${esc(data.motor || 'ACT-R Forense')}</b> · Timestamp: ${esc(data.timestamp)}`;
 
       // Animação passo a passo dos traces ReAct
       const trace = data.trace || [];
@@ -769,7 +771,7 @@ export const LabraAguCase = {
       if (pecaBox) pecaBox.textContent = (data.peca && data.peca.texto) || 'Minuta jurídica gerada com sucesso.';
 
     } catch (e) {
-      if (statusEl) statusEl.innerHTML = `<span style="color:var(--l-danger)">Falha de conexão com a API: ${esc(e.message)}</span>`;
+      if (statusEl) statusEl.innerHTML = `<span style="color:var(--vermelho);font-weight:700">Falha de conexão com a API: ${esc(e.message)}</span>`;
     } finally {
       if (btn) btn.disabled = false;
     }
@@ -827,7 +829,7 @@ export const LabraAguCase = {
         const data = await res.json();
         if (statusEl) {
           statusEl.innerHTML = `
-            <div style="background:rgba(16,185,129,0.1);border:1px solid var(--l-green);border-radius:8px;padding:12px;color:#a7f3d0">
+            <div style="background:#e7f3e9;border:1px solid #b7dfb9;border-radius:8px;padding:12px;color:#0d5217">
               <b>✓ Diretriz Pericial Emitida e Selada no Log!</b><br>
               <span style="font-family:monospace">ULID: ${esc(data.ulid)} · LSN: 88407</span><br>
               Status: ${esc(data.mensagem)}
@@ -835,7 +837,7 @@ export const LabraAguCase = {
           `;
         }
       } catch (e) {
-        if (statusEl) statusEl.innerHTML = `<span style="color:var(--l-danger)">Erro ao emitir diretriz: ${esc(e.message)}</span>`;
+        if (statusEl) statusEl.innerHTML = `<span style="color:var(--vermelho);font-weight:700">Erro ao emitir diretriz: ${esc(e.message)}</span>`;
       }
     });
   },

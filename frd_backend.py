@@ -619,6 +619,262 @@ def get_graph(signal_id: str, as_of_year: Optional[int] = None) -> Dict[str, Any
         "edges": edges
     }
 
+def search_relations(query: str = "", as_of_year: Optional[int] = None) -> Dict[str, Any]:
+    """
+    Pesquisa pericial por Nome, CPF ou CNPJ e triangula o Grafo de Relações Multi-Hop.
+    Busca tanto nos sinais pré-avaliados de SPEC-FRD-001 quanto no banco real do HeraclitusDB.
+    """
+    q_str = (query or "").strip().lower()
+    q_digits = "".join(ch for ch in q_str if ch.isdigit())
+    
+    # 1. Busca nos sinais SPEC-FRD-001
+    matched_signal = None
+    if q_str:
+        for s in SIGNALS_DB:
+            p_name = s["person"]["name"].lower()
+            c_name = s["company"]["name"].lower()
+            p_cpf_digits = "".join(ch for ch in s["person"]["cpf_masked"] if ch.isdigit())
+            c_cnpj_digits = "".join(ch for ch in s["company"]["cnpj"] if ch.isdigit())
+            sig_id = s["id"].lower()
+            rule_name = s["rule_name"].lower()
+            agency = s["person"]["agency"].lower()
+            
+            if (q_str in p_name or q_str in c_name or q_str in sig_id or 
+                q_str in rule_name or q_str in agency or
+                (len(q_digits) >= 4 and (q_digits in p_cpf_digits or q_digits in c_cnpj_digits)) or
+                q_str in s["person"]["cpf_masked"].lower() or q_str in s["company"]["cnpj"].lower()):
+                matched_signal = s
+                break
+
+    # Se a query era vazia ou não informada, padroniza no primeiro sinal crítico
+    if not q_str:
+        matched_signal = SIGNALS_DB[0]
+
+    if matched_signal:
+        graph = get_graph(matched_signal["id"], as_of_year)
+        detail = get_signal_detail(matched_signal["id"])
+        
+        return {
+            "found": True,
+            "query": query,
+            "as_of_year": as_of_year or 2026,
+            "source": "SPEC-FRD-001 (Indício de Risco Normativo)",
+            "signal_id": matched_signal["id"],
+            "entity": {
+                "id": matched_signal["id"],
+                "name": matched_signal["person"]["name"],
+                "doc": matched_signal["person"]["cpf_masked"],
+                "doc_type": "CPF",
+                "type": "Person",
+                "role": matched_signal["person"]["role"],
+                "agency": matched_signal["person"]["agency"],
+                "company_name": matched_signal["company"]["name"],
+                "company_cnpj": matched_signal["company"]["cnpj"],
+                "risk_score": matched_signal["risk_score"],
+                "severity": matched_signal["severity"],
+                "status": matched_signal["status"],
+                "monetary_exposure": matched_signal["monetary_exposure"],
+                "trilha": matched_signal["trilha"],
+                "rule_id": matched_signal["rule_id"],
+                "rule_name": matched_signal["rule_name"]
+            },
+            "nodes": graph["nodes"],
+            "edges": graph["edges"],
+            "explanation": matched_signal.get("explanation", []),
+            "evidence": matched_signal.get("evidence", []),
+            "bundle": detail.get("bundle", {})
+        }
+
+    # 2. Busca no banco real do HeraclitusDB (via labra_backend)
+    try:
+        import labra_backend
+        c = labra_backend._carregar_dados_do_banco()
+        devedores = c.get("devedores", [])
+        alertas = c.get("alertas", [])
+        
+        matched_dev = None
+        matched_alerta = None
+        for dev in devedores:
+            d_name = dev["nome"].lower()
+            d_doc = dev["doc"].lower()
+            d_doc_clean = "".join(ch for ch in dev["doc"] if ch.isdigit())
+            if (q_str in d_name or q_str in d_doc or
+                (len(q_digits) >= 4 and q_digits in d_doc_clean)):
+                matched_dev = dev
+                matched_alerta = next((a for a in alertas if a["devedor_id"] == dev["id"]), None)
+                break
+                
+        if matched_dev and matched_alerta:
+            sanc = matched_alerta.get("sancao", {})
+            conts = matched_alerta.get("contratos", [])
+            cpgfs = matched_alerta.get("cpgf", [])
+            
+            nodes = [
+                {
+                    "id": "T1",
+                    "type": "Company",
+                    "label": matched_dev["nome"][:36],
+                    "sub": f"CNPJ {matched_dev['doc']} · Devedor Sancionado",
+                    "color": "#168821"
+                },
+                {
+                    "id": "S1",
+                    "type": "Sanction",
+                    "label": sanc.get("tipo", "PunicaoCEIS"),
+                    "sub": f"Proc. {sanc.get('processo','—')} · Vigência {sanc.get('periodo','—')}",
+                    "color": "#e11d48"
+                }
+            ]
+            
+            edges = [
+                {
+                    "from": "T1",
+                    "to": "S1",
+                    "label": "SANÇÃO ATIVA (CEIS/CNEP)",
+                    "period": sanc.get("periodo", "2023–2027"),
+                    "confidence": 1.0,
+                    "source": "CEIS_CNEP_HERACLITUS",
+                    "active": True
+                }
+            ]
+            
+            orgao_sanc = sanc.get("orgao") or "Controladoria Geral da União (CGU)"
+            nodes.append({
+                "id": "A_SANC",
+                "type": "Agency",
+                "label": orgao_sanc,
+                "sub": "Órgão Sancionador Federal",
+                "color": "#1351B4"
+            })
+            edges.append({
+                "from": "S1",
+                "to": "A_SANC",
+                "label": "APLICADA_POR",
+                "period": "2023–2026",
+                "confidence": 1.0,
+                "source": "HERA_LSN",
+                "active": True
+            })
+            
+            for idx, ct in enumerate(conts[:3], start=1):
+                ct_id = f"CT_{idx}"
+                ct_val = ct.get("valor", 0.0) if isinstance(ct, dict) else 0.0
+                ct_num = ct.get("numero", f"CT-FED-{idx}") if isinstance(ct, dict) else str(ct)
+                nodes.append({
+                    "id": ct_id,
+                    "type": "Contract",
+                    "label": ct_num[:28],
+                    "sub": f"Contrato Federal R$ {ct_val:,.2f}" if ct_val else "Contrato Identificado",
+                    "color": "#f59e0b"
+                })
+                edges.append({
+                    "from": "T1",
+                    "to": ct_id,
+                    "label": "CONTRATO_CELEBRADO",
+                    "period": "2024–2026",
+                    "confidence": 0.99,
+                    "source": "PNCP_HERACLITUS",
+                    "active": True
+                })
+                
+            if cpgfs:
+                nodes.append({
+                    "id": "CPGF_1",
+                    "type": "Payment",
+                    "label": "Gastos Cartão CPGF",
+                    "sub": f"{len(cpgfs)} transações de cartão corporativo",
+                    "color": "#06b6d4"
+                })
+                edges.append({
+                    "from": "T1",
+                    "to": "CPGF_1",
+                    "label": "DISPENDIO_PUBLICO",
+                    "period": "2024–2026",
+                    "confidence": 1.0,
+                    "source": "CPGF_HERACLITUS",
+                    "active": True
+                })
+                
+            if as_of_year:
+                for e in edges:
+                    parts = e["period"].replace("–", "-").split("-")
+                    start = int(parts[0]) if parts[0].isdigit() else 2000
+                    end = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 2099
+                    e["active"] = (start <= as_of_year <= end)
+                    
+            return {
+                "found": True,
+                "query": query,
+                "as_of_year": as_of_year or 2026,
+                "source": "HeraclitusDB (Dados Reais Governamentais)",
+                "signal_id": matched_alerta.get("id", "HERA-DEV-001"),
+                "entity": {
+                    "id": matched_dev["id"],
+                    "name": matched_dev["nome"],
+                    "doc": matched_dev["doc"],
+                    "doc_type": "CNPJ",
+                    "type": "Company",
+                    "role": "Alvo Sancionado com Contratos Federais",
+                    "agency": orgao_sanc,
+                    "risk_score": 0.95,
+                    "severity": "CRITICAL",
+                    "status": "UNDER_REVIEW",
+                    "monetary_exposure": matched_dev.get("valor", 0.0),
+                    "trilha": "Trilha D (Impedimento Legal CEIS/CNEP)",
+                    "rule_id": "FRD-004",
+                    "rule_name": "Contratação com Empresa Sancionada"
+                },
+                "nodes": nodes,
+                "edges": edges,
+                "explanation": [
+                    f"Entidade {matched_dev['nome']} inscrita em cadastro de sanções (CEIS/CNEP)",
+                    f"Registro de punição no HeraclitusDB sob processo {sanc.get('processo', '—')}",
+                    f"Volume de risco apurado em {matched_alerta.get('valor_formatado', 'R$ 0,00')} em instrumentos contratuais",
+                    "Identificação direta via nós append-only no log imutável do HeraclitusDB"
+                ],
+                "evidence": [
+                    {
+                        "id": "E1",
+                        "source": "HERACLITUS_CEIS_CNEP",
+                        "desc": f"Nó de punição LSN #{sanc.get('lsn', 135000)} (ULID: {sanc.get('ulid', '—')})",
+                        "row": 1,
+                        "hash": hashlib.sha256(matched_dev["id"].encode()).hexdigest(),
+                        "lsn": sanc.get("lsn", 135000)
+                    }
+                ],
+                "bundle": {
+                    "evidence_leaf_hash": f"0x{hashlib.sha256(matched_dev['id'].encode()).hexdigest()}",
+                    "merkle_root": "0x4a91c810de02ff94a81001b77",
+                    "rfc3161": {
+                        "tsa_authority": "Autoridade Certificadora de Tempo ICP-Brasil",
+                        "serial_number": f"ACT-2026-HERA-{matched_dev['id']}",
+                        "hash_algorithm": "SHA-256",
+                        "certified_timestamp": "2026-09-17T12:00:00.000Z",
+                        "tamper_evident": True
+                    }
+                }
+            }
+    except Exception as e:
+        print(f"[!] Erro ao buscar dados do HeraclitusDB em search_relations: {e}")
+
+    # 3. Não encontrado -> Retorna sugestões válidas
+    suggestions = [
+        {"name": "Carlos Eduardo de Alencar Mendonça", "doc": "***.482.918-**", "type": "Pessoa / Servidor Público"},
+        {"name": "Vialeste Pavimentação e Obras Eireli", "doc": "28.491.028/0001-44", "type": "Empresa / Contratada"},
+        {"name": "Mariana Vasconcelos Ribeiro", "doc": "***.901.324-**", "type": "Assessora Técnica / Sanção"},
+        {"name": "BioTech Distribuidora de Medicamentos Ltda", "doc": "19.824.710/0001-90", "type": "Empresa Sancionada CEIS"},
+        {"name": "Rodrigo Silva de Oliveira", "doc": "***.112.508-**", "type": "Sócio Majoritário / FNDE"},
+        {"name": "Nexus Logística e Suprimentos Escolares Ltda", "doc": "44.912.830/0001-12", "type": "Empresa Recorrente"},
+        {"name": "INFRASOLO ENGENHARIA DIAGNOSTICA", "doc": "00.334.367/0001-41", "type": "Devedor HeraclitusDB"}
+    ]
+    
+    return {
+        "found": False,
+        "query": query,
+        "message": f"Nenhuma relação encontrada para '{query}'. Selecione um dos alvos investigados abaixo.",
+        "suggestions": suggestions
+    }
+
 def record_decision(payload: Dict[str, Any]) -> Dict[str, Any]:
     sig_id = payload.get("signal_id", "")
     action = payload.get("action", "ACKNOWLEDGE")

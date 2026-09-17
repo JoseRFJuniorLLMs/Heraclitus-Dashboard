@@ -544,3 +544,326 @@
   color: #64748b;
   font-size: 11px;
 }
+
+/* ==========================================================================
+   Seção de Pesquisa por Nome/CPF/CNPJ e Grafo das Relações em Destaque
+   ========================================================================== */
+.frd-case .frd-search-hero-panel {
+  background: linear-gradient(180deg, #0d172e 0%, #0a1122 100%);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.frd-case .frd-search-box-wrap {
+  padding: 24px 28px 20px;
+  background: rgba(15, 23, 42, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.frd-case .frd-search-header {
+  margin-bottom: 18px;
+}
+
+.frd-case .frd-search-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.frd-case .frd-search-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  font-size: 22px;
+}
+
+.frd-case .frd-search-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.frd-case .frd-search-sub {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.frd-case .frd-search-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.frd-case .chip-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-right: 4px;
+}
+
+.frd-case .frd-chip {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  padding: 5px 11px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: all .15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.frd-case .frd-chip:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.frd-case .frd-chip.active {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.frd-case .frd-search-bar {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+  align-items: center;
+}
+
+.frd-case .frd-input-group {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.frd-case .frd-input-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 16px;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.frd-case .frd-search-input {
+  width: 100%;
+  background: #070d19;
+  border: 2px solid rgba(56, 189, 248, 0.35);
+  color: #ffffff;
+  padding: 13px 40px 13px 44px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  outline: none;
+  transition: all .2s;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.frd-case .frd-search-input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.3), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.frd-case .frd-btn-clear {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+.frd-case .frd-btn-clear:hover {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.frd-case .frd-search-submit-btn {
+  background: linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%);
+  border: 1px solid #38bdf8;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 13px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all .2s;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+  white-space: nowrap;
+}
+
+.frd-case .frd-search-submit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.6);
+  background: linear-gradient(135deg, #0369a1 0%, #1e40af 100%);
+}
+
+/* Container do Resultado (Grafo das Relações) */
+.frd-case .frd-graph-result-container {
+  padding: 24px 28px 28px;
+}
+
+.frd-case .frd-graph-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.frd-case .frd-graph-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.frd-case #frd-entity-title {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.frd-case .frd-entity-meta {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: #94a3b8;
+}
+
+.frd-case .frd-entity-meta b {
+  color: #e2e8f0;
+}
+
+.frd-case .frd-graph-controls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.frd-case .frd-time-travel-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.frd-case .frd-time-travel-inline .lbl {
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.frd-case .frd-time-travel-inline strong {
+  color: #38bdf8;
+  min-width: 65px;
+  font-family: monospace;
+}
+
+/* Canvas SVG do Grafo de Relações */
+.frd-case .frd-relation-graph-canvas-wrap {
+  position: relative;
+  background: radial-gradient(circle at center, #0c1527 0%, #060a14 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6);
+}
+
+.frd-case .frd-relation-graph-canvas {
+  width: 100%;
+  min-height: 480px;
+  display: block;
+}
+
+.frd-case .frd-relation-graph-canvas svg {
+  width: 100%;
+  height: 480px;
+  display: block;
+}
+
+/* Legenda do Grafo */
+.frd-case .frd-graph-legend-overlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: rgba(15, 23, 42, 0.85);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.frd-case .frd-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.frd-case .leg-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Card Explicativo e Nexo Causal */
+.frd-case .frd-relation-explanation-card {
+  margin-top: 18px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 18px 22px;
+}
+
+.frd-case .frd-node-modal {
+  background: #1e293b;
+  border: 1px solid #38bdf8;
+  border-radius: 8px;
+  padding: 14px 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  color: #f8fafc;
+  font-size: 12px;
+}

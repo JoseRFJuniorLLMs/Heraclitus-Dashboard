@@ -258,6 +258,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_body(200, _json_bytes(frd_backend.get_graph(sig_id, year)))
             if parsed.path == "/frd-api/audit":
                 return self.send_body(200, _json_bytes(frd_backend.get_audit_trail()))
+            if parsed.path == "/frd-api/search":
+                query_str = q.get("q", [""])[0]
+                year = int(q.get("year", ["0"])[0]) if q.get("year") else None
+                return self.send_body(200, _json_bytes(frd_backend.search_relations(query_str, year)))
             return self.error(404, "Rota FRD não encontrada", code="NOT_FOUND")
         if parsed.path.startswith("/agent-api/"):
             route=parsed.path.removeprefix("/agent-api")

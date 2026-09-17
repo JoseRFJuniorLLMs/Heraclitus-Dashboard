@@ -6,7 +6,7 @@ const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 const index=read('index.html'),nav=read('js/components/Navigation.js'),platform=read('css/platform.css'),r9=read('css/r9.css'),app=read('js/app.js'),redteam=read('js/components/RedTeamSecurity.js');
 
 const cssLinks=[...index.matchAll(/<link\s+rel="stylesheet"\s+href="([^"]+)"/g)].map(m=>m[1]);
-assert.deepEqual(cssLinks,['css/styles.css','css/platform.css','css/labra-case.css','css/aeb-case.css','css/cgee-case.css','css/r9.css']);
+assert.deepEqual(cssLinks,['css/styles.css','css/platform.css','css/labra-case.css','css/aeb-case.css','css/cgee-case.css','css/frd-case.css','css/r9.css']);
 assert(index.includes('2026.09.15-r10'));
 assert(index.includes('class="skip-link"'));
 assert(index.includes('<aside id="nav"'));

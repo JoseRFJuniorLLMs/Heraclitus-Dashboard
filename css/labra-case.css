@@ -1,37 +1,57 @@
 /* ==========================================================================
-   LABRA-AGU · Sistema Pericial de IA — Estilos de Alta Fidelidade (Cyber-Dark Glass)
+   LABRA-AGU · Sistema Pericial de IA Forense
+   Padrão Visual Gov.br (DSGov) / CGEE — Azul Institucional & Branco Limpo
    ========================================================================== */
+
 .labra-case {
-  --l-bg: #070b14;
-  --l-panel: rgba(13, 18, 30, 0.82);
-  --l-panel-solid: #0d121e;
-  --l-input: rgba(255, 255, 255, 0.05);
-  --l-text: #e2e8f0;
-  --l-muted: #8492a6;
-  --l-cyan: #06b6d4;
-  --l-cyan-glow: rgba(6, 182, 212, 0.25);
-  --l-purple: #8b5cf6;
-  --l-purple-glow: rgba(139, 92, 246, 0.25);
-  --l-danger: #ef4444;
-  --l-danger-glow: rgba(239, 68, 68, 0.25);
-  --l-warning: #f59e0b;
-  --l-green: #10b981;
-  --l-border: rgba(255, 255, 255, 0.1);
-  --l-border-hover: rgba(255, 255, 255, 0.22);
-  --l-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  
+  /* Tokens gov.br (DSGov) idênticos ao CGEE */
+  --azul: #1351B4;
+  --azul-esc: #0c326f;
+  --azul-night: #071D41;
+  --amarelo: #FFCD07;
+  --verde: #168821;
+  --vermelho: #E52207;
+  --cinza-0: #FFFFFF;
+  --cinza-2: #F8F8F8;
+  --cinza-5: #EDEDED;
+  --cinza-10: #CCCCCC;
+  --cinza-40: #888888;
+  --cinza-80: #333333;
+  --txt: #1c1c1c;
+  --txt-mut: #5b6471;
+  --sombra: 0 1px 3px rgba(7, 29, 65, .12), 0 1px 2px rgba(7, 29, 65, .08);
+  --radius: 8px;
+  --ff: "Raleway", "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
+
+  /* Aliases compatíveis com o motor LABRA */
+  --l-bg: #F8F8F8;
+  --l-panel: #FFFFFF;
+  --l-panel-solid: #FFFFFF;
+  --l-input: #FFFFFF;
+  --l-text: #1c1c1c;
+  --l-muted: #5b6471;
+  --l-cyan: #1351B4;
+  --l-cyan-glow: rgba(19, 81, 180, 0.18);
+  --l-purple: #0c326f;
+  --l-purple-glow: rgba(12, 50, 111, 0.18);
+  --l-danger: #E52207;
+  --l-danger-glow: rgba(229, 34, 7, 0.18);
+  --l-warning: #FFCD07;
+  --l-green: #168821;
+  --l-border: #EDEDED;
+  --l-border-hover: #1351B4;
+  --l-font: var(--ff);
+
   display: none;
-  font-family: var(--l-font);
-  background: var(--l-bg);
-  background-image:
-    radial-gradient(ellipse at 10% 40%, rgba(6, 182, 212, 0.08), transparent 45%),
-    radial-gradient(ellipse at 90% 20%, rgba(139, 92, 246, 0.08), transparent 45%),
-    radial-gradient(ellipse at 50% 100%, rgba(239, 68, 68, 0.05), transparent 45%);
-  color: var(--l-text);
+  font-family: var(--ff);
+  background: var(--cinza-2);
+  color: var(--txt);
   padding: 0 0 50px;
-  border-radius: 16px;
+  border-radius: var(--radius);
   margin-bottom: 30px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--sombra);
+  border: 1px solid var(--cinza-5);
+  overflow: hidden;
 }
 
 .labra-case.on {
@@ -42,120 +62,174 @@
   box-sizing: border-box;
 }
 
-/* Header */
-.labra-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding: 20px 26px;
-  background: rgba(10, 15, 28, 0.88);
-  border-bottom: 1px solid var(--l-border);
-  backdrop-filter: blur(16px);
-  border-radius: 16px 16px 0 0;
+.labra-case a {
+  color: var(--azul);
 }
 
-.labra-header-brand {
+.labra-case h1,
+.labra-case h2,
+.labra-case h3 {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* ===== Barra gov.br ===== */
+.labra-case .govbar {
+  background: var(--cinza-0);
+  border-bottom: 1px solid var(--cinza-5);
+  font-size: 13px;
+}
+
+.labra-case .govbar .in {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 6px 20px;
   display: flex;
   align-items: center;
   gap: 14px;
 }
 
-.labra-header-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--l-cyan), var(--l-purple));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 24px var(--l-cyan-glow);
-  color: #fff;
-  font-size: 22px;
-}
-
-.labra-header-titles h1 {
-  margin: 0;
-  font-size: 1.35rem;
+.labra-case .logo {
   font-weight: 800;
-  letter-spacing: -0.02em;
+  font-size: 20px;
+  color: var(--azul);
+  letter-spacing: -0.03em;
+}
+
+.labra-case .logo .br {
+  color: var(--azul-esc);
+}
+
+.labra-case .govbar .ent {
+  color: var(--txt-mut);
+  font-weight: 600;
+}
+
+.labra-case .govbar .sp {
+  flex: 1;
+}
+
+.labra-case .govbar .acc {
+  height: 4px;
+  background: linear-gradient(90deg, var(--verde) 0 33%, var(--amarelo) 33% 66%, var(--azul) 66% 100%);
+}
+
+/* ===== Cabeçalho azul (Hero CGEE Style) ===== */
+.labra-case header.hero {
+  background: linear-gradient(120deg, var(--azul-night), var(--azul));
   color: #fff;
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+.labra-case header.hero .wave {
+  position: absolute;
+  inset: 0;
+  opacity: .25;
+  pointer-events: none;
+}
+
+.labra-case header.hero .in {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 26px 20px 28px;
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.labra-header-titles .labra-badge-version {
-  font-size: 0.72rem;
-  padding: 2px 8px;
-  background: rgba(6, 182, 212, 0.15);
-  color: var(--l-cyan);
-  border: 1px solid rgba(6, 182, 212, 0.3);
-  border-radius: 999px;
-  font-weight: 700;
-}
-
-.labra-header-titles p {
-  margin: 3px 0 0;
-  font-size: 0.85rem;
-  color: var(--l-muted);
-}
-
-.labra-header-status {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  gap: 20px;
+  align-items: flex-end;
   flex-wrap: wrap;
 }
 
-.labra-status-badge {
+.labra-case .hero .brand {
+  flex: 1;
+  min-width: 280px;
+}
+
+.labra-case .hero .eyebrow {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--amarelo);
+  font-weight: 700;
+}
+
+.labra-case .hero h1 {
+  font-size: 28px;
+  margin: 6px 0 4px;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+.labra-case .hero .sub {
+  color: #cfe0ff;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.labra-case .hero .panta {
+  margin-top: 10px;
+  font-style: italic;
+  color: #9fc0ff;
+  font-size: 13px;
+}
+
+.labra-case .status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.labra-case .pill {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 6px 13px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--l-border);
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #cbd5e1;
+  gap: 8px;
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .25);
+  padding: 7px 14px;
+  border-radius: 40px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #FFFFFF;
 }
 
-.labra-status-dot {
-  width: 8px;
-  height: 8px;
+.labra-case .dot {
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  background: var(--l-green);
-  box-shadow: 0 0 8px var(--l-green);
-  animation: labra-pulse 2s infinite;
+  background: var(--verde);
+  box-shadow: 0 0 0 0 rgba(22, 136, 33, .6);
+  animation: pulse 2s infinite;
 }
 
-@keyframes labra-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
+.labra-case .pill.demo .dot {
+  background: var(--amarelo);
+  box-shadow: none;
+  animation: none;
 }
 
-.labra-status-badge.highlight {
-  background: rgba(6, 182, 212, 0.12);
-  border-color: rgba(6, 182, 212, 0.35);
-  color: #a5f3fc;
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(22, 136, 33, .6); }
+  70% { box-shadow: 0 0 0 10px rgba(22, 136, 33, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(22, 136, 33, 0); }
 }
 
-.labra-status-badge.gold {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.35);
-  color: #fde68a;
+.labra-case .hero .meta {
+  font-size: 12px;
+  color: #b9d2ff;
+  text-align: right;
 }
 
-/* Navigation Tabs */
+/* ===== Navegação em Abas (DSGov) ===== */
 .labra-tabs-nav {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 10px 24px;
-  background: rgba(7, 11, 20, 0.95);
-  border-bottom: 1px solid var(--l-border);
+  gap: 4px;
+  padding: 0 20px;
+  background: var(--cinza-0);
+  border-bottom: 2px solid var(--cinza-5);
   overflow-x: auto;
 }
 
@@ -163,66 +237,71 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 9px 16px;
+  padding: 14px 18px;
   background: transparent;
-  color: var(--l-muted);
-  border: 1px solid transparent;
-  border-radius: 10px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  color: var(--txt-mut);
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  font-size: 0.88rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   white-space: nowrap;
+  font-family: var(--ff);
 }
 
 .labra-tab-btn:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--azul);
+  background: #f4f8ff;
 }
 
 .labra-tab-btn.active {
-  color: #fff;
-  background: rgba(6, 182, 212, 0.12);
-  border-color: rgba(6, 182, 212, 0.35);
-  box-shadow: 0 0 16px var(--l-cyan-glow);
+  color: var(--azul);
+  background: transparent;
+  border-bottom-color: var(--azul);
+  box-shadow: none;
 }
 
 .labra-tab-badge {
-  padding: 2px 7px;
-  border-radius: 999px;
+  padding: 2px 8px;
+  border-radius: 20px;
   font-size: 0.72rem;
   font-weight: 700;
-  background: rgba(239, 68, 68, 0.2);
-  color: #fca5a5;
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: #fde2dd;
+  color: var(--vermelho);
+  border: 1px solid #f8b4a8;
 }
 
-/* Tab Views Container */
+/* ===== Layout das Abas ===== */
 .labra-view {
   display: none;
-  padding: 24px;
+  padding: 24px 20px;
+  max-width: 1320px;
+  margin: 0 auto;
 }
 
 .labra-view.active {
   display: block;
 }
 
-/* Glass Panels */
+/* Cartões Padrão (Substituindo Glass por DSGov Card) */
 .labra-glass {
-  background: var(--l-panel);
-  border: 1px solid var(--l-border);
-  border-radius: 14px;
-  backdrop-filter: blur(14px);
+  background: var(--cinza-0);
+  border: 1px solid var(--cinza-5);
+  border-radius: var(--radius);
+  box-shadow: var(--sombra);
   padding: 20px;
   position: relative;
-  transition: border-color 0.2s;
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
 
 .labra-glass:hover {
-  border-color: var(--l-border-hover);
+  border-color: var(--cinza-10);
+  box-shadow: 0 4px 12px rgba(7, 29, 65, 0.08);
 }
 
-/* TAB 1: Alertas View */
+/* ===== TAB 1: Alertas de Fraude ===== */
 .labra-alerts-grid {
   display: grid;
   grid-template-columns: minmax(360px, 440px) 1fr;
@@ -236,11 +315,16 @@
   flex-direction: column;
   overflow: hidden;
   padding: 0;
+  background: var(--cinza-0);
+  border: 1px solid var(--cinza-5);
+  border-radius: var(--radius);
+  box-shadow: var(--sombra);
 }
 
 .labra-alerts-head {
-  padding: 18px 20px;
-  border-bottom: 1px solid var(--l-border);
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--cinza-5);
+  background: var(--cinza-2);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -254,50 +338,55 @@
 
 .labra-input-search {
   flex: 1;
-  background: var(--l-input);
-  border: 1px solid var(--l-border);
-  border-radius: 8px;
-  padding: 8px 12px;
-  color: #fff;
-  font-size: 0.82rem;
+  background: var(--cinza-0);
+  border: 1px solid var(--cinza-10);
+  border-radius: 6px;
+  padding: 9px 12px;
+  color: var(--txt);
+  font-size: 0.85rem;
+  font-family: var(--ff);
   outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .labra-input-search:focus {
-  border-color: var(--l-cyan);
-  box-shadow: 0 0 10px var(--l-cyan-glow);
+  border-color: var(--azul);
+  box-shadow: 0 0 0 2px rgba(19, 81, 180, 0.15);
 }
 
 .labra-alerts-list {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 16px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  background: var(--cinza-2);
 }
 
 .labra-alert-card {
   padding: 14px 16px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--l-border);
+  border-radius: var(--radius);
+  background: var(--cinza-0);
+  border: 1px solid var(--cinza-5);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   text-align: left;
   width: 100%;
+  box-shadow: 0 1px 2px rgba(7, 29, 65, 0.05);
 }
 
 .labra-alert-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: var(--l-border-hover);
+  background: #f4f8ff;
+  border-color: var(--azul);
   transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(19, 81, 180, 0.1);
 }
 
 .labra-alert-card.selected {
-  background: rgba(6, 182, 212, 0.09);
-  border-color: var(--l-cyan);
-  box-shadow: 0 0 16px var(--l-cyan-glow);
+  background: #eaf1fd;
+  border-color: var(--azul);
+  box-shadow: 0 0 0 2px rgba(19, 81, 180, 0.25);
 }
 
 .labra-card-top {
@@ -309,36 +398,43 @@
 }
 
 .labra-card-title {
-  font-size: 0.86rem;
+  font-size: 0.88rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--azul-esc);
   line-height: 1.35;
 }
 
 .labra-badge-sev {
-  padding: 3px 7px;
-  border-radius: 4px;
+  padding: 3px 8px;
+  border-radius: 20px;
   font-size: 0.68rem;
   font-weight: 800;
   text-transform: uppercase;
   flex-shrink: 0;
+  letter-spacing: 0.05em;
 }
 
 .labra-badge-sev.critica {
-  background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: #fde2dd;
+  color: #9a2310;
+  border: 1px solid #f8b4a8;
 }
 
 .labra-badge-sev.alta {
-  background: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: #fff3cd;
+  color: #7a5b00;
+  border: 1px solid #ffe082;
+}
+
+.labra-badge-sev.media {
+  background: #eaf1fd;
+  color: var(--azul);
+  border: 1px solid #c7dcfa;
 }
 
 .labra-card-desc {
-  font-size: 0.77rem;
-  color: var(--l-muted);
+  font-size: 0.80rem;
+  color: var(--txt-mut);
   line-height: 1.45;
   margin-bottom: 10px;
   display: -webkit-box;
@@ -351,47 +447,56 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.72rem;
-  color: #94a3b8;
-  padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.74rem;
+  color: var(--txt-mut);
+  padding-top: 8px;
+  border-top: 1px solid var(--cinza-5);
 }
 
 .labra-card-val {
-  font-weight: 700;
-  color: #fcd34d;
+  font-weight: 800;
+  color: var(--azul-esc);
 }
 
 .labra-card-actr {
-  color: var(--l-cyan);
+  color: var(--azul);
+  font-weight: 700;
   font-family: monospace;
 }
 
-/* Detail Panel */
+/* Painel de Detalhes */
 .labra-detail-panel {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  gap: 20px;
+  gap: 18px;
+  background: var(--cinza-0);
+  border: 1px solid var(--cinza-5);
+  border-radius: var(--radius);
+  box-shadow: var(--sombra);
+  padding: 24px;
 }
 
 .labra-detail-section {
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid var(--l-border);
-  border-radius: 12px;
+  background: var(--cinza-0);
+  border: 1px solid var(--cinza-5);
+  border-radius: var(--radius);
   padding: 16px 20px;
+  box-shadow: 0 1px 2px rgba(7, 29, 65, 0.04);
 }
 
 .labra-detail-section h3 {
   margin: 0 0 14px;
   font-size: 0.88rem;
   font-weight: 700;
-  color: var(--l-cyan);
+  color: var(--azul-esc);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   display: flex;
   align-items: center;
   gap: 8px;
+  border-bottom: 2px solid #eaf1fd;
+  padding-bottom: 6px;
 }
 
 .labra-kv-row {
@@ -399,9 +504,9 @@
   justify-content: space-between;
   align-items: baseline;
   gap: 16px;
-  padding: 7px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 0.82rem;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--cinza-5);
+  font-size: 0.84rem;
 }
 
 .labra-kv-row:last-child {
@@ -409,21 +514,22 @@
 }
 
 .labra-kv-key {
-  color: var(--l-muted);
+  color: var(--txt-mut);
+  font-weight: 600;
   flex-shrink: 0;
 }
 
 .labra-kv-val {
-  color: #fff;
-  font-weight: 500;
+  color: var(--txt);
+  font-weight: 600;
   text-align: right;
   word-break: break-word;
 }
 
 .labra-kv-val.gold {
-  color: #fcd34d;
-  font-weight: 700;
-  font-size: 0.95rem;
+  color: var(--azul-esc);
+  font-weight: 800;
+  font-size: 1.15rem;
 }
 
 .labra-nexo-chain {
@@ -436,17 +542,17 @@
 .labra-nexo-step {
   display: flex;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-left: 3px solid var(--l-cyan);
+  background: var(--cinza-2);
+  border: 1px solid var(--cinza-5);
+  border-left: 4px solid var(--azul);
   border-radius: 6px;
   padding: 10px 14px;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
 }
 
 .labra-nexo-title {
   font-weight: 700;
-  color: #fff;
+  color: var(--azul-esc);
   margin-bottom: 2px;
 }
 
@@ -457,68 +563,76 @@
   flex-wrap: wrap;
 }
 
+/* Botões Estilo DSGov / CGEE */
 .labra-btn-primary {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 11px 20px;
-  background: linear-gradient(135deg, #0284c7, #0369a1);
+  padding: 10px 18px;
+  background: var(--azul);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 0 15px rgba(2, 132, 199, 0.3);
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(19, 81, 180, 0.2);
+  font-family: var(--ff);
 }
 
 .labra-btn-primary:hover {
-  filter: brightness(1.15);
+  background: var(--azul-esc);
   transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(12, 50, 111, 0.25);
 }
 
 .labra-btn-secondary {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 11px 20px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #e2e8f0;
-  border: 1px solid var(--l-border);
-  border-radius: 8px;
+  padding: 10px 18px;
+  background: #fff;
+  color: var(--azul);
+  border: 1px solid var(--azul);
+  border-radius: 6px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  font-family: var(--ff);
 }
 
 .labra-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: #eaf1fd;
+  color: var(--azul-esc);
+  border-color: var(--azul-esc);
 }
 
-/* TAB 2: Relation Graph */
+/* ===== TAB 2: Relation Graph ===== */
 .labra-graph-wrap {
   position: relative;
   width: 100%;
   height: 640px;
-  background: radial-gradient(circle at center, rgba(13, 22, 40, 0.9), #070b14);
-  border-radius: 14px;
-  border: 1px solid var(--l-border);
+  background: #FFFFFF;
+  border-radius: var(--radius);
+  border: 1px solid var(--cinza-5);
+  box-shadow: var(--sombra);
   overflow: hidden;
 }
 
 .labra-graph-svg {
   width: 100%;
   height: 100%;
+  background: radial-gradient(circle at center, #ffffff 60%, #f4f8ff 100%);
 }
 
 .labra-graph-node-label {
-  fill: #e2e8f0;
+  fill: var(--txt);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   pointer-events: none;
+  font-family: var(--ff);
 }
 
 .labra-graph-edge {
@@ -530,7 +644,7 @@
   to { stroke-dashoffset: -100; }
 }
 
-/* TAB 3: Investigador Interativo */
+/* ===== TAB 3: Investigador Interativo ===== */
 .labra-investigador-box {
   display: flex;
   flex-direction: column;
@@ -542,26 +656,28 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--cinza-2);
   padding: 16px 20px;
-  border-radius: 12px;
-  border: 1px solid var(--l-border);
+  border-radius: var(--radius);
+  border: 1px solid var(--cinza-5);
 }
 
 .labra-select-custom {
   flex: 1;
   min-width: 280px;
-  background: #0d1322;
-  border: 1px solid var(--l-border);
-  border-radius: 8px;
-  padding: 11px 14px;
-  color: #fff;
+  background: #fff;
+  border: 1px solid var(--cinza-10);
+  border-radius: 6px;
+  padding: 10px 14px;
+  color: var(--txt);
   font-size: 0.88rem;
+  font-family: var(--ff);
   outline: none;
 }
 
 .labra-select-custom:focus {
-  border-color: var(--l-cyan);
+  border-color: var(--azul);
+  box-shadow: 0 0 0 2px rgba(19, 81, 180, 0.15);
 }
 
 .labra-steps-feed {
@@ -572,12 +688,13 @@
 }
 
 .labra-step-card {
-  background: rgba(13, 18, 30, 0.85);
-  border: 1px solid var(--l-border);
-  border-left: 4px solid var(--l-cyan);
-  border-radius: 8px;
+  background: #FFFFFF;
+  border: 1px solid var(--cinza-5);
+  border-left: 4px solid var(--azul);
+  border-radius: 6px;
   padding: 12px 18px;
   font-size: 0.88rem;
+  box-shadow: 0 1px 3px rgba(7, 29, 65, 0.05);
   animation: labra-step-fade 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
@@ -588,17 +705,17 @@
 
 .labra-step-num {
   font-weight: 800;
-  color: var(--l-cyan);
+  color: var(--azul);
   margin-right: 6px;
 }
 
 .labra-step-action {
   font-weight: 700;
-  color: #fff;
+  color: var(--azul-esc);
 }
 
 .labra-step-obs {
-  color: var(--l-muted);
+  color: var(--txt-mut);
   margin-top: 4px;
 }
 
@@ -611,48 +728,50 @@
 }
 
 .labra-kpi-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--l-border);
-  border-radius: 12px;
+  background: #FFFFFF;
+  border: 1px solid var(--cinza-5);
+  border-radius: var(--radius);
   padding: 16px 20px;
   text-align: center;
+  box-shadow: var(--sombra);
 }
 
 .labra-kpi-val {
   font-size: 1.8rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--azul-esc);
   letter-spacing: -0.02em;
 }
 
-.labra-kpi-val.cyan { color: var(--l-cyan); }
-.labra-kpi-val.gold { color: #fcd34d; }
-.labra-kpi-val.green { color: var(--l-green); }
+.labra-kpi-val.cyan { color: var(--azul); }
+.labra-kpi-val.gold { color: #8a6a00; }
+.labra-kpi-val.green { color: var(--verde); }
 
 .labra-kpi-lbl {
   font-size: 0.72rem;
-  color: var(--l-muted);
+  color: var(--txt-mut);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-top: 4px;
+  font-weight: 700;
 }
 
 /* Petição Renderizada */
 .labra-peca-box {
-  background: #090e18;
-  border: 1px solid var(--l-border);
-  border-radius: 12px;
+  background: var(--cinza-2);
+  border: 1px solid var(--cinza-10);
+  border-radius: var(--radius);
   padding: 24px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.85rem;
   line-height: 1.65;
-  color: #cbd5e1;
+  color: var(--txt);
   white-space: pre-wrap;
   max-height: 600px;
   overflow-y: auto;
 }
 
-/* TAB 4: Diretriz */
+/* ===== TAB 4: Diretriz ===== */
 .labra-directive-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -665,22 +784,30 @@
 
 .labra-form-group label {
   display: block;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--txt);
   margin-bottom: 6px;
 }
 
 .labra-form-group input[type="text"],
 .labra-form-group textarea {
   width: 100%;
-  background: var(--l-input);
-  border: 1px solid var(--l-border);
-  border-radius: 8px;
+  background: #FFFFFF;
+  border: 1px solid var(--cinza-10);
+  border-radius: 6px;
   padding: 10px 14px;
-  color: #fff;
+  color: var(--txt);
   font-size: 0.88rem;
+  font-family: var(--ff);
   outline: none;
+  transition: border-color 0.15s;
+}
+
+.labra-form-group input[type="text"]:focus,
+.labra-form-group textarea:focus {
+  border-color: var(--azul);
+  box-shadow: 0 0 0 2px rgba(19, 81, 180, 0.15);
 }
 
 .labra-form-group textarea {
@@ -696,23 +823,23 @@
 .labra-slider-val {
   font-size: 1.2rem;
   font-weight: 800;
-  color: var(--l-cyan);
+  color: var(--azul);
   min-width: 30px;
 }
 
 .labra-preview-code {
-  background: #080c16;
-  border: 1px solid var(--l-border);
-  border-radius: 8px;
+  background: var(--cinza-2);
+  border: 1px solid var(--cinza-5);
+  border-radius: 6px;
   padding: 16px;
   font-family: monospace;
   font-size: 0.82rem;
-  color: #93c5fd;
+  color: var(--azul-esc);
   white-space: pre-wrap;
   min-height: 150px;
 }
 
-/* Responsive */
+/* Responsivo */
 @media (max-width: 960px) {
   .labra-alerts-grid {
     grid-template-columns: 1fr;
