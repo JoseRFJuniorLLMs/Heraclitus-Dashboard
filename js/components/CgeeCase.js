@@ -349,10 +349,35 @@ function renderWhyChips(){
 function escTxt(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function escAttr(s){return escTxt(s).replace(/"/g,"&quot;");}
 function whyHash(e){ const h=Array.from(e.portaria).reduce((a,ch)=>((a*33+ch.charCodeAt(0))>>>0),5381).toString(16).padStart(8,"0"); return "0x"+h+(e.lsn*2654435761>>>0).toString(16).padStart(8,"0").slice(0,4); }
-function runWhy(){
-  const q=$("#whyInput").value.trim();
+async function runWhy(){
+  const input = $("#whyInput");
+  const q = (input ? input.value : "").trim();
   if(!q){toast("Informe uma portaria.");return;}
-  const e=EVENTOS_FULL.find(x=>x.portaria.toLowerCase()===q.toLowerCase()) || EVENTOS_FULL.find(x=>x.portaria.toLowerCase().includes(q.toLowerCase()));
+  let e = EVENTOS_FULL.find(x=>x.portaria.toLowerCase()===q.toLowerCase()) || EVENTOS_FULL.find(x=>x.portaria.toLowerCase().includes(q.toLowerCase()));
+  if(!e && LIVE){
+    try {
+      const r = await fetch(`/cgee-api/why?portaria=${encodeURIComponent(q)}`);
+      if(r.ok){
+        const j = await r.json();
+        if(j.encontrado && j.evento){
+          e = {
+            lsn: j.evento.lsn,
+            data: new Date(String(j.evento.data_oficial||j.evento.data).replace(" ","T")),
+            orgao: j.evento.orgao,
+            orgaoCod: j.evento.orgaoCod,
+            acao: j.evento.acao,
+            acaoCod: j.evento.acao_orcamentaria,
+            tipo: j.evento.tipo_alteracao,
+            tipoCls: (TIPOS.find(x=>x[0]===j.evento.tipo_alteracao)||["",'b-sup'])[1],
+            valor: +j.evento.valor||0,
+            portaria: j.evento.action_id || j.evento.portaria,
+            origem: j.evento.origem || ORIGENS[0],
+            cred: j.evento.cred || CREDS[0]
+          };
+        }
+      }
+    }catch(_){}
+  }
   if(!e){$("#whyGraph").innerHTML=`<div class="muted" style="padding:24px;text-align:center">Nenhuma portaria encontrada para “${escTxt(q)}”.</div>`;$("#whyDetail").innerHTML="";return;}
   const rel=EVENTOS_FULL.filter(x=>x.orgao===e.orgao&&x.portaria!==e.portaria);
   const hash=whyHash(e), W=1040,H=460,NW=176,NH=56;
@@ -423,39 +448,42 @@ function tamper(){ tampered=true; renderBlocks(); setShield(false,"QUEBRA DE INT
 
 /* ========== Charts SVG com hints globais integradas e todos os órgãos cadastrados ========== */
 function barH(data, unit){ // data:[{lab,val,cor}]
-  // Definimos uma proporção equilibrada para caber nomes completos e as barras
-  const W=850,bh=26,gap=10,pad=350; const max=Math.max(...data.map(d=>d.val))||1; const H=data.length*(bh+gap)+10;
-  
-  // CORREÇÃO AQUI: Mudado para preserveAspectRatio="xMinYMin meet" (alinha no topo)
-  // E trocado height:${H}px por height:auto (faz a altura colar perfeitamente nos dados, sem espaços fantasmas)
+  const W=850,bh=26,gap=10,pad=360; const max=Math.max(...data.map(d=>d.val))||1; const H=data.length*(bh+gap)+10;
   let s=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMin meet" style="width:100%; height:auto; display:block;">`;
-  
-  data.forEach((d,i)=>{const y=i*(bh+gap)+5,w=(d.val/max)*(W-pad-100);
+  data.forEach((d,i)=>{
+    const y=i*(bh+gap)+5,w=(d.val/max)*(W-pad-110);
+    const label = d.lab.length > 42 ? d.lab.slice(0, 40) + "…" : d.lab;
     s+=`<g data-tip="Órgão: ${escAttr(d.lab)} | Volume Acumulado: ${fmtBRL(d.val)}">
-        <text x="0" y="${y+17}" font-size="12" fill="#1c1c1c" font-family="Raleway,sans-serif">${escTxt(d.lab)}</text>
+        <text x="0" y="${y+17}" font-size="12" fill="#1c1c1c" font-family="Raleway,sans-serif">${escTxt(label)}</text>
         <rect x="${pad}" y="${y}" width="${Math.max(w,2)}" height="${bh}" rx="4" fill="${d.cor||'#1351B4'}"/>
         <text x="${pad+Math.max(w,2)+10}" y="${y+17}" font-size="11" font-weight="700" fill="#0c326f" font-family="Raleway,sans-serif">${unit(d.val)}</text>
-        </g>`;});
+        </g>`;
+  });
   return s+`</svg>`;
 }
 function renderCharts(){
   const byOrg={}; EVENTOS.forEach(e=>{byOrg[e.orgao]=(byOrg[e.orgao]||0)+Math.max(e.valor,0);});
-  
-  // Alteração 1: Removido o .slice(0,8) para renderizar absolutamente TODOS os órgãos da base de dados
   const topO=Object.entries(byOrg).map(([lab,val])=>({lab,val})).sort((a,b)=>b.val-a.val);
   $("#chOrgao").innerHTML=barH(topO,fmtBRLc);
   
   // por ano e tipo (stacked simples -> barras agrupadas por ano)
   const anos=[2023,2024,2025,2026]; const cores={"Crédito Suplementar":"#1351B4","Crédito Especial":"#FFCD07","Crédito Extraordinário":"#E52207","Remanejamento":"#168821","Anulação de Dotação":"#888"};
   const byAno={}; anos.forEach(a=>byAno[a]={});
-  EVENTOS.forEach(e=>{const a=e.data.getFullYear(); if(byAno[a]) byAno[a][e.tipo]=(byAno[a][e.tipo]||0)+Math.abs(e.valor);});
+  const evSource = EVENTOS_FULL && EVENTOS_FULL.length ? EVENTOS_FULL : EVENTOS;
+  evSource.forEach(e=>{const a=e.data.getFullYear(); if(byAno[a]) byAno[a][e.tipo]=(byAno[a][e.tipo]||0)+Math.abs(e.valor);});
   const W=560,H=210,pad=40,gap=24; const max=Math.max(...anos.map(a=>Object.values(byAno[a]).reduce((s,v)=>s+v,0)))||1;
   const bw=(W-pad-gap*anos.length)/anos.length;
   let s=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:${H}px">`;
-  anos.forEach((a,i)=>{let x=pad+i*(bw+gap),y=H-24; const tipos=Object.keys(cores);
+  anos.forEach((a,i)=>{
+    let x=pad+i*(bw+gap),y=H-24; const tipos=Object.keys(cores);
+    const isSelected = anoFiltro === "todos" || String(anoFiltro) === String(a);
+    const op = isSelected ? "1" : "0.35";
     tipos.forEach(tp=>{const v=byAno[a][tp]||0; const h=(v/max)*(H-50); y-=h;
-      s+=`<rect x="${x}" y="${y}" width="${bw}" height="${Math.max(h,0)}" fill="${cores[tp]}" data-tip="Exercício: ${a} | Distribuição: ${tp} | Volume total: ${fmtBRL(v)}"/>`;});
-    s+=`<text x="${x+bw/2}" y="${H-6}" font-size="12" text-anchor="middle" font-weight="700" fill="#5b6471" font-family="Raleway">${a}</text>`;});
+      s+=`<rect x="${x}" y="${y}" width="${bw}" height="${Math.max(h,0)}" fill="${cores[tp]}" opacity="${op}" data-tip="Exercício: ${a} | Distribuição: ${tp} | Volume total: ${fmtBRL(v)}"/>`;});
+    const fontWt = isSelected && anoFiltro !== "todos" ? "900" : "700";
+    const fillCol = isSelected && anoFiltro !== "todos" ? "#1351B4" : "#5b6471";
+    s+=`<text x="${x+bw/2}" y="${H-6}" font-size="12" text-anchor="middle" font-weight="${fontWt}" fill="${fillCol}" font-family="Raleway">${a}</text>`;
+  });
   s+=`</svg>`; $("#chAno").innerHTML=s;
   $("#legAno").innerHTML=Object.entries(cores).map(([t,c])=>`<span data-tip="Legenda de Tipo Legal: ${t}"><i style="background:${c}"></i>${t}</span>`).join("");
 }
@@ -464,7 +492,7 @@ function renderCharts(){
 function renderFeed(){
   const ul=$("#feed"); ul.innerHTML="";
   EVENTOS.slice(-18).reverse().forEach(e=>{
-    const li = el("li",null,`<span class="ln">#e.lsn</span>
+    const li = el("li",null,`<span class="ln">#${e.lsn}</span>
       <span><b>${e.orgao}</b><div class="muted" style="font-size:11px">${e.tipo} · ${fmtData(e.data)} · ${e.portaria}</div></span>
       <span class="v" style="color:${e.valor<0?'#E52207':'#0c326f'}">${fmtBRLc(e.valor)}</span>`);
     li.setAttribute("data-tip", `Log Evento #${e.lsn} | Doc: ${e.portaria} | Beneficiário: ${e.orgao} | Tipo legal: ${e.tipo} | Volume: ${fmtBRL(e.valor)} | Data: ${fmtData(e.data)}`);
@@ -498,7 +526,7 @@ async function tentarLive(){
     const t=await fetch("/cgee-api/timeline?limit=24000",{cache:"no-store"});
     if(t.ok){ const tj=await t.json();
       if(Array.isArray(tj.eventos)&&tj.eventos.length){
-        EVENTOS=tj.eventos.map((e,i)=>({lsn:e.lsn!=null?e.lsn:i,data:new Date(e.data_oficial||e.data||Date.now()),
+        EVENTOS=tj.eventos.map((e,i)=>({lsn:e.lsn!=null?e.lsn:i,data:new Date(String(e.data_oficial||e.data||Date.now()).replace(" ","T")),
           orgao:e.orgao||"—",orgaoCod:e.orgaoCod||"",acaoCod:e.acao_orcamentaria||e.acaoCod||"",acao:e.acao||"",
           tipo:e.tipo_alteracao||e.tipo||"Crédito Suplementar",tipoCls:(TIPOS.find(x=>x[0]===(e.tipo_alteracao||e.tipo))||["",'b-sup'])[1],
           valor:+e.valor||0,portaria:e.action_id||e.portaria||("LSN-"+i),origem:e.origem||ORIGENS[0],cred:e.cred||CREDS[0]}));
@@ -535,6 +563,13 @@ function setAno(ano){
   asOfIdx=Math.max(0,EVENTOS.length-1);
   const sl=$("#asof"); sl.value=100; sl.style.setProperty("--p","100%");
   renderAnoPills(); renderHeatmap(); renderKpis(); renderTimeline(); renderCharts(); renderFeed(); renderWhyChips();
+  const input = $("#whyInput");
+  if (input && input.value) {
+    runWhy();
+  } else if (EVENTOS.length > 0 && input) {
+    input.value = EVENTOS[0].portaria;
+    runWhy();
+  }
 }
 
 /* ========== boot ========== */
@@ -545,6 +580,14 @@ function bootRender(){
   const sl=$("#asof"); sl.max=100; sl.value=100;
   renderAnoPills(); renderHeatmap(); renderKpis(); renderTimeline(); renderWhyChips(); renderBlocks(); renderCharts(); renderFeed(); renderEngine();
   setShield(true,"Cadeia Merkle verificada — 100% de consistência matemática no log imutável.");
+  if (EVENTOS_FULL.length > 0) {
+    const input = $("#whyInput");
+    const pick = EVENTOS_FULL.find(e => e.portaria) || EVENTOS_FULL[0];
+    if (pick && input && (!input.value || !$("#whyGraph svg"))) {
+      input.value = pick.portaria;
+      runWhy();
+    }
+  }
 }
 let playTimer=null;
 function pararPlay(){ if(playTimer){clearInterval(playTimer);playTimer=null;} const b=$("#playBtn"); if(b){b.textContent="▶ Reproduzir";b.classList.remove("btn-amar");b.classList.add("btn-azul");} }
@@ -625,7 +668,30 @@ document.addEventListener("keydown", ev => {
 });
 
 $("#asof").style.setProperty("--p","100%");
+bootRender();
 tentarLive();
+
+// Reatividade de rotas — re-renderiza gráficos quando o usuário navega para #cgee
+document.addEventListener("hera:route-changed", ev => {
+  if (ev.detail?.route === "cgee") {
+    bootRender();
+  }
+});
+
+// Redimensionamento de janela
+let resizeTimer = null;
+window.addEventListener("resize", () => {
+  if (resizeTimer) clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    const sec = document.getElementById("cgee");
+    if (sec && sec.classList.contains("on")) {
+      renderTimelineChart();
+      renderHeatmap();
+      renderCharts();
+      if ($("#whyInput") && $("#whyInput").value) runWhy();
+    }
+  }, 150);
+});
       };
       boot();
     } catch (e) {
