@@ -55,12 +55,9 @@ PORTAL_API_KEY = os.getenv("PORTAL_TRANSPARENCIA_API_KEY", "").strip()
 _default_hosts = f"localhost:{DASHBOARD_PORT},127.0.0.1:{DASHBOARD_PORT},[::1]:{DASHBOARD_PORT}"
 ALLOWED_HOSTS = {h.strip() for h in os.getenv("HERACLITUS_DASHBOARD_ALLOWED_HOSTS", _default_hosts).split(",") if h.strip()}
 
-if bool(CORE_USERNAME) != bool(CORE_PASSWORD):
-    raise RuntimeError("Configure HERACLITUS_REST_USERNAME e HERACLITUS_REST_PASSWORD juntos")
-if ":" in CORE_USERNAME:
-    raise RuntimeError("HERACLITUS_REST_USERNAME não pode conter ':' em autenticação Basic")
+AUTO_LOGIN = os.getenv("HERACLITUS_DASHBOARD_AUTO_LOGIN", "0").lower() in ("1", "true", "yes")
 CORE_AUTH_HEADER = None
-if CORE_USERNAME and CORE_PASSWORD:
+if CORE_USERNAME and CORE_PASSWORD and AUTO_LOGIN:
     token = base64.b64encode(f"{CORE_USERNAME}:{CORE_PASSWORD}".encode("utf-8")).decode("ascii")
     CORE_AUTH_HEADER = f"Basic {token}"
 
