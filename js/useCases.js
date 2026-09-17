@@ -35,6 +35,18 @@ export const USE_CASES = Object.freeze([
     capabilities:['Linha do tempo viva','Heatmap estilo GitHub','Exercícios','WHY por portaria','Verificação do log'],
     sourceUi:'painel.html + painel_server.py',
   },
+  {
+    id:'frd',
+    name:'SPEC-FRD-001 v2.0',
+    subtitle:'Detecção, Triangulação e Evidência de Riscos de Integridade Pública',
+    repo:'docs/SPEC-FRD-001 v2.0 — Detecção, Triangulação e Evidência de Riscos de Integridade Pública.md',
+    snapshot:'2026.09.17-v2.0',
+    runtime:'http://127.0.0.1:9337/frd-api',
+    runtimeLabel:'Console Pericial de Integridade',
+    accent:'fraud',
+    capabilities:['Dashboard Executivo','Fila de Triagem','Grafo Temporal Multi-Hop','Time Travel (AS OF LSN)','Dossiê Probatório Merkle','Decisão Humana & Audit Trail'],
+    sourceUi:'SPEC-FRD-001 v2.0 / FrdCase.js',
+  },
 ]);
 
 export const USE_CASE_BY_ID = new Map(USE_CASES.map(item => [item.id,item]));

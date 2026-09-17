@@ -18,6 +18,7 @@ import re
 from urllib.parse import parse_qs, urlencode, urlsplit
 import labra_backend
 import cgee_backend
+import frd_backend
 
 ROOT = Path(__file__).resolve().parent
 RELEASE = "2026.09.15-r10"
@@ -242,6 +243,22 @@ class Handler(BaseHTTPRequestHandler):
             target = _cgee_target(route, parsed.query)
             if target is None: return self.error(400, "Parâmetros CGEE inválidos", code="BAD_QUERY")
             return self._proxy(CGEE_HOST, CGEE_PORT, target, timeout=25, forward_browser_auth=False)
+        if parsed.path.startswith("/frd-api/"):
+            q = parse_qs(parsed.query, keep_blank_values=True)
+            if parsed.path == "/frd-api/summary":
+                return self.send_body(200, _json_bytes(frd_backend.get_summary()))
+            if parsed.path == "/frd-api/signals":
+                return self.send_body(200, _json_bytes(frd_backend.get_signals(q)))
+            if parsed.path == "/frd-api/signal":
+                sig_id = q.get("id", [""])[0]
+                return self.send_body(200, _json_bytes(frd_backend.get_signal_detail(sig_id)))
+            if parsed.path == "/frd-api/graph":
+                sig_id = q.get("id", [""])[0]
+                year = int(q.get("year", ["0"])[0]) if q.get("year") else None
+                return self.send_body(200, _json_bytes(frd_backend.get_graph(sig_id, year)))
+            if parsed.path == "/frd-api/audit":
+                return self.send_body(200, _json_bytes(frd_backend.get_audit_trail()))
+            return self.error(404, "Rota FRD não encontrada", code="NOT_FOUND")
         if parsed.path.startswith("/agent-api/"):
             route=parsed.path.removeprefix("/agent-api")
             if not AGENT_READ_ROUTES.fullmatch(route): return self.error(403,"Rota Agent fora do escopo somente-leitura",code="ROUTE_DENIED")
@@ -268,6 +285,12 @@ class Handler(BaseHTTPRequestHandler):
             try: payload=json.loads(raw or b"{}")
             except Exception: payload={}
             return self.send_body(200,_json_bytes(labra_backend.registrar_diretriz(payload)))
+        if parsed.path=="/frd-api/decision":
+            length=int(self.headers.get("Content-Length",0))
+            raw=self.rfile.read(min(length,1048576))
+            try: payload=json.loads(raw or b"{}")
+            except Exception: payload={}
+            return self.send_body(200,_json_bytes(frd_backend.record_decision(payload)))
         return self.error(405,"Dashboard é somente leitura; mutações não são expostas",code="READ_ONLY")
 
 if __name__=="__main__":

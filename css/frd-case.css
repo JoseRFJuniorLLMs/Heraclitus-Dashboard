@@ -1,0 +1,546 @@
+/* ==========================================================================
+   SPEC-FRD-001 v2.0 · Plataforma de Integridade Pública & Detecção de Fraudes
+   CSS com escopo estrito (.frd-case) baseado na especificação normativa
+   ========================================================================== */
+
+.frd-case {
+  display: none;
+  width: 100%;
+  margin-bottom: 40px;
+  background: #0b101b;
+  border-radius: 12px;
+  overflow: hidden;
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+}
+
+.frd-case.on {
+  display: block;
+  animation: fade .2s;
+}
+
+.frd-case * {
+  box-sizing: border-box;
+}
+
+/* Header & Banner */
+.frd-case .frd-hero {
+  background: linear-gradient(135deg, #071126 0%, #0d234a 50%, #133a75 100%);
+  padding: 26px 30px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.frd-case .frd-hero-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.frd-case .frd-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.frd-case .frd-title {
+  margin: 10px 0 6px;
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.frd-case .frd-subtitle {
+  color: #94a3b8;
+  font-size: 14px;
+  max-width: 800px;
+}
+
+.frd-case .frd-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: monospace;
+}
+
+.frd-case .frd-status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 10px #10b981;
+}
+
+/* Executive Snapshot Bar */
+.frd-case .frd-exec-bar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 30px;
+  background: #0f172a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  color: #94a3b8;
+  flex-wrap: wrap;
+}
+
+.frd-case .frd-exec-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.frd-case .frd-exec-item strong {
+  color: #f1f5f9;
+}
+
+/* KPI Cards Grid */
+.frd-case .frd-kpis-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 16px;
+  padding: 24px 30px 10px;
+}
+
+@media (max-width: 1200px) {
+  .frd-case .frd-kpis-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 700px) {
+  .frd-case .frd-kpis-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.frd-case .frd-kpi-card {
+  background: #111a2e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 16px;
+  transition: transform .15s, border-color .15s;
+}
+
+.frd-case .frd-kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.frd-case .frd-kpi-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.frd-case .frd-kpi-val {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #f8fafc;
+}
+
+.frd-case .frd-kpi-val.crit { color: #f43f5e; }
+.frd-case .frd-kpi-val.high { color: #fb923c; }
+.frd-case .frd-kpi-val.med { color: #facc15; }
+.frd-case .frd-kpi-val.rev { color: #38bdf8; }
+.frd-case .frd-kpi-val.exp { color: #34d399; font-size: 22px; }
+
+.frd-case .frd-kpi-sub {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* Main Two-Column Layout */
+.frd-case .frd-body {
+  padding: 16px 30px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Sections & Panels */
+.frd-case .frd-panel {
+  background: #111a2e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.frd-case .frd-panel-hd {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.6);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.frd-case .frd-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0;
+}
+
+.frd-case .frd-panel-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.frd-case .frd-panel-bd {
+  padding: 20px;
+}
+
+/* Filters Toolbar */
+.frd-case .frd-toolbar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.frd-case .frd-input {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color .15s;
+}
+
+.frd-case .frd-input:focus {
+  border-color: #38bdf8;
+}
+
+.frd-case .frd-select {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Triage Table */
+.frd-case .frd-table-wrap {
+  overflow-x: auto;
+}
+
+.frd-case table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.frd-case th {
+  background: rgba(15, 23, 42, 0.8);
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.frd-case td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  vertical-align: middle;
+}
+
+.frd-case tr:hover td {
+  background: rgba(56, 189, 248, 0.04);
+}
+
+.frd-case tr.selected td {
+  background: rgba(56, 189, 248, 0.1);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+/* Badges */
+.frd-case .badge-crit {
+  background: rgba(244, 63, 94, 0.18);
+  color: #fb7185;
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.frd-case .badge-high {
+  background: rgba(251, 146, 60, 0.18);
+  color: #fdba74;
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.frd-case .badge-med {
+  background: rgba(250, 204, 21, 0.18);
+  color: #fde047;
+  border: 1px solid rgba(250, 204, 21, 0.3);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.frd-case .badge-status {
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+
+.frd-case .badge-status.st-new { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+.frd-case .badge-status.st-review { background: rgba(250, 204, 21, 0.15); color: #facc15; }
+.frd-case .badge-status.st-dismiss { background: rgba(100, 116, 139, 0.2); color: #94a3b8; }
+.frd-case .badge-status.st-escalated { background: rgba(244, 63, 94, 0.2); color: #f43f5e; }
+
+/* Action Buttons */
+.frd-case .frd-btn {
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f1f5f9;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all .15s;
+}
+
+.frd-case .frd-btn:hover {
+  background: #334155;
+  border-color: #38bdf8;
+  color: #38bdf8;
+}
+
+.frd-case .frd-btn-primary {
+  background: #0284c7;
+  border-color: #0284c7;
+  color: #fff;
+}
+
+.frd-case .frd-btn-primary:hover {
+  background: #0369a1;
+}
+
+.frd-case .frd-btn-danger {
+  background: #be123c;
+  border-color: #be123c;
+  color: #fff;
+}
+
+.frd-case .frd-btn-danger:hover {
+  background: #9f1239;
+}
+
+/* Investigation Split View (Graph + Dossier) */
+.frd-case .frd-investigation-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 1024px) {
+  .frd-case .frd-investigation-grid { grid-template-columns: 1fr; }
+}
+
+/* Time Travel Slider in Graph */
+.frd-case .frd-time-travel {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+.frd-case .frd-slider {
+  flex: 1;
+  accent-color: #38bdf8;
+  cursor: pointer;
+}
+
+/* Graph Canvas Container */
+.frd-case .frd-graph-canvas {
+  background: #070d19;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  min-height: 380px;
+}
+
+/* Dossier Card & Evidence Sets */
+.frd-case .frd-dossier {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.frd-case .frd-dossier-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+
+.frd-case .frd-dossier-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+.frd-case .frd-evidence-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.frd-case .frd-evidence-card {
+  background: #1e293b;
+  border-left: 3px solid #38bdf8;
+  padding: 10px 14px;
+  border-radius: 0 6px 6px 0;
+  font-size: 12px;
+}
+
+.frd-case .frd-evidence-title {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 4px;
+}
+
+.frd-case .frd-evidence-desc {
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.frd-case .frd-evidence-hash {
+  font-family: monospace;
+  font-size: 10.5px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* Merkle & RFC 3161 Proof Box */
+.frd-case .frd-seal-box {
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 6px;
+  padding: 12px;
+  margin-top: 14px;
+  font-size: 11.5px;
+}
+
+.frd-case .frd-seal-title {
+  color: #34d399;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+/* Human Decision Console */
+.frd-case .frd-decision-bar {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.frd-case .frd-decision-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+/* Audit Trail Feed */
+.frd-case .frd-audit-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.frd-case .frd-audit-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #0f172a;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  border-left: 2px solid #38bdf8;
+}
+
+.frd-case .frd-audit-lsn {
+  font-family: monospace;
+  font-weight: 700;
+  color: #38bdf8;
+  min-width: 80px;
+}
+
+.frd-case .frd-audit-body {
+  flex: 1;
+}
+
+.frd-case .frd-audit-meta {
+  color: #64748b;
+  font-size: 11px;
+}

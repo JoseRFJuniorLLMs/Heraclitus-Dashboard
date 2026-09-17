@@ -9,6 +9,7 @@ import { RedTeamSecurity } from './components/RedTeamSecurity.js';
 import { LabraAguCase } from './components/LabraAguCase.js';
 import { AebStreamCase } from './components/AebStreamCase.js';
 import { CgeeCase } from './components/CgeeCase.js';
+import { FrdCase } from './components/FrdCase.js';
 import { SOCPanel } from './components/SOCPanel.js';
 import { ExecPanel } from './components/ExecPanel.js';
 import { Titular } from './components/Titular.js';
@@ -40,14 +41,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   $('#main-content').innerHTML = `
     ${PlatformOverview.render()}${Capabilities.render()}${PublicData.render()}${Fontes.render()}${Atributos.render()}
-    ${TimeMachine.render()}${Diff.render()}${Cases.render()}${LabraAguCase.render()}${AebStreamCase.render()}${CgeeCase.render()}
+    ${TimeMachine.render()}${Diff.render()}${Cases.render()}${LabraAguCase.render()}${AebStreamCase.render()}${CgeeCase.render()}${FrdCase.render()}
     ${AttackGraph.render()}${AttackReplay.render()}${CausalInvestigation.render()}${CustodyChain.render()}${MerkleViewer.render()}
     ${CompliancePanel.render()}${AgentBlackBox.render()}${RedTeamSecurity.render()}${SOCPanel.render()}${ExecPanel.render()}${Titular.render()}${ForensicAI.render()}${Modos.render()}
   `;
 
   const modalContainer=document.createElement('div');modalContainer.innerHTML=LoginModal.render();document.body.appendChild(modalContainer);
 
-  Header.init();LoginModal.init();Navigation.init();PlatformOverview.init();Capabilities.init();PublicData.init();Fontes.init();Atributos.init();TimeMachine.init();Diff.init();Cases.init();LabraAguCase.init();AebStreamCase.init();CgeeCase.init();AttackGraph.init();AttackReplay.init();CausalInvestigation.init();CustodyChain.init();MerkleViewer.init();CompliancePanel.init();AgentBlackBox.init();RedTeamSecurity.init();SOCPanel.init();ExecPanel.init();Titular.init();ForensicAI.init();Modos.init();
+  Header.init();LoginModal.init();Navigation.init();PlatformOverview.init();Capabilities.init();PublicData.init();Fontes.init();Atributos.init();TimeMachine.init();Diff.init();Cases.init();LabraAguCase.init();AebStreamCase.init();CgeeCase.init();FrdCase.init();AttackGraph.init();AttackReplay.init();CausalInvestigation.init();CustodyChain.init();MerkleViewer.init();CompliancePanel.init();AgentBlackBox.init();RedTeamSecurity.init();SOCPanel.init();ExecPanel.init();Titular.init();ForensicAI.init();Modos.init();
 
   await LoginModal.bootstrap();
   RuntimeMonitor.init();
